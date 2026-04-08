@@ -64,3 +64,11 @@ The application is pre-configured with Ariadne Labs resources:
 ## ⚠️ Security Warning (PHI)
 
 **Warning:** This tool is designed for general clinical decision support. Users **must never** input Protected Health Information (PHI) or identifiable patient data into the chat interface. All queries must be anonymized.
+
+## 🤝 In Collaboration With
+
+This project is done in collaboration with the following schools and labs:
+
+| EPFL | LIGHT LABORATORY | Harvard T.H. Chan School | Ariadne Labs |
+| :---: | :---: | :---: | :---: |
+| <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/95/Logo_EPFL_2019.svg/1280px-Logo_EPFL_2019.svg.png" width="150" alt="EPFL"> | <img src="https://avatars.githubusercontent.com/u/62012557?s=200&v=4" width="150" alt="LIGHT LABORATORY"> | <img src="https://upload.wikimedia.org/wikipedia/en/1/18/Harvard_shield-Public_Health.png" width="150" alt="Harvard T.H. Chan School"> | <img src="https://www.ariadnelabs.org/wp-content/themes/ariadne-labs/assets/images/AL-logo-solo-white.svg" width="150" alt="Ariadne Labs"> |
