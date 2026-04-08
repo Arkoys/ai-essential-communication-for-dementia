@@ -35,22 +35,31 @@ export function SidebarHistory({
 }: SidebarHistoryProps) {
   return (
     <div className="w-72 md:w-64 h-full bg-zinc-50 dark:bg-zinc-950 border-r border-zinc-200 dark:border-zinc-800 flex flex-col shadow-2xl md:shadow-none">
-      <div className="p-4 flex items-center justify-between md:block gap-2">
-        <button
-          onClick={() => {
-            onNew();
-            onClose?.();
-          }}
-          className="flex-1 flex items-center justify-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg transition-colors font-medium"
-        >
-          <Plus size={18} />
-          New Consultation
-        </button>
-        {onClose && (
-          <button onClick={onClose} className="md:hidden p-2 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200">
-            <X size={20} />
+      <div className="p-4 flex flex-col gap-4 border-b border-zinc-200 dark:border-zinc-800">
+        <div className="flex items-center justify-center py-2">
+          <img 
+            src="https://www.ariadnelabs.org/wp-content/themes/ariadne-labs/assets/images/AL-logo-solo-white.svg" 
+            alt="Ariadne Labs" 
+            className="h-16 w-auto dark:invert-0 invert opacity-90"
+          />
+        </div>
+        <div className="flex items-center justify-between md:block gap-2">
+          <button
+            onClick={() => {
+              onNew();
+              onClose?.();
+            }}
+            className="flex-1 w-full flex items-center justify-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-4 py-2 rounded-lg transition-colors font-medium"
+          >
+            <Plus size={18} />
+            New Consultation
           </button>
-        )}
+          {onClose && (
+            <button onClick={onClose} className="md:hidden p-2 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200">
+              <X size={20} />
+            </button>
+          )}
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto p-2 space-y-1">
