@@ -1,0 +1,5 @@
+{
+  "name": "Dementia Clinical Assistant",
+  "description": "A privacy-first clinical assistant for PCPs to support consultations with patients presenting dementia symptoms.",
+  "requestFramePermissions": []
+}
