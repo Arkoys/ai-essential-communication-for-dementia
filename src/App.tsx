@@ -1,12 +1,17 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
-import { auth, signInWithGoogle, logOut } from './firebase';
+import { collection, query, where, orderBy, onSnapshot, addDoc, serverTimestamp, deleteDoc, doc, getDocs, setDoc } from 'firebase/firestore';
+import { auth, db, signInWithGoogle, logOut, handleFirestoreError, OperationType } from './firebase';
 import { SidebarHistory, Conversation } from './components/SidebarHistory';
 import { ChatWindow } from './components/ChatWindow';
 import { NavigationMap, PhaseName } from './components/NavigationMap';
 import { AdminPanel } from './components/AdminPanel';
+import { generateClinicalResponseWithHistory } from './lib/llm';
 import { Stethoscope, Settings, Menu } from 'lucide-react';
 import { cn } from './lib/utils';
+
+import { DEFAULT_KNOWLEDGE_CHUNKS } from './lib/defaultData';
+import { generateEmbedding } from './lib/rag';
 
 interface Message {
   id: string;
@@ -40,55 +45,96 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
-  const fetchConversations = useCallback(async () => {
-    if (!user) return;
-    try {
-      const res = await fetch(`/api/conversations?userId=${user.uid}`);
-      if (res.ok) {
-        const data = await res.json();
-        setConversations(data.map((c: any) => ({
-          ...c,
-          createdAt: new Date(c.createdAt),
-          updatedAt: new Date(c.updatedAt)
-        })));
+  // Auto-seed default resources if empty
+  useEffect(() => {
+    if (!isAuthReady || !user || user.email !== 'victor.negadi@gmail.com') return;
+
+    const checkAndSeed = async () => {
+      try {
+        const chunksRef = collection(db, 'knowledge_chunks');
+        const snapshot = await getDocs(chunksRef);
+        if (snapshot.empty) {
+          console.log("Knowledge base is empty. Auto-seeding default resources...");
+          for (const chunk of DEFAULT_KNOWLEDGE_CHUNKS) {
+            const embedding = await generateEmbedding(chunk.content);
+            await addDoc(collection(db, 'knowledge_chunks'), {
+              content: chunk.content,
+              source: chunk.source,
+              embedding,
+            });
+          }
+          console.log("Auto-seeding complete!");
+        }
+      } catch (error) {
+        console.error("Error during auto-seeding:", error);
       }
-    } catch (error) {
-      console.error("Error fetching conversations:", error);
-    }
-  }, [user]);
+    };
+
+    checkAndSeed();
+  }, [user, isAuthReady]);
 
   // Fetch Conversations
   useEffect(() => {
-    if (isAuthReady && user) {
-      fetchConversations();
-    } else {
+    if (!isAuthReady || !user) {
       setConversations([]);
-    }
-  }, [user, isAuthReady, fetchConversations]);
-
-  const fetchMessages = useCallback(async () => {
-    if (!activeConversationId) {
-      setMessages([]);
       return;
     }
-    try {
-      const res = await fetch(`/api/conversations/${activeConversationId}/messages`);
-      if (res.ok) {
-        const data = await res.json();
-        setMessages(data.map((m: any) => ({
-          ...m,
-          createdAt: new Date(m.createdAt)
-        })));
-      }
-    } catch (error) {
-      console.error("Error fetching messages:", error);
-    }
-  }, [activeConversationId]);
+
+    const q = query(
+      collection(db, 'conversations'),
+      where('userId', '==', user.uid),
+      orderBy('updatedAt', 'desc')
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const convos: Conversation[] = [];
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+        convos.push({
+          id: doc.id,
+          title: data.title,
+          createdAt: data.createdAt?.toDate() || new Date(),
+          updatedAt: data.updatedAt?.toDate() || new Date(),
+        });
+      });
+      setConversations(convos);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, 'conversations');
+    });
+
+    return () => unsubscribe();
+  }, [user, isAuthReady]);
 
   // Fetch Messages for Active Conversation
   useEffect(() => {
-    fetchMessages();
-  }, [activeConversationId, fetchMessages]);
+    if (!isAuthReady || !user || !activeConversationId) {
+      setMessages([]);
+      return;
+    }
+
+    const q = query(
+      collection(db, `conversations/${activeConversationId}/messages`),
+      orderBy('createdAt', 'asc')
+    );
+
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const msgs: Message[] = [];
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+        msgs.push({
+          id: doc.id,
+          role: data.role,
+          content: data.content,
+          createdAt: data.createdAt?.toDate() || new Date(),
+        });
+      });
+      setMessages(msgs);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, `conversations/${activeConversationId}/messages`);
+    });
+
+    return () => unsubscribe();
+  }, [activeConversationId, user, isAuthReady]);
 
   const handleNewConversation = () => {
     setActiveConversationId(null);
@@ -98,13 +144,20 @@ export default function App() {
 
   const handleDeleteConversation = async (id: string) => {
     try {
-      await fetch(`/api/conversations/${id}`, { method: 'DELETE' });
+      // Delete messages first
+      const messagesRef = collection(db, `conversations/${id}/messages`);
+      const snapshot = await getDocs(messagesRef);
+      const deletePromises = snapshot.docs.map(doc => deleteDoc(doc.ref));
+      await Promise.all(deletePromises);
+
+      // Delete conversation
+      await deleteDoc(doc(db, 'conversations', id));
+      
       if (activeConversationId === id) {
         handleNewConversation();
       }
-      fetchConversations();
     } catch (error) {
-      console.error("Error deleting conversation:", error);
+      handleFirestoreError(error, OperationType.DELETE, `conversations/${id}`);
     }
   };
 
@@ -118,41 +171,46 @@ export default function App() {
       // Create new conversation if none active
       if (!convId) {
         const title = content.length > 40 ? content.substring(0, 40) + '...' : content;
-        const res = await fetch('/api/conversations', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ userId: user.uid, title })
+        const convRef = await addDoc(collection(db, 'conversations'), {
+          userId: user.uid,
+          title,
+          createdAt: serverTimestamp(),
+          updatedAt: serverTimestamp(),
         });
-        const data = await res.json();
-        convId = data.id;
+        convId = convRef.id;
         setActiveConversationId(convId);
-        fetchConversations();
       }
 
-      // Optimistically add user message
-      const tempUserMsg: Message = {
-        id: Date.now().toString(),
+      // Add user message to Firestore
+      await addDoc(collection(db, `conversations/${convId}/messages`), {
+        conversationId: convId,
         role: 'user',
         content,
-        createdAt: new Date()
-      };
-      setMessages(prev => [...prev, tempUserMsg]);
-
-      // Send to API
-      const res = await fetch(`/api/conversations/${convId}/messages`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content, currentPhase })
+        createdAt: serverTimestamp(),
       });
+
+      // Prepare history for LLM
+      const history = messages.map(m => ({ role: m.role, content: m.content }));
       
-      if (res.ok) {
-        // Re-fetch to get exact IDs and timestamps
-        fetchMessages();
-        fetchConversations(); // update timestamp
-      }
+      // Generate response
+      const responseText = await generateClinicalResponseWithHistory(content, history, currentPhase);
+
+      // Add assistant message to Firestore
+      await addDoc(collection(db, `conversations/${convId}/messages`), {
+        conversationId: convId,
+        role: 'assistant',
+        content: responseText,
+        createdAt: serverTimestamp(),
+      });
+
+      // Update conversation timestamp
+      await setDoc(doc(db, 'conversations', convId), {
+        updatedAt: serverTimestamp()
+      }, { merge: true });
 
     } catch (error) {
       console.error("Error sending message:", error);
+      // We could add an error message to the UI here
     } finally {
       setIsLoading(false);
     }
