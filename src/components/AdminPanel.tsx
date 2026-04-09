@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { RagConfig, DEFAULT_RAG_CONFIG, KnowledgeChunk } from '../lib/rag-types';
+import { collection, getDocs, addDoc, deleteDoc, doc } from 'firebase/firestore';
+import { db } from '../firebase';
+import { getRagConfig, saveRagConfig, RagConfig, DEFAULT_RAG_CONFIG, generateEmbedding, KnowledgeChunk } from '../lib/rag';
 import { Settings, Database, Plus, Trash2, Loader2 } from 'lucide-react';
 import { DEFAULT_KNOWLEDGE_CHUNKS } from '../lib/defaultData';
 
@@ -20,17 +22,22 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
   const loadData = async () => {
     setIsLoading(true);
     try {
-      const [configRes, chunksRes] = await Promise.all([
-        fetch('/api/rag-config'),
-        fetch('/api/chunks')
-      ]);
-      
-      if (configRes.ok) {
-        setConfig(await configRes.json());
-      }
-      if (chunksRes.ok) {
-        setChunks(await chunksRes.json());
-      }
+      const loadedConfig = await getRagConfig();
+      setConfig(loadedConfig);
+
+      const chunksRef = collection(db, 'knowledge_chunks');
+      const snapshot = await getDocs(chunksRef);
+      const loadedChunks: KnowledgeChunk[] = [];
+      snapshot.forEach((doc) => {
+        const data = doc.data();
+        loadedChunks.push({
+          id: doc.id,
+          content: data.content,
+          embedding: data.embedding,
+          source: data.source,
+        });
+      });
+      setChunks(loadedChunks);
     } catch (error) {
       console.error("Error loading admin data:", error);
     } finally {
@@ -41,11 +48,7 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
   const handleSaveConfig = async () => {
     setIsSaving(true);
     try {
-      await fetch('/api/rag-config', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(config)
-      });
+      await saveRagConfig(config);
       alert('Configuration saved successfully.');
     } catch (error) {
       console.error("Error saving config:", error);
@@ -62,10 +65,11 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
     }
     setIsAdding(true);
     try {
-      await fetch('/api/chunks', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ content: newContent, source: newSource })
+      const embedding = await generateEmbedding(newContent);
+      await addDoc(collection(db, 'knowledge_chunks'), {
+        content: newContent,
+        source: newSource,
+        embedding,
       });
       setNewContent('');
       setNewSource('');
@@ -81,7 +85,7 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
   const handleDeleteChunk = async (id: string) => {
     if (!confirm('Are you sure you want to delete this resource?')) return;
     try {
-      await fetch(`/api/chunks/${id}`, { method: 'DELETE' });
+      await deleteDoc(doc(db, 'knowledge_chunks', id));
       await loadData();
     } catch (error) {
       console.error("Error deleting chunk:", error);
@@ -96,10 +100,11 @@ export function AdminPanel({ onClose }: { onClose: () => void }) {
       const defaultChunks = DEFAULT_KNOWLEDGE_CHUNKS;
 
       for (const chunk of defaultChunks) {
-        await fetch('/api/chunks', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ content: chunk.content, source: chunk.source })
+        const embedding = await generateEmbedding(chunk.content);
+        await addDoc(collection(db, 'knowledge_chunks'), {
+          content: chunk.content,
+          source: chunk.source,
+          embedding,
         });
       }
       await loadData();

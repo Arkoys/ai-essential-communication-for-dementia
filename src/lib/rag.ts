@@ -1,18 +1,32 @@
 import { GoogleGenAI } from '@google/genai';
-import { getDb } from './db';
-import { KnowledgeChunk, RagConfig, DEFAULT_RAG_CONFIG } from './rag-types';
+import { collection, getDocs, doc, getDoc, setDoc } from 'firebase/firestore';
+import { db } from '../firebase';
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
+export interface KnowledgeChunk {
+  id: string;
+  content: string;
+  embedding: number[];
+  source: string;
+}
+
+export interface RagConfig {
+  topK: number;
+  similarityThreshold: number;
+}
+
+export const DEFAULT_RAG_CONFIG: RagConfig = {
+  topK: 3,
+  similarityThreshold: 0.7,
+};
+
 export async function getRagConfig(): Promise<RagConfig> {
   try {
-    const db = await getDb();
-    const config = await db.get('SELECT * FROM rag_config WHERE id = ?', ['default']);
-    if (config) {
-      return {
-        topK: config.topK,
-        similarityThreshold: config.similarityThreshold
-      };
+    const docRef = doc(db, 'app_settings', 'rag_config');
+    const docSnap = await getDoc(docRef);
+    if (docSnap.exists()) {
+      return docSnap.data() as RagConfig;
     }
   } catch (error) {
     console.error("Error fetching RAG config:", error);
@@ -21,11 +35,8 @@ export async function getRagConfig(): Promise<RagConfig> {
 }
 
 export async function saveRagConfig(config: RagConfig): Promise<void> {
-  const db = await getDb();
-  await db.run(
-    'UPDATE rag_config SET topK = ?, similarityThreshold = ? WHERE id = ?',
-    [config.topK, config.similarityThreshold, 'default']
-  );
+  const docRef = doc(db, 'app_settings', 'rag_config');
+  await setDoc(docRef, config);
 }
 
 export async function generateEmbedding(text: string): Promise<number[]> {
@@ -58,33 +69,30 @@ export async function retrieveRelevantChunks(query: string): Promise<KnowledgeCh
     return [];
   }
 
-  const db = await getDb();
-  const rows = await db.all('SELECT * FROM knowledge_chunks');
+  // Fetch all chunks (in a real app with large data, use a vector DB like Pinecone or pgvector)
+  // For MVP, we fetch all and calculate similarity in memory
+  const chunksRef = collection(db, 'knowledge_chunks');
+  const snapshot = await getDocs(chunksRef);
   
   const chunks: (KnowledgeChunk & { similarity: number })[] = [];
   
-  for (const row of rows) {
-    let embedding: number[] = [];
-    try {
-      embedding = JSON.parse(row.embedding);
-    } catch (e) {
-      continue;
-    }
-
-    if (embedding && embedding.length > 0) {
-      const similarity = cosineSimilarity(queryEmbedding, embedding);
+  snapshot.forEach((doc) => {
+    const data = doc.data();
+    if (data.embedding && data.embedding.length > 0) {
+      const similarity = cosineSimilarity(queryEmbedding, data.embedding);
       if (similarity >= config.similarityThreshold) {
         chunks.push({
-          id: row.id,
-          content: row.content,
-          embedding: embedding,
-          source: row.source,
+          id: doc.id,
+          content: data.content,
+          embedding: data.embedding,
+          source: data.source,
           similarity,
         });
       }
     }
-  }
+  });
 
+  // Sort by similarity descending and take topK
   chunks.sort((a, b) => b.similarity - a.similarity);
   return chunks.slice(0, config.topK);
 }
