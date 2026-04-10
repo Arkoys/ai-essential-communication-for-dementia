@@ -2,6 +2,10 @@ import { GoogleGenAI } from '@google/genai';
 import { retrieveRelevantChunks } from './rag';
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const LLM_PROVIDER = (process.env.LLM_PROVIDER || 'gemini').toLowerCase();
+const MINIMAX_MODEL = process.env.MINIMAX_MODEL || 'MiniMax-Text-01';
+const MINIMAX_API_BASE_URL = process.env.MINIMAX_API_BASE_URL || 'https://api.minimaxi.chat';
+const MINIMAX_API_PATH = process.env.MINIMAX_API_PATH || '/v1/chat/completions';
 
 const SYSTEM_PROMPT = `You are a clinical decision-support assistant for primary care providers.
 
@@ -20,7 +24,51 @@ You must:
 Always align your response with the current phase of care.
 
 Return your response in Markdown format. Use clear headings, bullet points, and bold text for emphasis.
-End your response with a "Suggested next step:" section.`;
+End your response with a "Suggested next step:" section.
+
+Do not reveal chain-of-thought, hidden reasoning, or internal deliberations. Provide only the final answer.`;
+
+function sanitizeModelOutput(text: string): string {
+  return text
+    .replace(/<think>[\s\S]*?<\/think>/gi, '')
+    .replace(/^\s*Insufficient Information\s*$/gim, '## Insufficient Information')
+    .trim();
+}
+
+async function generateWithMinimax(messages: { role: string; content: string }[]) {
+  const apiKey = process.env.MINIMAX_API_KEY;
+  if (!apiKey) {
+    throw new Error('MINIMAX_API_KEY is missing. Add it to your local env file.');
+  }
+
+  const url = `${MINIMAX_API_BASE_URL}${MINIMAX_API_PATH}`;
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      Authorization: `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: MINIMAX_MODEL,
+      messages,
+      temperature: 0.2,
+    }),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`MiniMax API request failed: ${response.status} ${errorText}`);
+  }
+
+  const data = await response.json();
+  const rawText = (
+    data?.choices?.[0]?.message?.content ||
+    data?.reply ||
+    data?.output_text ||
+    'No response text returned from MiniMax.'
+  );
+  return sanitizeModelOutput(rawText);
+}
 
 export async function generateClinicalResponseWithHistory(
   query: string,
@@ -52,6 +100,19 @@ export async function generateClinicalResponseWithHistory(
       parts: [{ text: query + contextString + phaseContext }]
     });
 
+    if (LLM_PROVIDER === 'minimax') {
+      const minimaxMessages = [
+        { role: 'system', content: SYSTEM_PROMPT },
+        ...history.map((msg) => ({
+          role: msg.role,
+          content: msg.content,
+        })),
+        { role: 'user', content: query + contextString + phaseContext },
+      ];
+
+      return await generateWithMinimax(minimaxMessages);
+    }
+
     const response = await ai.models.generateContent({
       model: 'gemini-3.1-pro-preview',
       contents: contents,
@@ -61,7 +122,7 @@ export async function generateClinicalResponseWithHistory(
       },
     });
 
-    return response.text;
+    return sanitizeModelOutput(response.text || '');
   } catch (error) {
     console.error('Error generating response:', error);
     throw error;

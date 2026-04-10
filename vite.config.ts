@@ -9,6 +9,11 @@ export default defineConfig(({mode}) => {
     plugins: [react(), tailwindcss()],
     define: {
       'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
+      'process.env.LLM_PROVIDER': JSON.stringify(env.LLM_PROVIDER),
+      'process.env.MINIMAX_API_KEY': JSON.stringify(env.MINIMAX_API_KEY),
+      'process.env.MINIMAX_MODEL': JSON.stringify(env.MINIMAX_MODEL),
+      'process.env.MINIMAX_API_BASE_URL': JSON.stringify(env.MINIMAX_API_BASE_URL),
+      'process.env.MINIMAX_API_PATH': JSON.stringify(env.MINIMAX_API_PATH),
     },
     resolve: {
       alias: {
