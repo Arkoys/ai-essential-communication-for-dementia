@@ -3,6 +3,8 @@ import { collection, getDocs, doc, getDoc, setDoc } from 'firebase/firestore';
 import { db } from '../firebase';
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+const LLM_PROVIDER = (process.env.LLM_PROVIDER || 'gemini').toLowerCase();
+const useGeminiForRag = LLM_PROVIDER !== 'minimax' && Boolean(process.env.GEMINI_API_KEY);
 
 export interface KnowledgeChunk {
   id: string;
@@ -40,6 +42,11 @@ export async function saveRagConfig(config: RagConfig): Promise<void> {
 }
 
 export async function generateEmbedding(text: string): Promise<number[]> {
+  if (!useGeminiForRag) {
+    // Local MiniMax-only runs can skip RAG embeddings safely.
+    return [];
+  }
+
   const response = await ai.models.embedContent({
     model: 'gemini-embedding-2-preview',
     contents: text,
@@ -62,6 +69,10 @@ function cosineSimilarity(a: number[], b: number[]): number {
 }
 
 export async function retrieveRelevantChunks(query: string): Promise<KnowledgeChunk[]> {
+  if (!useGeminiForRag) {
+    return [];
+  }
+
   const config = await getRagConfig();
   const queryEmbedding = await generateEmbedding(query);
   
