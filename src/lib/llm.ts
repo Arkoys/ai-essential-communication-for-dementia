@@ -1,4 +1,5 @@
 import { GoogleGenAI } from '@google/genai';
+import { DEFAULT_KNOWLEDGE_CHUNKS } from './defaultData';
 import { retrieveRelevantChunks } from './rag';
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
@@ -7,31 +8,96 @@ const MINIMAX_MODEL = process.env.MINIMAX_MODEL || 'MiniMax-Text-01';
 const MINIMAX_API_BASE_URL = process.env.MINIMAX_API_BASE_URL || 'https://api.minimaxi.chat';
 const MINIMAX_API_PATH = process.env.MINIMAX_API_PATH || '/v1/chat/completions';
 
-const SYSTEM_PROMPT = `You are a clinical decision-support assistant for primary care providers.
+const SYSTEM_PROMPT = `You are a clinical decision-support assistant for primary care providers, grounded in the Ariadne Labs Essential Communications Toolkit.
 
-You help guide dementia-related consultations using a structured framework:
+You guide dementia-related consultations using this framework cycle:
 1. Recognition
 2. Evaluation
 3. Diagnosis
 
-You must:
-- Be concise and clinically accurate
-- Suggest next steps
-- Clarify uncertainty
-- Avoid hallucinations
-- Never provide definitive diagnosis without evidence
+Grounding rules (strict):
+- Stay close to the toolkit resources provided in context. Prefer their wording, phases, and sample language over generic advice.
+- Do not invent frameworks, steps, or scripts that are not supported by those resources. If something is not in the material, say so briefly and stay within what the toolkit offers.
+- When you paraphrase, keep the same clinical intent and tone as Ariadne Labs (patient-centered, clear, non-abandoning).
 
-Always align your response with the current phase of care.
+Clinical safety:
+- Be concise and accurate; clarify uncertainty; avoid hallucinations.
+- Never provide a definitive diagnosis without appropriate evidence and context.
 
-Return your response in Markdown format. Use clear headings, bullet points, and bold text for emphasis.
-End your response with a "Suggested next step:" section.
+Required answer structure — use these Markdown headings in order (adapt content to the clinician's question):
 
-Do not reveal chain-of-thought, hidden reasoning, or internal deliberations. Provide only the final answer.`;
+## Where you are in the framework
+State whether the situation maps best to **Recognition**, **Evaluation**, or **Diagnosis** (or a transition between them). One short paragraph.
 
+## What needs to happen next
+Concrete clinical and follow-up actions aligned with that phase, drawn from the toolkit.
+
+## Communication tools you could use
+Specific phrases, questions, or approaches from the toolkit (conversation guides, sample language) that fit this moment. Quote or closely adapt toolkit wording when possible.
+
+## Stuck Points framework (relational)
+When relevant, tie to the Stuck Points ideas (notice tension, acknowledge emotion, get curious, summarize and plan). If the situation is not a "stuck" moment, state that briefly and still offer relational language from the toolkit that fits.
+
+End with a short line: **Suggested next step:** (one clear action).
+
+Format: Markdown with bullets where helpful. Do not reveal chain-of-thought or internal reasoning; give only the final answer.`;
+
+function buildToolkitReferenceForPrompt(): string {
+  return DEFAULT_KNOWLEDGE_CHUNKS.map(
+    (chunk) => `### ${chunk.source}\n\n${chunk.content}`
+  ).join('\n\n---\n\n');
+}
+
+function buildMinimaxSystemPrompt(): string {
+  return `${SYSTEM_PROMPT}
+
+---
+
+## Toolkit reference (Ariadne Labs Essential Communications)
+The following excerpts are the authoritative in-app reference. Your answers must follow this material: same terminology, phases, and sample language. Do not drift into general advice that is not reflected here.
+
+${buildToolkitReferenceForPrompt()}
+
+---
+
+## Output format (required)
+Reply with Markdown only. Follow the required headings (Where you are in the framework → What needs to happen next → Communication tools → Stuck Points framework). Do not include scratchpads, think tags, or hidden reasoning. Start with the first heading.`;
+}
+
+/** Strip chain-of-thought wrappers some models (e.g. MiniMax) emit. */
 function sanitizeModelOutput(text: string): string {
-  return text
-    .replace(/<think>[\s\S]*?<\/think>/gi, '')
+  let out = text;
+  const stripPatterns: RegExp[] = [
+    /<redacted_thinking>[\s\S]*?<\/think>/gi,
+    /<redacted_thinking>[\s\S]*?<\/redacted_thinking>/gi,
+    /<reasoning>[\s\S]*?<\/reasoning>/gi,
+    /<analysis>[\s\S]*?<\/analysis>/gi,
+    /<scratchpad>[\s\S]*?<\/scratchpad>/gi,
+    /<internal>[\s\S]*?<\/internal>/gi,
+    /```(?:thinking|reasoning|internal|scratchpad)[\s\S]*?```/gi,
+  ];
+  for (const re of stripPatterns) {
+    out = out.replace(re, '');
+  }
+  out = out.replace(/^\s*(?:thinking|reasoning|scratchpad)\s*:\s*[^\n]+\n*/gim, '');
+
+  // Model sometimes outputs a think block then the real answer — keep the tail after the last closing tag.
+  const afterThinkClose = /(?:<\/think>|<\/redacted_thinking>|<\/reasoning>)\s*/gi;
+  let match: RegExpExecArray | null;
+  let lastEnd = -1;
+  while ((match = afterThinkClose.exec(out)) !== null) {
+    lastEnd = match.index + match[0].length;
+  }
+  if (lastEnd > 0) {
+    const tail = out.slice(lastEnd).trim();
+    if (tail.length > 40) {
+      out = tail;
+    }
+  }
+
+  return out
     .replace(/^\s*Insufficient Information\s*$/gim, '## Insufficient Information')
+    .replace(/\n{3,}/g, '\n\n')
     .trim();
 }
 
@@ -81,7 +147,25 @@ export async function generateClinicalResponseWithHistory(
       parts: [{ text: msg.content }]
     }));
 
-    // RAG Retrieval
+    const phaseContext = currentPhase
+      ? `\n\n[System Note: The user is currently focusing on the "${currentPhase}" phase of the dementia care framework. Please tailor your response to this phase.]`
+      : '';
+
+    // MiniMax: no RAG — full toolkit text is embedded in the system prompt.
+    if (LLM_PROVIDER === 'minimax') {
+      const minimaxMessages = [
+        { role: 'system', content: buildMinimaxSystemPrompt() },
+        ...history.map((msg) => ({
+          role: msg.role,
+          content: msg.content,
+        })),
+        { role: 'user', content: query + phaseContext },
+      ];
+
+      return await generateWithMinimax(minimaxMessages);
+    }
+
+    // Gemini: RAG retrieval for relevant chunks only
     const relevantChunks = await retrieveRelevantChunks(query);
     let contextString = '';
     if (relevantChunks.length > 0) {
@@ -91,27 +175,10 @@ export async function generateClinicalResponseWithHistory(
       });
     }
 
-    const phaseContext = currentPhase 
-      ? `\n\n[System Note: The user is currently focusing on the "${currentPhase}" phase of the dementia care framework. Please tailor your response to this phase.]`
-      : '';
-
     contents.push({
       role: 'user',
       parts: [{ text: query + contextString + phaseContext }]
     });
-
-    if (LLM_PROVIDER === 'minimax') {
-      const minimaxMessages = [
-        { role: 'system', content: SYSTEM_PROMPT },
-        ...history.map((msg) => ({
-          role: msg.role,
-          content: msg.content,
-        })),
-        { role: 'user', content: query + contextString + phaseContext },
-      ];
-
-      return await generateWithMinimax(minimaxMessages);
-    }
 
     const response = await ai.models.generateContent({
       model: 'gemini-3.1-pro-preview',
