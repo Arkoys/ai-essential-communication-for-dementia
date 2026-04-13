@@ -42,14 +42,43 @@ End with a short line: **Suggested next step:** (one clear action).
 
 Format: Markdown with bullets where helpful. Do not reveal chain-of-thought or internal reasoning; give only the final answer.`;
 
+export type AnswerLengthMode = 'concise' | 'detailed';
+
+/** Appended to Gemini system instruction when concise. */
+function answerLengthSuffix(mode: AnswerLengthMode): string {
+  if (mode === 'detailed') return '';
+  return `
+
+---
+
+## Length mode: Concise (clinician-selected)
+FINAL AUTHORITY over earlier wording: reply **≤55 words total** (hard cap). Same four ## headings in order; under each heading **exactly one** bullet of **≤8 words** OR one **≤8-word** sentence—no other lines under that heading. **Suggested next step:** one line, **≤8 words**. No intro, no closing filler.`;
+}
+
+/** Last block in MiniMax system prompt so it wins over the long toolkit. */
+function minimaxConciseFinalBlock(): string {
+  return `
+
+---
+
+## FINAL OVERRIDE (CONCISE — highest priority)
+Ignore any earlier instruction to use paragraphs or “one short paragraph” per section. The clinician chose CONCISE.
+Hard limits: **≤55 words** for the entire assistant message. Four ## headings only; under each heading **one** bullet, **≤8 words**. Then **Suggested next step:** one line, **≤8 words**. Toolkit is reference only—do not quote long passages.`;
+}
+
+/** Injected on the user turn so the model sees it after long system context. */
+function userConciseReminder(): string {
+  return '\n\n[Reply mode: CONCISE — ≤55 words total, one short bullet per ## section, Suggested next step ≤8 words.]';
+}
+
 function buildToolkitReferenceForPrompt(): string {
   return DEFAULT_KNOWLEDGE_CHUNKS.map(
     (chunk) => `### ${chunk.source}\n\n${chunk.content}`
   ).join('\n\n---\n\n');
 }
 
-function buildMinimaxSystemPrompt(): string {
-  return `${SYSTEM_PROMPT}
+function buildMinimaxSystemPrompt(answerLength: AnswerLengthMode): string {
+  const base = `${SYSTEM_PROMPT}
 
 ---
 
@@ -62,6 +91,8 @@ ${buildToolkitReferenceForPrompt()}
 
 ## Output format (required)
 Reply with Markdown only. Follow the required headings (Where you are in the framework → What needs to happen next → Communication tools → Stuck Points framework). Do not include scratchpads, think tags, or hidden reasoning. Start with the first heading.`;
+
+  return answerLength === 'concise' ? `${base}${minimaxConciseFinalBlock()}` : base;
 }
 
 /** Strip chain-of-thought wrappers some models (e.g. MiniMax) emit. */
@@ -101,24 +132,32 @@ function sanitizeModelOutput(text: string): string {
     .trim();
 }
 
-async function generateWithMinimax(messages: { role: string; content: string }[]) {
+async function generateWithMinimax(
+  messages: { role: string; content: string }[],
+  answerLength: AnswerLengthMode
+) {
   const apiKey = process.env.MINIMAX_API_KEY;
   if (!apiKey) {
     throw new Error('MINIMAX_API_KEY is missing. Add it to your local env file.');
   }
 
   const url = `${MINIMAX_API_BASE_URL}${MINIMAX_API_PATH}`;
+  const body: Record<string, unknown> = {
+    model: MINIMAX_MODEL,
+    messages,
+    temperature: answerLength === 'concise' ? 0.1 : 0.2,
+  };
+  if (answerLength === 'concise') {
+    body.max_tokens = 180;
+  }
+
   const response = await fetch(url, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       Authorization: `Bearer ${apiKey}`,
     },
-    body: JSON.stringify({
-      model: MINIMAX_MODEL,
-      messages,
-      temperature: 0.2,
-    }),
+    body: JSON.stringify(body),
   });
 
   if (!response.ok) {
@@ -139,7 +178,8 @@ async function generateWithMinimax(messages: { role: string; content: string }[]
 export async function generateClinicalResponseWithHistory(
   query: string,
   history: { role: 'user' | 'assistant'; content: string }[],
-  currentPhase: string | null
+  currentPhase: string | null,
+  answerLength: AnswerLengthMode = 'detailed'
 ) {
   try {
     const contents = history.map(msg => ({
@@ -153,16 +193,20 @@ export async function generateClinicalResponseWithHistory(
 
     // MiniMax: no RAG — full toolkit text is embedded in the system prompt.
     if (LLM_PROVIDER === 'minimax') {
+      const userContent =
+        query +
+        phaseContext +
+        (answerLength === 'concise' ? userConciseReminder() : '');
       const minimaxMessages = [
-        { role: 'system', content: buildMinimaxSystemPrompt() },
+        { role: 'system', content: buildMinimaxSystemPrompt(answerLength) },
         ...history.map((msg) => ({
           role: msg.role,
           content: msg.content,
         })),
-        { role: 'user', content: query + phaseContext },
+        { role: 'user', content: userContent },
       ];
 
-      return await generateWithMinimax(minimaxMessages);
+      return await generateWithMinimax(minimaxMessages, answerLength);
     }
 
     // Gemini: RAG retrieval for relevant chunks only
@@ -175,17 +219,24 @@ export async function generateClinicalResponseWithHistory(
       });
     }
 
+    const userText =
+      query +
+      contextString +
+      phaseContext +
+      (answerLength === 'concise' ? userConciseReminder() : '');
+
     contents.push({
       role: 'user',
-      parts: [{ text: query + contextString + phaseContext }]
+      parts: [{ text: userText }]
     });
 
     const response = await ai.models.generateContent({
       model: 'gemini-3.1-pro-preview',
       contents: contents,
       config: {
-        systemInstruction: SYSTEM_PROMPT,
-        temperature: 0.2,
+        systemInstruction: SYSTEM_PROMPT + answerLengthSuffix(answerLength),
+        temperature: answerLength === 'concise' ? 0.1 : 0.2,
+        ...(answerLength === 'concise' ? { maxOutputTokens: 200 } : {}),
       },
     });
 

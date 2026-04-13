@@ -1,8 +1,9 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Loader2, AlertTriangle } from 'lucide-react';
+import { Send, Loader2, AlertTriangle, AlignLeft, AlignJustify } from 'lucide-react';
 import { MessageBubble } from './MessageBubble';
 import { cn } from '../lib/utils';
 import { anonymize } from '../lib/anonymizer';
+import type { AnswerLengthMode } from '../lib/llm';
 
 interface Message {
   id: string;
@@ -12,8 +13,11 @@ interface Message {
 
 interface ChatWindowProps {
   messages: Message[];
-  onSendMessage: (content: string) => void;
+  /** Second arg is the mode at send time (sync with toggle; avoids stale parent state). */
+  onSendMessage: (content: string, answerLength: AnswerLengthMode) => void;
   isLoading: boolean;
+  answerLengthMode: AnswerLengthMode;
+  onAnswerLengthModeChange: (mode: AnswerLengthMode) => void;
 }
 
 const SUGGESTED_PROMPTS = [
@@ -22,9 +26,21 @@ const SUGGESTED_PROMPTS = [
   "Construct a workup"
 ];
 
-export function ChatWindow({ messages, onSendMessage, isLoading }: ChatWindowProps) {
+export function ChatWindow({
+  messages,
+  onSendMessage,
+  isLoading,
+  answerLengthMode,
+  onAnswerLengthModeChange,
+}: ChatWindowProps) {
   const [input, setInput] = useState('');
+  /** Local mode updates synchronously on toggle so submit uses the value the user just picked. */
+  const [lengthMode, setLengthMode] = useState<AnswerLengthMode>(answerLengthMode);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setLengthMode(answerLengthMode);
+  }, [answerLengthMode]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -39,13 +55,18 @@ export function ChatWindow({ messages, onSendMessage, isLoading }: ChatWindowPro
     if (!input.trim() || isLoading) return;
     
     const cleanInput = anonymize(input);
-    onSendMessage(cleanInput);
+    onSendMessage(cleanInput, lengthMode);
     setInput('');
   };
 
   const handleSuggestedPrompt = (prompt: string) => {
     if (isLoading) return;
-    onSendMessage(prompt);
+    onSendMessage(prompt, lengthMode);
+  };
+
+  const handleLengthToggle = (mode: AnswerLengthMode) => {
+    setLengthMode(mode);
+    onAnswerLengthModeChange(mode);
   };
 
   return (
@@ -111,23 +132,61 @@ export function ChatWindow({ messages, onSendMessage, isLoading }: ChatWindowPro
           </div>
           <form
             onSubmit={handleSubmit}
-            className="relative flex items-center bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-2xl shadow-sm focus-within:ring-2 focus-within:ring-orange-500/20 focus-within:border-orange-500 transition-all"
+            className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3"
           >
-            <input
-              type="text"
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask a medical question..."
-              className="w-full bg-transparent py-3 md:py-4 pl-4 md:pl-6 pr-12 md:pr-14 outline-none text-sm md:text-base text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400"
-              disabled={isLoading}
-            />
-            <button
-              type="submit"
-              disabled={!input.trim() || isLoading}
-              className="absolute right-1.5 md:right-2 p-1.5 md:p-2 rounded-xl bg-orange-500 text-white hover:bg-orange-600 disabled:opacity-50 disabled:hover:bg-orange-500 transition-colors"
+            <div
+              className="flex shrink-0 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900/80 p-0.5"
+              role="group"
+              aria-label="Answer length"
             >
-              <Send size={16} className="md:w-[18px] md:h-[18px]" />
-            </button>
+              <button
+                type="button"
+                disabled={isLoading}
+                onClick={() => handleLengthToggle('concise')}
+                title="Short bullets, on-the-spot"
+                className={cn(
+                  'flex items-center justify-center gap-1 sm:gap-1.5 rounded-lg px-2 sm:px-2.5 py-2 text-[11px] sm:text-xs font-medium transition-colors min-w-0 flex-1 sm:flex-initial',
+                  lengthMode === 'concise'
+                    ? 'bg-white dark:bg-zinc-800 text-orange-700 dark:text-orange-300 shadow-sm'
+                    : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
+                )}
+              >
+                <AlignLeft size={14} className="shrink-0" aria-hidden />
+                <span>Concise</span>
+              </button>
+              <button
+                type="button"
+                disabled={isLoading}
+                onClick={() => handleLengthToggle('detailed')}
+                title="Full structured answer"
+                className={cn(
+                  'flex items-center justify-center gap-1 sm:gap-1.5 rounded-lg px-2 sm:px-2.5 py-2 text-[11px] sm:text-xs font-medium transition-colors min-w-0 flex-1 sm:flex-initial',
+                  lengthMode === 'detailed'
+                    ? 'bg-white dark:bg-zinc-800 text-orange-700 dark:text-orange-300 shadow-sm'
+                    : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
+                )}
+              >
+                <AlignJustify size={14} className="shrink-0" aria-hidden />
+                <span>Detailed</span>
+              </button>
+            </div>
+            <div className="relative flex flex-1 items-center min-w-0 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-2xl shadow-sm focus-within:ring-2 focus-within:ring-orange-500/20 focus-within:border-orange-500 transition-all">
+              <input
+                type="text"
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                placeholder="Ask a medical question..."
+                className="w-full bg-transparent py-3 md:py-4 pl-4 md:pl-6 pr-12 md:pr-14 outline-none text-sm md:text-base text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400"
+                disabled={isLoading}
+              />
+              <button
+                type="submit"
+                disabled={!input.trim() || isLoading}
+                className="absolute right-1.5 md:right-2 p-1.5 md:p-2 rounded-xl bg-orange-500 text-white hover:bg-orange-600 disabled:opacity-50 disabled:hover:bg-orange-500 transition-colors"
+              >
+                <Send size={16} className="md:w-[18px] md:h-[18px]" />
+              </button>
+            </div>
           </form>
           <div className="text-center mt-1.5 md:mt-2 text-[10px] md:text-xs text-zinc-400 dark:text-zinc-500">
             AI-generated clinical guidance. Always verify with primary literature.
