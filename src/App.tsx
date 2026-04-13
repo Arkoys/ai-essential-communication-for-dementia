@@ -6,7 +6,7 @@ import { SidebarHistory, Conversation } from './components/SidebarHistory';
 import { ChatWindow } from './components/ChatWindow';
 import { NavigationMap, PhaseName } from './components/NavigationMap';
 import { AdminPanel } from './components/AdminPanel';
-import { generateClinicalResponseWithHistory } from './lib/llm';
+import { generateClinicalResponseWithHistory, type AnswerLengthMode } from './lib/llm';
 import { Stethoscope, Settings, Menu } from 'lucide-react';
 import { cn } from './lib/utils';
 
@@ -35,6 +35,24 @@ export default function App() {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  const [answerLengthMode, setAnswerLengthMode] = useState<AnswerLengthMode>(() => {
+    try {
+      const v = localStorage.getItem('clinical-assistant-answer-length');
+      if (v === 'concise' || v === 'detailed') return v;
+    } catch {
+      /* ignore */
+    }
+    return 'detailed';
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('clinical-assistant-answer-length', answerLengthMode);
+    } catch {
+      /* ignore */
+    }
+  }, [answerLengthMode]);
 
   // Auth Listener
   useEffect(() => {
@@ -161,7 +179,7 @@ export default function App() {
     }
   };
 
-  const handleSendMessage = async (content: string) => {
+  const handleSendMessage = async (content: string, answerLength: AnswerLengthMode) => {
     if (!user) return;
     setIsLoading(true);
 
@@ -193,7 +211,12 @@ export default function App() {
       const history = messages.map(m => ({ role: m.role, content: m.content }));
       
       // Generate response
-      const responseText = await generateClinicalResponseWithHistory(content, history, currentPhase);
+      const responseText = await generateClinicalResponseWithHistory(
+        content,
+        history,
+        currentPhase,
+        answerLength
+      );
 
       // Add assistant message to Firestore
       await addDoc(collection(db, `conversations/${convId}/messages`), {
@@ -223,7 +246,7 @@ export default function App() {
   const handleSelectStep = (step: string) => {
     if (!user) return;
     const prompt = `I need help with the "${step}" step in the ${currentPhase || 'current'} phase of dementia care.`;
-    handleSendMessage(prompt);
+    handleSendMessage(prompt, answerLengthMode);
   };
 
   const handleLogin = async () => {
@@ -335,6 +358,8 @@ export default function App() {
             messages={messages}
             onSendMessage={handleSendMessage}
             isLoading={isLoading}
+            answerLengthMode={answerLengthMode}
+            onAnswerLengthModeChange={setAnswerLengthMode}
           />
         </div>
       </div>
