@@ -280,6 +280,7 @@ export default function App() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-zinc-50 dark:bg-zinc-950 p-4">
         <div className="max-w-md w-full bg-white dark:bg-zinc-900 rounded-2xl shadow-xl p-8 text-center space-y-6">
+          
           <div className="w-16 h-16 bg-orange-100 dark:bg-orange-900/30 text-orange-600 dark:text-orange-400 rounded-full flex items-center justify-center mx-auto">
             <Stethoscope size={32} />
           </div>
@@ -299,6 +300,13 @@ export default function App() {
               {loginError}
             </div>
           )}
+          <div className="flex justify-center">
+            <img
+              src="https://www.ariadnelabs.org/wp-content/themes/ariadne-labs/assets/images/AL-logo-solo-white.svg"
+              alt="Ariadne Labs"
+              className="sm:h-20 h-8 w-auto invert dark:invert-0"
+            />
+          </div>
           <p className="text-xs text-zinc-400 dark:text-zinc-500">
             For authorized clinical personnel only. Do not input identifiable patient data.
           </p>
