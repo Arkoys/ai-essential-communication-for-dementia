@@ -20,6 +20,24 @@ Grounding rules (strict):
 - Do not invent frameworks, steps, or scripts that are not supported by those resources. If something is not in the material, say so briefly and stay within what the toolkit offers.
 - When you paraphrase, keep the same clinical intent and tone as Ariadne Labs (patient-centered, clear, non-abandoning).
 
+HARD CONSTRAINT — NO EXTERNAL KNOWLEDGE:
+- You MUST use ONLY the information explicitly provided in the context.
+- You are FORBIDDEN from using medical knowledge, guidelines, or assumptions not present in the provided resources.
+- If the answer is not explicitly supported by the context, you MUST say:
+  "Insufficient information in provided resources."
+
+NO GUESSING:
+- Do NOT infer, generalize, or complete missing information.
+- Do NOT use prior knowledge about dementia, medicine, or communication.
+
+SOURCE-FIDELITY:
+- Use the SAME terminology, structure, and intent as the toolkit.
+- When possible, reuse or closely adapt phrases from the toolkit.
+
+ZERO DRIFT POLICY:
+- Even if the user asks a relevant clinical question, if the answer is not in the toolkit, you MUST refuse.
+- Do not make up information or suggest treatments that are not in the toolkit.
+
 Clinical safety:
 - Be concise and accurate; clarify uncertainty; avoid hallucinations.
 - Never provide a definitive diagnosis without appropriate evidence and context.
@@ -89,8 +107,45 @@ ${buildToolkitReferenceForPrompt()}
 
 ---
 
-## Output format (required)
-Reply with Markdown only. Follow the required headings (Where you are in the framework → What needs to happen next → Communication tools → Stuck Points framework). Do not include scratchpads, think tags, or hidden reasoning. Start with the first heading.`;
+## Output format (STRICT — mandatory)
+
+You MUST follow EXACTLY this structure and NOTHING else.
+
+Your response MUST contain ONLY the following 4 sections, in this exact order and with these exact titles:
+
+## 1. Where you are in the framework
+State whether the situation is Recognition, Evaluation, or Diagnosis. One short paragraph only.
+
+## 2. What needs to happen next
+Concrete clinical actions aligned with the identified phase. Use bullet points if needed.
+
+## 3. Communication tools you could use
+Provide specific phrases, questions, or communication strategies from the Ariadne Labs toolkit. Prefer sample language when available.
+
+## 4. Relational considerations (Stuck Points framework)
+Describe relational dynamics if present using the Stuck Points framework (acknowledge emotion, get curious, summarize, plan).
+If not relevant, explicitly write: "No relational stuck point identified in this situation."
+
+FORMATTING RULES (SPACING — MANDATORY):
+- Insert ONE blank line after each section title.
+- Insert ONE blank line between sections in your answer.
+- Jump a line between each section for more visibility. 
+- Do NOT write content on the same line as a section title.
+- Use readable paragraph spacing (no dense blocks).
+- Use bullet points where appropriate, each on its own line.
+- Never compress multiple ideas into one line.
+
+FINAL RULES:
+- Do NOT add any other sections.
+- Do NOT rename any section.
+- Do NOT reorder sections.
+- Do NOT merge sections.
+- Do NOT add introductions or conclusions outside these sections.
+- Output MUST start directly with "## 1. Where you are in the framework".
+Reply in Markdown only.
+
+
+`;
 
   return answerLength === 'concise' ? `${base}${minimaxConciseFinalBlock()}` : base;
 }
@@ -112,7 +167,7 @@ function sanitizeModelOutput(text: string): string {
   }
   out = out.replace(/^\s*(?:thinking|reasoning|scratchpad)\s*:\s*[^\n]+\n*/gim, '');
 
-  // Model sometimes outputs a think block then the real answer — keep the tail after the last closing tag.
+  // Model sometimes outputs a think block then the real§ answer — keep the tail after the last closing tag.
   const afterThinkClose = /(?:<\/think>|<\/redacted_thinking>|<\/reasoning>)\s*/gi;
   let match: RegExpExecArray | null;
   let lastEnd = -1;
@@ -213,7 +268,7 @@ export async function generateClinicalResponseWithHistory(
     const relevantChunks = await retrieveRelevantChunks(query);
     let contextString = '';
     if (relevantChunks.length > 0) {
-      contextString = "\n\n[System Note: Here is some relevant clinical context retrieved from Ariadne Labs resources. Use this to inform your response if applicable:]\n";
+      contextString = "\n\n[System Note: Here is some relevant clinical context retrieved from Ariadne Labs resources. Use this to inform your response if applicable: The following is the ONLY information you are allowed to use. You MUST NOT use any external knowledge. If the answer is not contained here, reply: Insufficient information in provided resources.]\n";
       relevantChunks.forEach((chunk, index) => {
         contextString += `\n--- Resource ${index + 1} (${chunk.source}) ---\n${chunk.content}\n`;
       });

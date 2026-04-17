@@ -35,7 +35,17 @@ export function MessageBubble({ role, content }: MessageBubbleProps) {
             {isUser ? 'You' : 'Clinical Assistant'}
           </div>
           <div className="prose prose-zinc dark:prose-invert max-w-none text-sm leading-relaxed">
-            <ReactMarkdown>{content}</ReactMarkdown>
+            <ReactMarkdown
+              components={{
+                h2: ({ children }) => (
+                  <h2 className="text-orange-800 font-semibold text-base mt-6 mb-2 border-l-4 border-orange-400 pl-3">
+                    {children}
+                  </h2>
+                ),
+              }}
+            >
+              {content}
+            </ReactMarkdown>
           </div>
         </div>
       </div>
