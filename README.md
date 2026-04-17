@@ -79,7 +79,7 @@ flowchart TD
     end
 
     %% Cloud Hosting
-    Hosting((Google Cloud Run))
+    Hosting((Netflify, Google Cloud Run, or esle...))
 
     %% Connections - Auth & DB
     Provider -->|Logs in| Auth
@@ -88,7 +88,7 @@ flowchart TD
     UI_Admin -->|Writes chunks & config| Firestore
 
     %% RAG Admin Flow
-    Admin -->|Uploads Guidelines| UI_Admin
+    Admin -->|Uploads Guidelines/Ressources| UI_Admin
     UI_Admin -->|Generate Embedding| Gemini
     UI_Admin -->|Save Doc + Vector| Firestore
 
