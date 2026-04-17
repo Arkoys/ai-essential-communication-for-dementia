@@ -37,9 +37,9 @@ export function SidebarHistory({
           )}
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="p-1 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
+            className="p-2 text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200"
           >
-            {isOpen ? <ChevronLeft size={20} /> : <ChevronRight size={20} />}
+            {isOpen ? <ChevronLeft size={20} className="pointer-events-none" /> : <ChevronRight size={20} className="pointer-events-none" />}
           </button>
         </div>
 
