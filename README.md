@@ -6,7 +6,7 @@ A clinical decision support web application designed for primary care providers.
 
 - **Specialized AI Assistant:** A chatbot powered by the Google Gemini API, configured to provide relevant clinical guidance.
 - **Integrated Knowledge Base (RAG):** The assistant uses Retrieval-Augmented Generation (RAG) to ground its responses in the Ariadne Labs "Essential Communications Toolkit".
-- **Consultation Management:** Conversation history is saved and organized by session via SQLite.
+- **Consultation Management:** Conversation history is saved and organized by session via Firebase.
 - **Navigation Map:** An interface guiding the practitioner through 3 key phases: Recognition, Evaluation, and Diagnosis.
 - **Admin Panel:** A dedicated interface to inject and manage documentary resources (Knowledge Chunks) and configure RAG parameters.
 - **Auto-Seeding:** Automatic injection of default medical resources upon the administrator's first login.
@@ -15,22 +15,19 @@ A clinical decision support web application designed for primary care providers.
 
 ## 🛠️ Tech Stack
 
-- **Framework:** Next.js (App Router), React 18, TypeScript
+- **Frontend:** React 18, TypeScript, Vite
 - **Styling:** Tailwind CSS, Lucide React (icons)
-- **Database:** SQLite (via `sqlite3` and `sqlite`)
-- **Authentication:** Firebase Auth
+- **Backend & Database:** Firebase (Authentication, Firestore)
 - **Artificial Intelligence:** Google Gemini API (`@google/genai`) for text generation and embeddings.
-- **Deployment:** Docker & Docker Compose
 
 ## 🚀 Installation and Setup
 
 ### Prerequisites
 - Node.js
-- Docker & Docker Compose (for containerized deployment)
-- A Firebase project with Authentication (Google) enabled.
-- A Google Gemini API key. (or other model, to modify if needed)
+- A Firebase project with Authentication (Google) and Firestore enabled.
+- A Google Gemini API key.
 
-### Local Development
+### Steps
 
 1. **Install dependencies:**
    ```bash
@@ -46,20 +43,118 @@ A clinical decision support web application designed for primary care providers.
    ```
    The application will be accessible on port 3000.
 
-### Docker Deployment
-
-1. **Build and run the container:**
-   ```bash
-   docker-compose up --build -d
-   ```
-   The application will be accessible on port 3000. Data will be persisted in a Docker volume.
-
 ## 📚 Knowledge Base (RAG)
 
 The application is pre-configured with Ariadne Labs resources:
 - **Primer:** Introductory guide to essential communication.
 - **Stuck Points Framework:** Framework for managing emotional and relational roadblocks.
 - **Sample Language:** Dialogue examples for the recognition, evaluation, and diagnosis phases.
+
+## 🏗️ System Architecture
+
+```mermaid
+flowchart TD
+    %% Users
+    Provider([Primary Care Provider])
+    Admin([System Admin])
+
+    %% Frontend App
+    subgraph Client [Client Application (React / SPA)]
+        UI_Chat[Chat Interface]
+        UI_Admin[Admin Panel]
+        RAG_Engine[RAG Controller / rag.ts]
+        LLM_Service[LLM Service / llm.ts]
+    end
+
+    %% Firebase / BaaS
+    subgraph Firebase [Firebase Cloud]
+        Auth[Firebase Authentication]
+        Firestore[(Firestore NoSQL DB)]
+    end
+
+    %% External APIs
+    subgraph External_APIs [External AI Providers]
+        Gemini[Google Gemini API]
+        Minimax[Minimax API]
+    end
+
+    %% Cloud Hosting
+    Hosting((Google Cloud Run))
+
+    %% Connections - Auth & DB
+    Provider -->|Logs in| Auth
+    Admin -->|Logs in| Auth
+    UI_Chat -->|Reads chunks & config| Firestore
+    UI_Admin -->|Writes chunks & config| Firestore
+
+    %% RAG Admin Flow
+    Admin -->|Uploads Guidelines| UI_Admin
+    UI_Admin -->|1. Generate Embedding| Gemini
+    UI_Admin -->|2. Save Doc + Vector| Firestore
+
+    %% Chat & RAG Query Flow
+    Provider -->|1. Asks clinical question| UI_Chat
+    UI_Chat --> RAG_Engine
+    
+    %% RAG Logic
+    RAG_Engine -.->|If RAG:| Gemini_vector[Vectorize Query via Gemini]
+    Gemini_vector -.->|Fetch chunks| Firestore
+    RAG_Engine -.->|If Prompt Stuffing:| Firestore_All[Fetch ALL chunks]
+    
+    RAG_Engine -->|Format Context| LLM_Service
+    
+    %% LLM Generation Flow
+    LLM_Service -->|Prompt + Context + History| Gemini
+    LLM_Service -->|Prompt + Context + History| Minimax
+    
+    %% Hosting
+    Hosting -.->|Serves compiled App| Client
+```
+
+## 🗄️ Database Schema
+
+```mermaid
+erDiagram
+    APP_SETTINGS {
+        string documentId PK "e.g., 'rag_config'"
+        number topK "Number of chunks (e.g., 3)"
+        number similarityThreshold "e.g., 0.7"
+        string mode "'rag' or 'prompt_stuffing'"
+        string modelProvider "'gemini' or 'minimax'"
+    }
+
+    KNOWLEDGE_CHUNKS {
+        string documentId PK "Auto-generated"
+        string source "e.g., 'Ariadne Labs - Primer'"
+        string content "Raw text of the resource"
+        number[] embedding "Array of floats (GenAI Vector)"
+    }
+
+    USERS {
+        string uid PK "Matches Firebase Auth UID"
+        string email 
+        string role "'provider' or 'admin'"
+    }
+
+    CONVERSATIONS {
+        string conversationId PK 
+        string uid FK "Owner of the conversation"
+        string currentPhase "e.g., 'Recognition'"
+        timestamp lastUpdatedAt 
+    }
+
+    MESSAGES {
+        string messageId PK 
+        string conversationId FK 
+        string role "'user' or 'assistant'"
+        string content "Message text content"
+        timestamp createdAt 
+    }
+
+    %% Relationships
+    USERS ||--o{ CONVERSATIONS : "owns"
+    CONVERSATIONS ||--o{ MESSAGES : "contains"
+```
 
 ## ⚠️ Security Warning (PHI)
 
