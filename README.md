@@ -59,11 +59,11 @@ flowchart TD
     Admin([System Admin])
 
     %% Frontend App
-    subgraph Client [Client Application (React / SPA)]
+    subgraph Client [Client Application - React SPA]
         UI_Chat[Chat Interface]
         UI_Admin[Admin Panel]
-        RAG_Engine[RAG Controller / rag.ts]
-        LLM_Service[LLM Service / llm.ts]
+        RAG_Engine[RAG Controller - rag.ts]
+        LLM_Service[LLM Service - llm.ts]
     end
 
     %% Firebase / BaaS
@@ -89,17 +89,17 @@ flowchart TD
 
     %% RAG Admin Flow
     Admin -->|Uploads Guidelines| UI_Admin
-    UI_Admin -->|1. Generate Embedding| Gemini
-    UI_Admin -->|2. Save Doc + Vector| Firestore
+    UI_Admin -->|Generate Embedding| Gemini
+    UI_Admin -->|Save Doc + Vector| Firestore
 
     %% Chat & RAG Query Flow
-    Provider -->|1. Asks clinical question| UI_Chat
+    Provider -->|Asks clinical question| UI_Chat
     UI_Chat --> RAG_Engine
     
     %% RAG Logic
-    RAG_Engine -.->|If RAG:| Gemini_vector[Vectorize Query via Gemini]
+    RAG_Engine -.->|If RAG| Gemini_vector[Vectorize Query via Gemini]
     Gemini_vector -.->|Fetch chunks| Firestore
-    RAG_Engine -.->|If Prompt Stuffing:| Firestore_All[Fetch ALL chunks]
+    RAG_Engine -.->|If Prompt Stuffing| Firestore_All[Fetch ALL chunks]
     
     RAG_Engine -->|Format Context| LLM_Service
     
