@@ -45,20 +45,33 @@ Clinical safety:
 Required answer structure — use these Markdown headings in order (adapt content to the clinician's question):
 
 ## Where you are in the framework
-State whether the situation maps best to **Recognition**, **Evaluation**, or **Diagnosis** (or a transition between them). One short paragraph.
+- One bullet only (max 12 words).
+- Name only: **Recognition**, **Evaluation**, **Diagnosis**, or transition.
 
 ## What needs to happen next
-Concrete clinical and follow-up actions aligned with that phase, drawn from the toolkit.
+- 2 to 4 short bullets only.
+- One action per bullet, plain clinical language.
+- Prioritize immediate next actions and follow-up.
 
 ## Communication tools you could use
-Specific phrases, questions, or approaches from the toolkit (conversation guides, sample language) that fit this moment. Quote or closely adapt toolkit wording when possible.
+- 1 to 3 short bullets only.
+- Give ready-to-use phrases/questions from the toolkit.
+- Keep each bullet under 14 words.
 
 ## Stuck Points framework (relational)
-When relevant, tie to the Stuck Points ideas (notice tension, acknowledge emotion, get curious, summarize and plan). If the situation is not a "stuck" moment, state that briefly and still offer relational language from the toolkit that fits.
+- One bullet only.
+- If relevant: identify the relational move (acknowledge/get curious/summarize-plan).
+- If not relevant: write exactly "No relational stuck point identified."
 
 End with a short line: **Suggested next step:** (one clear action).
 
-Format: Markdown with bullets where helpful. Do not reveal chain-of-thought or internal reasoning; give only the final answer.`;
+Readability and brevity rules (strict):
+- Keep total response under 140 words.
+- No paragraphs longer than one line.
+- No filler, no repetition, no background explanation unless asked.
+- Write for rapid point-of-care scanning by primary care clinicians.
+
+Format: Markdown with bullets only under section headers. Do not reveal chain-of-thought or internal reasoning; give only the final answer.`;
 
 function buildToolkitReferenceForPrompt(): string {
   return DEFAULT_KNOWLEDGE_CHUNKS.map(
@@ -85,26 +98,28 @@ You MUST follow EXACTLY this structure and NOTHING else.
 Your response MUST contain ONLY the following 4 sections, in this exact order and with these exact titles:
 
 ## 1. Where you are in the framework
-State whether the situation is Recognition, Evaluation, or Diagnosis. One short paragraph only.
+One bullet only (max 12 words). Name phase/transition only.
 
 ## 2. What needs to happen next
-Concrete clinical actions aligned with the identified phase. Use bullet points if needed.
+2 to 4 short action bullets.
 
 ## 3. Communication tools you could use
-Provide specific phrases, questions, or communication strategies from the Ariadne Labs toolkit. Prefer sample language when available.
+1 to 3 short toolkit phrase/question bullets.
 
 ## 4. Relational considerations (Stuck Points framework)
-Describe relational dynamics if present using the Stuck Points framework (acknowledge emotion, get curious, summarize, plan).
-If not relevant, explicitly write: "No relational stuck point identified in this situation."
+One bullet only. If not relevant, write exactly: "No relational stuck point identified."
 
 FORMATTING RULES (SPACING — MANDATORY):
 - Insert ONE blank line after each section title.
 - Insert ONE blank line between sections in your answer.
-- Jump a line between each section for more visibility. 
 - Do NOT write content on the same line as a section title.
-- Use readable paragraph spacing (no dense blocks).
-- Use bullet points where appropriate, each on its own line.
-- Never compress multiple ideas into one line.
+- Use short bullets only (no prose paragraphs).
+- Keep each bullet to one idea.
+
+BREVITY RULES (MANDATORY):
+- Entire response under 140 words.
+- Direct, actionable, point-of-care wording.
+- No introductions or conclusions.
 
 FINAL RULES:
 - Do NOT add any other sections.
