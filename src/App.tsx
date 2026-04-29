@@ -20,6 +20,62 @@ interface Message {
   createdAt: Date;
 }
 
+const PHASES: { name: PhaseName; steps: string[] }[] = [
+  {
+    name: 'Recognition',
+    steps: ['Name Findings', 'Understand Concern', 'Assess Cognition', 'Assess Function'],
+  },
+  {
+    name: 'Evaluation',
+    steps: [
+      'Assess Cognition',
+      'Assess Function',
+      'Assess Safety',
+      'Targeted Exam',
+      'Labs and Imaging',
+      'Medication Review',
+      'Name Condition',
+    ],
+  },
+  {
+    name: 'Diagnosis',
+    steps: [
+      'Assess and Align Understanding',
+      'Address Risks and Concerns',
+      'Apply Diagnosis',
+      'Plan Follow-up',
+      'Stage Condition',
+    ],
+  },
+];
+
+function parseFrameworkPosition(text: string): { phase: PhaseName | null; step: string | null } {
+  const normalized = text.toLowerCase();
+  const phase = PHASES.find((candidate) => normalized.includes(candidate.name.toLowerCase()))?.name || null;
+
+  let step: string | null = null;
+  for (const candidatePhase of PHASES) {
+    for (const candidateStep of candidatePhase.steps) {
+      if (normalized.includes(candidateStep.toLowerCase())) {
+        step = candidateStep;
+        break;
+      }
+    }
+    if (step) break;
+  }
+
+  return { phase, step };
+}
+
+function findPhaseForStep(step: string): PhaseName | null {
+  for (const phase of PHASES) {
+    if (phase.steps.includes(step)) {
+      return phase.name;
+    }
+  }
+  return null;
+}
+
 export default function App() {
   const [user, setUser] = useState<User | null>(null);
   const [isAuthReady, setIsAuthReady] = useState(false);
@@ -29,6 +85,7 @@ export default function App() {
   
   const [messages, setMessages] = useState<Message[]>([]);
   const [currentPhase, setCurrentPhase] = useState<PhaseName | null>(null);
+  const [currentStep, setCurrentStep] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   
   const [showAdminPanel, setShowAdminPanel] = useState(false);
@@ -158,6 +215,7 @@ export default function App() {
     setActiveConversationId(null);
     setMessages([]);
     setCurrentPhase(null);
+    setCurrentStep(null);
   };
 
   const handleDeleteConversation = async (id: string) => {
@@ -218,6 +276,10 @@ export default function App() {
         answerLength
       );
 
+      const { phase: detectedPhase, step: detectedStep } = parseFrameworkPosition(responseText);
+      if (detectedPhase) setCurrentPhase(detectedPhase);
+      if (detectedStep) setCurrentStep(detectedStep);
+
       // Add assistant message to Firestore
       await addDoc(collection(db, `conversations/${convId}/messages`), {
         conversationId: convId,
@@ -241,11 +303,18 @@ export default function App() {
 
   const handleSelectPhase = (phase: PhaseName) => {
     setCurrentPhase(phase);
+    setCurrentStep(null);
   };
 
   const handleSelectStep = (step: string) => {
     if (!user) return;
-    const prompt = `I need help with the "${step}" step in the ${currentPhase || 'current'} phase of dementia care.`;
+    const phaseForStep = findPhaseForStep(step);
+    const activePhase = phaseForStep || currentPhase;
+    if (phaseForStep) {
+      setCurrentPhase(phaseForStep);
+    }
+    setCurrentStep(step);
+    const prompt = `I need help with the "${step}" step in the ${activePhase || 'current'} phase of dementia care.`;
     handleSendMessage(prompt, answerLengthMode);
   };
 
@@ -357,6 +426,7 @@ export default function App() {
 
         <NavigationMap
           currentPhase={currentPhase}
+          currentStep={currentStep}
           onSelectPhase={handleSelectPhase}
           onSelectStep={handleSelectStep}
         />
