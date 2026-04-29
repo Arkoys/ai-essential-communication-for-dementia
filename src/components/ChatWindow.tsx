@@ -1,9 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Loader2, AlertTriangle, AlignLeft, AlignJustify } from 'lucide-react';
+import { Send, Loader2, AlertTriangle } from 'lucide-react';
 import { MessageBubble } from './MessageBubble';
-import { cn } from '../lib/utils';
 import { anonymize } from '../lib/anonymizer';
-import type { AnswerLengthMode } from '../lib/llm';
 
 interface Message {
   id: string;
@@ -13,11 +11,8 @@ interface Message {
 
 interface ChatWindowProps {
   messages: Message[];
-  /** Second arg is the mode at send time (sync with toggle; avoids stale parent state). */
-  onSendMessage: (content: string, answerLength: AnswerLengthMode) => void;
+  onSendMessage: (content: string) => void;
   isLoading: boolean;
-  answerLengthMode: AnswerLengthMode;
-  onAnswerLengthModeChange: (mode: AnswerLengthMode) => void;
 }
 
 const SUGGESTED_PROMPTS = [
@@ -30,17 +25,9 @@ export function ChatWindow({
   messages,
   onSendMessage,
   isLoading,
-  answerLengthMode,
-  onAnswerLengthModeChange,
 }: ChatWindowProps) {
   const [input, setInput] = useState('');
-  /** Local mode updates synchronously on toggle so submit uses the value the user just picked. */
-  const [lengthMode, setLengthMode] = useState<AnswerLengthMode>(answerLengthMode);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    setLengthMode(answerLengthMode);
-  }, [answerLengthMode]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -55,18 +42,13 @@ export function ChatWindow({
     if (!input.trim() || isLoading) return;
     
     const cleanInput = anonymize(input);
-    onSendMessage(cleanInput, lengthMode);
+    onSendMessage(cleanInput);
     setInput('');
   };
 
   const handleSuggestedPrompt = (prompt: string) => {
     if (isLoading) return;
-    onSendMessage(prompt, lengthMode);
-  };
-
-  const handleLengthToggle = (mode: AnswerLengthMode) => {
-    setLengthMode(mode);
-    onAnswerLengthModeChange(mode);
+    onSendMessage(prompt);
   };
 
   return (
@@ -134,42 +116,6 @@ export function ChatWindow({
             onSubmit={handleSubmit}
             className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3"
           >
-            <div
-              className="flex shrink-0 rounded-xl border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900/80 p-0.5"
-              role="group"
-              aria-label="Answer length"
-            >
-              <button
-                type="button"
-                disabled={isLoading}
-                onClick={() => handleLengthToggle('concise')}
-                title="Short bullets, on-the-spot"
-                className={cn(
-                  'flex items-center justify-center gap-1 sm:gap-1.5 rounded-lg px-2 sm:px-2.5 py-2 text-[11px] sm:text-xs font-medium transition-colors min-w-0 flex-1 sm:flex-initial',
-                  lengthMode === 'concise'
-                    ? 'bg-white dark:bg-zinc-800 text-orange-700 dark:text-orange-300 shadow-sm'
-                    : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
-                )}
-              >
-                <AlignLeft size={14} className="shrink-0" aria-hidden />
-                <span>Concise</span>
-              </button>
-              <button
-                type="button"
-                disabled={isLoading}
-                onClick={() => handleLengthToggle('detailed')}
-                title="Full structured answer"
-                className={cn(
-                  'flex items-center justify-center gap-1 sm:gap-1.5 rounded-lg px-2 sm:px-2.5 py-2 text-[11px] sm:text-xs font-medium transition-colors min-w-0 flex-1 sm:flex-initial',
-                  lengthMode === 'detailed'
-                    ? 'bg-white dark:bg-zinc-800 text-orange-700 dark:text-orange-300 shadow-sm'
-                    : 'text-zinc-600 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-200'
-                )}
-              >
-                <AlignJustify size={14} className="shrink-0" aria-hidden />
-                <span>Detailed</span>
-              </button>
-            </div>
             <div className="relative flex flex-1 items-center min-w-0 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-2xl shadow-sm focus-within:ring-2 focus-within:ring-orange-500/20 focus-within:border-orange-500 transition-all">
               <input
                 type="text"

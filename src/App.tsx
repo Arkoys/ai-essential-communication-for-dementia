@@ -6,8 +6,8 @@ import { SidebarHistory, Conversation } from './components/SidebarHistory';
 import { ChatWindow } from './components/ChatWindow';
 import { NavigationMap, PhaseName } from './components/NavigationMap';
 import { AdminPanel } from './components/AdminPanel';
-import { generateClinicalResponseWithHistory, type AnswerLengthMode } from './lib/llm';
-import { Stethoscope, Settings, Menu } from 'lucide-react';
+import { generateClinicalResponseWithHistory } from './lib/llm';
+import { Stethoscope, Menu } from 'lucide-react';
 import { cn } from './lib/utils';
 
 import { DEFAULT_KNOWLEDGE_CHUNKS } from './lib/defaultData';
@@ -92,24 +92,6 @@ export default function App() {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-
-  const [answerLengthMode, setAnswerLengthMode] = useState<AnswerLengthMode>(() => {
-    try {
-      const v = localStorage.getItem('clinical-assistant-answer-length');
-      if (v === 'concise' || v === 'detailed') return v;
-    } catch {
-      /* ignore */
-    }
-    return 'detailed';
-  });
-
-  useEffect(() => {
-    try {
-      localStorage.setItem('clinical-assistant-answer-length', answerLengthMode);
-    } catch {
-      /* ignore */
-    }
-  }, [answerLengthMode]);
 
   // Auth Listener
   useEffect(() => {
@@ -237,7 +219,7 @@ export default function App() {
     }
   };
 
-  const handleSendMessage = async (content: string, answerLength: AnswerLengthMode) => {
+  const handleSendMessage = async (content: string) => {
     if (!user) return;
     setIsLoading(true);
 
@@ -272,8 +254,7 @@ export default function App() {
       const responseText = await generateClinicalResponseWithHistory(
         content,
         history,
-        currentPhase,
-        answerLength
+        currentPhase
       );
 
       const { phase: detectedPhase, step: detectedStep } = parseFrameworkPosition(responseText);
@@ -315,7 +296,7 @@ export default function App() {
     }
     setCurrentStep(step);
     const prompt = `I need help with the "${step}" step in the ${activePhase || 'current'} phase of dementia care.`;
-    handleSendMessage(prompt, answerLengthMode);
+    handleSendMessage(prompt);
   };
 
   const handleLogin = async () => {
@@ -436,8 +417,6 @@ export default function App() {
             messages={messages}
             onSendMessage={handleSendMessage}
             isLoading={isLoading}
-            answerLengthMode={answerLengthMode}
-            onAnswerLengthModeChange={setAnswerLengthMode}
           />
         </div>
       </div>
