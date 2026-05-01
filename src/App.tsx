@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { collection, query, where, orderBy, onSnapshot, addDoc, serverTimestamp, deleteDoc, doc, getDocs, setDoc } from 'firebase/firestore';
 import { auth, db, signInWithGoogle, logOut, handleFirestoreError, OperationType } from './firebase';
-import { SidebarHistory, Conversation } from './components/SidebarHistory';
+import { SidebarHistory } from './components/SidebarHistory';
 import { ChatWindow } from './components/ChatWindow';
 import { NavigationMap, PhaseName } from './components/NavigationMap';
 import { AdminPanel } from './components/AdminPanel';
@@ -18,6 +18,13 @@ interface Message {
   role: 'user' | 'assistant';
   content: string;
   createdAt: Date;
+}
+
+interface Conversation {
+  id: string;
+  title: string;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 const PHASES: { name: PhaseName; steps: string[] }[] = [
@@ -93,6 +100,27 @@ export default function App() {
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  const saveFrameworkState = async (
+    conversationId: string,
+    state: { currentPhase: PhaseName | null; currentStep: string | null; lastDetectedPhase: PhaseName | null }
+  ) => {
+    try {
+      await setDoc(
+        doc(db, 'conversations', conversationId),
+        {
+          currentPhase: state.currentPhase,
+          currentStep: state.currentStep,
+          lastDetectedPhase: state.lastDetectedPhase,
+          updatedAt: serverTimestamp(),
+        },
+        { merge: true }
+      );
+    } catch (error) {
+      // Framework state must never block message delivery.
+      console.error('Error saving framework state:', error);
+    }
+  };
 
   // Auth Listener
   useEffect(() => {
@@ -194,6 +222,51 @@ export default function App() {
     return () => unsubscribe();
   }, [activeConversationId, user, isAuthReady]);
 
+  // Fetch framework state for Active Conversation (source of truth from DB)
+  useEffect(() => {
+    if (!isAuthReady || !user || !activeConversationId) {
+      setCurrentPhase(null);
+      setCurrentStep(null);
+      setLastDetectedPhase(null);
+      return;
+    }
+
+    const conversationRef = doc(db, 'conversations', activeConversationId);
+    const unsubscribe = onSnapshot(conversationRef, (snapshot) => {
+      if (!snapshot.exists()) return;
+      const data = snapshot.data();
+      const phase =
+        data.currentPhase === 'Recognition' || data.currentPhase === 'Evaluation' || data.currentPhase === 'Diagnosis'
+          ? (data.currentPhase as PhaseName)
+          : null;
+      const detectedPhase =
+        data.lastDetectedPhase === 'Recognition' ||
+        data.lastDetectedPhase === 'Evaluation' ||
+        data.lastDetectedPhase === 'Diagnosis'
+          ? (data.lastDetectedPhase as PhaseName)
+          : phase;
+
+      setCurrentPhase(phase || detectedPhase);
+      setCurrentStep(typeof data.currentStep === 'string' ? data.currentStep : null);
+      setLastDetectedPhase(detectedPhase);
+    }, (error) => {
+      handleFirestoreError(error, OperationType.LIST, `conversations/${activeConversationId}`);
+    });
+
+    return () => unsubscribe();
+  }, [activeConversationId, user, isAuthReady]);
+
+  // Fallback source: infer framework position from latest assistant output.
+  const latestAssistantMessage = [...messages].reverse().find((m) => m.role === 'assistant') || null;
+  const inferredFromOutput = latestAssistantMessage
+    ? parseFrameworkPosition(latestAssistantMessage.content)
+    : { phase: null, step: null };
+  const effectivePhase: PhaseName | null =
+    currentPhase || lastDetectedPhase || inferredFromOutput.phase || null;
+  const effectiveStep: string | null = currentStep || inferredFromOutput.step || null;
+  const effectiveDetectedPhase: PhaseName | null =
+    lastDetectedPhase || currentPhase || inferredFromOutput.phase || null;
+
   const handleNewConversation = () => {
     setActiveConversationId(null);
     setMessages([]);
@@ -256,15 +329,23 @@ export default function App() {
       const responseText = await generateClinicalResponseWithHistory(
         content,
         history,
-        currentPhase
+        effectivePhase
       );
 
       const { phase: detectedPhase, step: detectedStep } = parseFrameworkPosition(responseText);
+      let nextPhase = currentPhase;
+      let nextStep = currentStep;
+      let nextDetectedPhase = lastDetectedPhase;
       if (detectedPhase) {
         setCurrentPhase(detectedPhase);
         setLastDetectedPhase(detectedPhase);
+        nextPhase = detectedPhase;
+        nextDetectedPhase = detectedPhase;
       }
-      if (detectedStep) setCurrentStep(detectedStep);
+      if (detectedStep) {
+        setCurrentStep(detectedStep);
+        nextStep = detectedStep;
+      }
 
       // Add assistant message to Firestore
       await addDoc(collection(db, `conversations/${convId}/messages`), {
@@ -274,10 +355,11 @@ export default function App() {
         createdAt: serverTimestamp(),
       });
 
-      // Update conversation timestamp
-      await setDoc(doc(db, 'conversations', convId), {
-        updatedAt: serverTimestamp()
-      }, { merge: true });
+      await saveFrameworkState(convId, {
+        currentPhase: nextPhase,
+        currentStep: nextStep,
+        lastDetectedPhase: nextDetectedPhase,
+      });
 
     } catch (error) {
       console.error("Error sending message:", error);
@@ -290,6 +372,17 @@ export default function App() {
   const handleSelectPhase = (phase: PhaseName) => {
     setCurrentPhase(phase);
     setCurrentStep(null);
+    setLastDetectedPhase(phase);
+
+    if (activeConversationId) {
+      saveFrameworkState(activeConversationId, {
+        currentPhase: phase,
+        currentStep: null,
+        lastDetectedPhase: phase,
+      }).catch((error) => {
+        console.error('Error saving selected phase:', error);
+      });
+    }
   };
 
   const handleSelectStep = (step: string) => {
@@ -298,8 +391,21 @@ export default function App() {
     const activePhase = phaseForStep || currentPhase;
     if (phaseForStep) {
       setCurrentPhase(phaseForStep);
+      setLastDetectedPhase(phaseForStep);
     }
     setCurrentStep(step);
+
+    if (activeConversationId) {
+      const selectedPhase = phaseForStep || currentPhase;
+      saveFrameworkState(activeConversationId, {
+        currentPhase: selectedPhase,
+        currentStep: step,
+        lastDetectedPhase: selectedPhase || lastDetectedPhase,
+      }).catch((error) => {
+        console.error('Error saving selected step:', error);
+      });
+    }
+
     const prompt = `I need help with the "${step}" step in the ${activePhase || 'current'} phase of dementia care.`;
     handleSendMessage(prompt);
   };
@@ -411,9 +517,9 @@ export default function App() {
         </div>
 
         <NavigationMap
-          currentPhase={currentPhase}
-          currentStep={currentStep}
-          detectedPhase={lastDetectedPhase}
+          currentPhase={effectivePhase}
+          currentStep={effectiveStep}
+          detectedPhase={effectiveDetectedPhase}
           onSelectPhase={handleSelectPhase}
           onSelectStep={handleSelectStep}
         />
