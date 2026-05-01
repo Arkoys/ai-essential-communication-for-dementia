@@ -86,6 +86,7 @@ export default function App() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [currentPhase, setCurrentPhase] = useState<PhaseName | null>(null);
   const [currentStep, setCurrentStep] = useState<string | null>(null);
+  const [lastDetectedPhase, setLastDetectedPhase] = useState<PhaseName | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   
   const [showAdminPanel, setShowAdminPanel] = useState(false);
@@ -198,6 +199,7 @@ export default function App() {
     setMessages([]);
     setCurrentPhase(null);
     setCurrentStep(null);
+    setLastDetectedPhase(null);
   };
 
   const handleDeleteConversation = async (id: string) => {
@@ -258,7 +260,10 @@ export default function App() {
       );
 
       const { phase: detectedPhase, step: detectedStep } = parseFrameworkPosition(responseText);
-      if (detectedPhase) setCurrentPhase(detectedPhase);
+      if (detectedPhase) {
+        setCurrentPhase(detectedPhase);
+        setLastDetectedPhase(detectedPhase);
+      }
       if (detectedStep) setCurrentStep(detectedStep);
 
       // Add assistant message to Firestore
@@ -408,6 +413,7 @@ export default function App() {
         <NavigationMap
           currentPhase={currentPhase}
           currentStep={currentStep}
+          detectedPhase={lastDetectedPhase}
           onSelectPhase={handleSelectPhase}
           onSelectStep={handleSelectStep}
         />

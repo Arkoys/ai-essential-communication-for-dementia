@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { cn } from '../lib/utils';
 import { ChevronUp, ChevronDown } from 'lucide-react';
 
@@ -35,12 +35,48 @@ export const PHASES: { name: PhaseName; steps: string[] }[] = [
 interface NavigationMapProps {
   currentPhase: PhaseName | null;
   currentStep: string | null;
+  detectedPhase: PhaseName | null;
   onSelectPhase: (phase: PhaseName) => void;
   onSelectStep: (step: string) => void;
 }
 
-export function NavigationMap({ currentPhase, currentStep, onSelectPhase, onSelectStep }: NavigationMapProps) {
-  const [isOpen, setIsOpen] = useState(true);
+const MOBILE_MEDIA_QUERY = '(max-width: 767px)';
+
+function isMobileViewport(): boolean {
+  if (typeof window === 'undefined') return false;
+  return window.matchMedia(MOBILE_MEDIA_QUERY).matches;
+}
+
+export function NavigationMap({
+  currentPhase,
+  currentStep,
+  detectedPhase,
+  onSelectPhase,
+  onSelectStep,
+}: NavigationMapProps) {
+  const [isMobile, setIsMobile] = useState(isMobileViewport);
+  const [isOpen, setIsOpen] = useState(() => !isMobileViewport());
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const media = window.matchMedia(MOBILE_MEDIA_QUERY);
+    const applyViewportMode = (matches: boolean) => {
+      setIsMobile(matches);
+      setIsOpen(!matches);
+    };
+    const handleChange = (event: MediaQueryListEvent) => {
+      applyViewportMode(event.matches);
+    };
+
+    applyViewportMode(media.matches);
+    if (typeof media.addEventListener === 'function') {
+      media.addEventListener('change', handleChange);
+      return () => media.removeEventListener('change', handleChange);
+    }
+
+    media.addListener(handleChange);
+    return () => media.removeListener(handleChange);
+  }, []);
 
   return (
     <div className="w-full bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800">
@@ -52,6 +88,17 @@ export function NavigationMap({ currentPhase, currentStep, onSelectPhase, onSele
         <span className="text-xs uppercase tracking-widest">Navigation Map</span>
         {isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
       </button>
+
+      <div
+        className={cn(
+          'overflow-hidden transition-all duration-300 ease-out',
+          !isOpen && detectedPhase ? 'max-h-20 opacity-100' : 'max-h-0 opacity-0'
+        )}
+      >
+        <div className="mx-4 mb-2 rounded-xl border border-orange-200 dark:border-orange-800/60 bg-orange-50/80 dark:bg-orange-950/40 px-3 py-2 text-xs text-orange-800 dark:text-orange-200 shadow-sm backdrop-blur-sm">
+          <span className="font-semibold">Current phase:</span> {detectedPhase}
+        </div>
+      </div>
 
       {/* Collapsible content */}
       <div
