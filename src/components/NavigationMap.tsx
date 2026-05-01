@@ -56,6 +56,8 @@ export function NavigationMap({
 }: NavigationMapProps) {
   const [isMobile, setIsMobile] = useState(isMobileViewport);
   const [isOpen, setIsOpen] = useState(() => !isMobileViewport());
+  const activePhase = currentPhase || detectedPhase;
+  const visiblePhase = detectedPhase || currentPhase;
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -92,11 +94,11 @@ export function NavigationMap({
       <div
         className={cn(
           'overflow-hidden transition-all duration-300 ease-out',
-          !isOpen && detectedPhase ? 'max-h-20 opacity-100' : 'max-h-0 opacity-0'
+          !isOpen && visiblePhase ? 'max-h-20 opacity-100' : 'max-h-0 opacity-0'
         )}
       >
         <div className="mx-4 mb-2 rounded-xl border border-orange-200 dark:border-orange-800/60 bg-orange-50/80 dark:bg-orange-950/40 px-3 py-2 text-xs text-orange-800 dark:text-orange-200 shadow-sm backdrop-blur-sm">
-          <span className="font-semibold">Current phase:</span> {detectedPhase}
+          <span className="font-semibold">Current phase:</span> {visiblePhase}
         </div>
       </div>
 
@@ -110,7 +112,7 @@ export function NavigationMap({
         <div className="overflow-x-auto p-4">
           <div className="flex gap-4 md:gap-6 w-max px-2 md:px-0 md:mx-auto">
             {PHASES.map((phase) => {
-              const isActive = currentPhase === phase.name;
+              const isActive = activePhase === phase.name;
               return (
                 <div
                   key={phase.name}

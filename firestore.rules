@@ -55,11 +55,30 @@ service cloud.firestore {
     // Domain Validators
     // ===============================================================
     function isValidConversation(data) {
-      return hasOnlyAllowedFields(['userId', 'title', 'createdAt', 'updatedAt']) &&
+      return hasOnlyAllowedFields([
+               'userId',
+               'title',
+               'createdAt',
+               'updatedAt',
+               'currentPhase',
+               'currentStep',
+               'lastDetectedPhase'
+             ]) &&
              data.userId is string && data.userId.size() > 0 && data.userId.size() < 100 &&
              data.title is string && data.title.size() > 0 && data.title.size() < 200 &&
              data.createdAt is timestamp &&
-             data.updatedAt is timestamp;
+             data.updatedAt is timestamp &&
+             (!('currentPhase' in data) ||
+               data.currentPhase == null ||
+               (data.currentPhase is string &&
+                (data.currentPhase == 'Recognition' || data.currentPhase == 'Evaluation' || data.currentPhase == 'Diagnosis'))) &&
+             (!('lastDetectedPhase' in data) ||
+               data.lastDetectedPhase == null ||
+               (data.lastDetectedPhase is string &&
+                (data.lastDetectedPhase == 'Recognition' || data.lastDetectedPhase == 'Evaluation' || data.lastDetectedPhase == 'Diagnosis'))) &&
+             (!('currentStep' in data) ||
+               data.currentStep == null ||
+               (data.currentStep is string && data.currentStep.size() > 0 && data.currentStep.size() < 200));
     }
 
     function isValidMessage(data) {
