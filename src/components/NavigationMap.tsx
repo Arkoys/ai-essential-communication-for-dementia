@@ -24,21 +24,21 @@ const STEPS = [
 const PHASES = [
   {
     name: 'Recognition' as PhaseName,
-    subtitle: 'Early signal detection',
+    subtitle: 'Is there a cognitive problem?',
     color: 'teal',
     start: 0,
     end: 4,
   },
   {
     name: 'Evaluation' as PhaseName,
-    subtitle: 'Clinical investigation',
+    subtitle: 'What do we know about the problem?',
     color: 'emerald',
     start: 1,
     end: 8,
   },
   {
     name: 'Naming & Diagnosis' as PhaseName,
-    subtitle: 'Diagnosis & care plan',
+    subtitle: 'What do we call the problem?',
     color: 'orange',
     start: 9,
     end: 14,
@@ -116,7 +116,7 @@ export function NavigationMap({
           {/* GRID */}
           <div
             className="grid gap-x-2 gap-y-3"
-            style={{ gridTemplateColumns: `220px repeat(${COLS}, minmax(72px, 1fr))` }}
+            style={{ gridTemplateColumns: `200px repeat(${COLS}, minmax(72px, 1fr))` }}
           >
 
             {/* STEP HEADER ROW (more vertical space for readability) */}
@@ -145,7 +145,7 @@ export function NavigationMap({
                     className={cn(
                       "flex flex-col justify-center px-2 py-2 rounded-lg cursor-pointer transition",
                       "text-xs leading-tight",
-                      phase.color === 'teal' && "bg-teal-50 text-teal-900 dark:bg-teal-900/20 dark:text-teal-200",
+                      phase.color === 'teal' && "bg-blue-50 text-teal-900 dark:bg-teal-900/20 dark:text-teal-200",
                       phase.color === 'emerald' && "bg-emerald-50 text-emerald-900 dark:bg-emerald-900/20 dark:text-emerald-200",
                       phase.color === 'orange' && "bg-orange-50 text-orange-900 dark:bg-orange-900/20 dark:text-orange-200",
                       isActive && "ring-2 ring-orange-400"
@@ -176,7 +176,7 @@ export function NavigationMap({
                           <button
                             onClick={() => onSelectStep(step)}
                             className={cn(
-                              "w-3 h-3 rounded-full transition z-10",
+                              "w-4 h-4 rounded-full transition z-10",
                               isStepActive
                                 ? "bg-orange-500 scale-125"
                                 : "bg-zinc-300 dark:bg-zinc-700 hover:bg-orange-400"
