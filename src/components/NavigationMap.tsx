@@ -2,33 +2,46 @@ import React, { useEffect, useState } from 'react';
 import { cn } from '../lib/utils';
 import { ChevronUp, ChevronDown } from 'lucide-react';
 
-export type PhaseName = 'Recognition' | 'Evaluation' | 'Diagnosis';
-export const PHASES: { name: PhaseName; steps: string[] }[] = [
+export type PhaseName = 'Recognition' | 'Evaluation' | 'Naming & Diagnosis';
+
+const STEPS = [
+  'Understand Concern',
+  'Assess Function',
+  'Assess Cognition',
+  'Name Findings',
+  'Assess Safety',
+  'Targeted Exam',
+  'Labs and Imaging',
+  'Medication Review',
+  'Name Condition',
+  'Assess and Align Understanding',
+  'Address Risks and Concerns',
+  'Apply Diagnosis',
+  'Stage Condition',
+  'Plan Follow-up',
+];
+
+const PHASES = [
   {
-    name: 'Recognition',
-    steps: ['Name Findings', 'Understand Concern', 'Assess Cognition', 'Assess Function'],
+    name: 'Recognition' as PhaseName,
+    subtitle: 'Early signal detection',
+    color: 'teal',
+    start: 0,
+    end: 4,
   },
   {
-    name: 'Evaluation',
-    steps: [
-      'Assess Cognition',
-      'Assess Function',
-      'Assess Safety',
-      'Targeted Exam',
-      'Labs and Imaging',
-      'Medication Review',
-      'Name Condition',
-    ],
+    name: 'Evaluation' as PhaseName,
+    subtitle: 'Clinical investigation',
+    color: 'emerald',
+    start: 1,
+    end: 8,
   },
   {
-    name: 'Diagnosis',
-    steps: [
-      'Assess and Align Understanding',
-      'Address Risks and Concerns',
-      'Apply Diagnosis',
-      'Plan Follow-up',
-      'Stage Condition',
-    ],
+    name: 'Naming & Diagnosis' as PhaseName,
+    subtitle: 'Diagnosis & care plan',
+    color: 'orange',
+    start: 9,
+    end: 14,
   },
 ];
 
@@ -54,109 +67,131 @@ export function NavigationMap({
   onSelectPhase,
   onSelectStep,
 }: NavigationMapProps) {
-  const [isMobile, setIsMobile] = useState(isMobileViewport);
   const [isOpen, setIsOpen] = useState(() => !isMobileViewport());
+
   const activePhase = currentPhase || detectedPhase;
   const visiblePhase = detectedPhase || currentPhase;
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const media = window.matchMedia(MOBILE_MEDIA_QUERY);
-    const applyViewportMode = (matches: boolean) => {
-      setIsMobile(matches);
-      setIsOpen(!matches);
-    };
-    const handleChange = (event: MediaQueryListEvent) => {
-      applyViewportMode(event.matches);
-    };
+    const handler = (e: MediaQueryListEvent) => setIsOpen(!e.matches);
 
-    applyViewportMode(media.matches);
-    if (typeof media.addEventListener === 'function') {
-      media.addEventListener('change', handleChange);
-      return () => media.removeEventListener('change', handleChange);
+    if (media.addEventListener) {
+      media.addEventListener('change', handler);
+      return () => media.removeEventListener('change', handler);
     }
-
-    media.addListener(handleChange);
-    return () => media.removeListener(handleChange);
+    media.addListener(handler);
+    return () => media.removeListener(handler);
   }, []);
+
+  const COLS = STEPS.length;
 
   return (
     <div className="w-full bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800">
-      {/* Toggle bar */}
+
+      {/* Header */}
       <button
-        onClick={() => setIsOpen((prev) => !prev)}
-        className="w-full flex items-center justify-between px-4 py-2 text-sm font-medium text-zinc-500 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-colors"
+        onClick={() => setIsOpen(v => !v)}
+        className="w-full flex items-center justify-between px-4 py-2 text-xs uppercase tracking-widest text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800"
       >
-        <span className="text-xs uppercase tracking-widest">Navigation Map</span>
+        Clinical Workflow Map
         {isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
       </button>
 
-      <div
-        className={cn(
-          'overflow-hidden transition-all duration-300 ease-out',
-          !isOpen && visiblePhase ? 'max-h-20 opacity-100' : 'max-h-0 opacity-0'
-        )}
-      >
+      {!isOpen && visiblePhase && (
         <div className="mx-4 mb-2 rounded-xl border border-orange-200 dark:border-orange-800/60 bg-orange-50/80 dark:bg-orange-950/40 px-3 py-2 text-xs text-orange-800 dark:text-orange-200 shadow-sm backdrop-blur-sm">
           <span className="font-semibold">Current phase:</span> {visiblePhase}
         </div>
-      </div>
+      )}
 
-      {/* Collapsible content */}
       <div
         className={cn(
-          "overflow-hidden transition-all duration-300 ease-in-out",
-          isOpen ? "max-h-[600px] opacity-100" : "max-h-0 opacity-0"
+          'overflow-hidden transition-all duration-300',
+          isOpen ? 'max-h-[650px] opacity-100' : 'max-h-0 opacity-0'
         )}
       >
-        <div className="overflow-x-auto p-4">
-          <div className="flex gap-4 md:gap-6 w-max px-2 md:px-0 md:mx-auto">
+        <div className="overflow-x-auto px-4 pb-4">
+
+          {/* GRID */}
+          <div
+            className="grid gap-x-2 gap-y-3"
+            style={{ gridTemplateColumns: `220px repeat(${COLS}, minmax(72px, 1fr))` }}
+          >
+
+            {/* STEP HEADER ROW (more vertical space for readability) */}
+            <div />
+            {STEPS.map((step) => (
+              <div
+                key={step}
+                className="flex items-end justify-center h-16 pb-2"
+              >
+                <div className="text-[9px] text-center text-zinc-400 leading-tight rotate-[-35deg] origin-bottom whitespace-nowrap">
+                  {step}
+                </div>
+              </div>
+            ))}
+
+            {/* PHASE ROWS */}
             {PHASES.map((phase) => {
               const isActive = activePhase === phase.name;
+
               return (
-                <div
-                  key={phase.name}
-                  className={cn(
-                    "flex flex-col gap-2 p-4 rounded-xl border transition-all cursor-pointer",
-                    isActive
-                      ? "border-orange-500 bg-orange-50 dark:bg-orange-950/20"
-                      : "border-zinc-200 dark:border-zinc-800 hover:border-orange-300 dark:hover:border-orange-700"
-                  )}
-                  onClick={() => onSelectPhase(phase.name)}
-                >
-                  <h3 className={cn(
-                    "font-semibold text-lg text-center",
-                    isActive ? "text-orange-600 dark:text-orange-400" : "text-zinc-700 dark:text-zinc-300"
-                  )}>
-                    {phase.name}
-                  </h3>
-                  <div className="grid grid-cols-2 gap-2 mt-2">
-                    {phase.steps.map((step) => {
-                      const isStepActive = currentStep === step;
-                      return (
-                        <button
-                          key={step}
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            onSelectStep(step);
-                          }}
-                          className={cn(
-                            "text-xs px-2 py-1.5 rounded-full text-center transition-all ring-offset-1 dark:ring-offset-zinc-900",
-                            isStepActive
-                              ? "bg-orange-600 text-white shadow-md ring-2 ring-orange-400 dark:ring-orange-500 font-semibold scale-[1.03]"
-                              : isActive
-                                ? "bg-white dark:bg-zinc-800 text-orange-700 dark:text-orange-300 shadow-sm hover:bg-orange-100 dark:hover:bg-orange-900/50"
-                                : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700"
-                          )}
-                        >
-                          {step}
-                        </button>
-                      );
-                    })}
+                <React.Fragment key={phase.name}>
+
+                  {/* LABEL */}
+                  <div
+                    onClick={() => onSelectPhase(phase.name)}
+                    className={cn(
+                      "flex flex-col justify-center px-2 py-2 rounded-lg cursor-pointer transition",
+                      "text-xs leading-tight",
+                      phase.color === 'teal' && "bg-teal-50 text-teal-900 dark:bg-teal-900/20 dark:text-teal-200",
+                      phase.color === 'emerald' && "bg-emerald-50 text-emerald-900 dark:bg-emerald-900/20 dark:text-emerald-200",
+                      phase.color === 'orange' && "bg-orange-50 text-orange-900 dark:bg-orange-900/20 dark:text-orange-200",
+                      isActive && "ring-2 ring-orange-400"
+                    )}
+                  >
+                    <div className="font-semibold text-[10px] uppercase">
+                      {phase.name}
+                    </div>
+                    <div className="text-[9px] opacity-70">
+                      {phase.subtitle}
+                    </div>
                   </div>
-                </div>
+
+                  {/* STEPS ROW */}
+                  {STEPS.map((step, i) => {
+                    const inPhase = i >= phase.start && i <= phase.end;
+                    const isStepActive = currentStep === step;
+
+                    return (
+                      <div
+                        key={step}
+                        className="flex items-center justify-center h-10 relative"
+                      >
+                        {/* vertical guide */}
+                        <div className="absolute inset-y-0 left-1/2 border-l border-dashed border-zinc-200 dark:border-zinc-700" />
+
+                        {inPhase && (
+                          <button
+                            onClick={() => onSelectStep(step)}
+                            className={cn(
+                              "w-3 h-3 rounded-full transition z-10",
+                              isStepActive
+                                ? "bg-orange-500 scale-125"
+                                : "bg-zinc-300 dark:bg-zinc-700 hover:bg-orange-400"
+                            )}
+                            title={step}
+                          />
+                        )}
+                      </div>
+                    );
+                  })}
+
+                </React.Fragment>
               );
             })}
+
           </div>
         </div>
       </div>
