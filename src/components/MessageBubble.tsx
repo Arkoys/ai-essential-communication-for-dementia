@@ -45,7 +45,7 @@ export function MessageBubble({ role, content, isStuck }: MessageBubbleProps) {
             "font-semibold text-sm",
             isUser ? "text-zinc-800 dark:text-zinc-200" : isStuck ? "text-green-800 dark:text-green-200" : "text-zinc-800 dark:text-zinc-200"
           )}>
-            {isUser ? 'You' : isStuck ? 'Stuck Mode Assistant' : 'Clinical Assistant'}
+            {isUser ? 'You' : isStuck ? 'Stuck Mode Coach' : 'Clinical Coach'}
           </div>
           <div className={cn(
             "prose max-w-none text-sm leading-relaxed",
