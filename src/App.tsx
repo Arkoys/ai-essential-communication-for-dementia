@@ -446,7 +446,7 @@ export default function App() {
             <Stethoscope size={32} />
           </div>
           <div>
-            <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 mb-2">Dementia Clinical Assistant</h1>
+            <h1 className="text-2xl font-bold text-zinc-900 dark:text-zinc-100 mb-2">Dementia Clinical Coach</h1>
             <p className="text-zinc-500 dark:text-zinc-400">Evidence-based decision support for primary care providers.</p>
           </div>
           <button
