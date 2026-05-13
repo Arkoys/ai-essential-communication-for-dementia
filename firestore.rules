@@ -81,13 +81,20 @@ service cloud.firestore {
                (data.currentStep is string && data.currentStep.size() > 0 && data.currentStep.size() < 200));
     }
 
-    function isValidMessage(data) {
-      return hasOnlyAllowedFields(['conversationId', 'role', 'content', 'createdAt']) &&
-             data.conversationId is string && data.conversationId.size() > 0 && data.conversationId.size() < 100 &&
-             data.role is string && (data.role == 'user' || data.role == 'assistant') &&
-             data.content is string && data.content.size() > 0 && data.content.size() < 50000 &&
-             data.createdAt is timestamp;
-    }
+function isValidMessage(data) {
+  return hasOnlyAllowedFields([
+           'conversationId',
+           'role',
+           'content',
+           'createdAt',
+           'isStuck'
+         ]) &&
+         data.conversationId is string && data.conversationId.size() > 0 && data.conversationId.size() < 100 &&
+         data.role is string && (data.role == 'user' || data.role == 'assistant') &&
+         data.content is string && data.content.size() > 0 && data.content.size() < 50000 &&
+         data.createdAt is timestamp &&
+         (!('isStuck' in data) || data.isStuck is bool);
+}
 
     // ===============================================================
     // Rules

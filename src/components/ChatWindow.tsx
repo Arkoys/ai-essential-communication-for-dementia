@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Loader2, AlertTriangle } from 'lucide-react';
+import { Send, Loader2, AlertTriangle, Zap } from 'lucide-react';
 import { MessageBubble } from './MessageBubble';
 import { anonymize } from '../lib/anonymizer';
 
@@ -7,11 +7,12 @@ interface Message {
   id: string;
   role: 'user' | 'assistant';
   content: string;
+  isStuck?: boolean;
 }
 
 interface ChatWindowProps {
   messages: Message[];
-  onSendMessage: (content: string) => void;
+  onSendMessage: (content: string, isStuck?: boolean) => void;
   isLoading: boolean;
 }
 
@@ -27,6 +28,7 @@ export function ChatWindow({
   isLoading,
 }: ChatWindowProps) {
   const [input, setInput] = useState('');
+  const [isStuck, setIsStuck] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   const scrollToBottom = () => {
@@ -42,7 +44,7 @@ export function ChatWindow({
     if (!input.trim() || isLoading) return;
     
     const cleanInput = anonymize(input);
-    onSendMessage(cleanInput);
+    onSendMessage(cleanInput, isStuck);
     setInput('');
   };
 
@@ -80,7 +82,7 @@ export function ChatWindow({
         ) : (
           <div className="pb-36 md:pb-32">
             {messages.map((msg) => (
-              <MessageBubble key={msg.id} role={msg.role} content={msg.content} />
+              <MessageBubble key={msg.id} role={msg.role} content={msg.content} isStuck={msg.isStuck} />
             ))}
             {isLoading && (
               <div className="flex w-full py-4 md:py-6 bg-zinc-50 dark:bg-zinc-900">
@@ -116,12 +118,17 @@ export function ChatWindow({
             onSubmit={handleSubmit}
             className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3"
           >
-            <div className="relative flex flex-1 items-center min-w-0 bg-white dark:bg-zinc-900 border border-zinc-300 dark:border-zinc-700 rounded-2xl shadow-sm focus-within:ring-2 focus-within:ring-orange-500/20 focus-within:border-orange-500 transition-all">
+            <div className={[
+              "relative flex flex-1 items-center min-w-0 bg-white dark:bg-zinc-900 rounded-2xl shadow-sm transition-all",
+              isStuck 
+                ? "border-2 border-green-500 ring-4 ring-green-200 dark:ring-green-800/30" 
+                : "border border-zinc-300 dark:border-zinc-700 focus-within:ring-2 focus-within:ring-orange-500/20 focus-within:border-orange-500"
+            ].join(" ")}>
               <input
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Ask a medical question..."
+                placeholder={isStuck ? "Describe your stuck point..." : "Ask a medical question..."}
                 className="w-full bg-transparent py-3 md:py-4 pl-4 md:pl-6 pr-12 md:pr-14 outline-none text-sm md:text-base text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400"
                 disabled={isLoading}
               />
@@ -133,6 +140,20 @@ export function ChatWindow({
                 <Send size={16} className="md:w-[18px] md:h-[18px]" />
               </button>
             </div>
+            <button
+              type="button"
+              onClick={() => setIsStuck(!isStuck)}
+              className={[
+                "shrink-0 px-3 py-2 md:px-4 md:py-3 rounded-xl font-medium text-sm transition-all flex items-center gap-2",
+                isStuck
+                  ? "bg-green-500 text-white hover:bg-green-600 shadow-md"
+                  : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700"
+              ].join(" ")}
+              title="Focus on stuck point - skip framework structure"
+            >
+              <Zap size={16} className={isStuck ? "fill-current" : ""} />
+              <span className="hidden sm:inline">Stuck</span>
+            </button>
           </form>
           <div className="text-center mt-1.5 md:mt-2 text-[10px] md:text-xs text-zinc-400 dark:text-zinc-500">
             AI-generated clinical guidance. Always verify with primary literature.
