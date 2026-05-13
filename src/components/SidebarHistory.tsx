@@ -3,6 +3,19 @@ import { Plus, MessageSquare, LogOut, Trash2, Settings, X, ChevronLeft, ChevronR
 import { format } from 'date-fns';
 import { cn } from '../lib/utils';
 
+interface SidebarHistoryProps {
+  conversations: { id: string; title: string; createdAt: Date; updatedAt: Date }[];
+  activeId: string | null;
+  onSelect: (id: string) => void;
+  onNew: () => void;
+  onDelete: (id: string) => void;
+  onLogout: () => void;
+  userEmail: string;
+  setShowAdminPanel: (show: boolean) => void;
+  setShowSettingsPanel: (show: boolean) => void;
+  onClose?: () => void;
+}
+
 export function SidebarHistory({
   conversations,
   activeId,
@@ -12,6 +25,7 @@ export function SidebarHistory({
   onLogout,
   userEmail,
   setShowAdminPanel,
+  setShowSettingsPanel,
   onClose,
 }: SidebarHistoryProps) {
   const [isOpen, setIsOpen] = useState(true);
@@ -123,10 +137,19 @@ export function SidebarHistory({
               <button
                 onClick={() => setShowAdminPanel(true)}
                 className="text-zinc-400 hover:text-orange-500 transition-colors p-1"
+                title="Admin Panel"
               >
                 <Settings size={18} />
               </button>
             )}
+
+            <button
+              onClick={() => setShowSettingsPanel(true)}
+              className="text-zinc-400 hover:text-blue-500 transition-colors p-1"
+              title="Prompt Settings"
+            >
+              <Settings size={18} />
+            </button>
 
             <button
               onClick={onLogout}
