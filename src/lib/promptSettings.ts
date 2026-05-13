@@ -106,9 +106,9 @@ Keep it under 100 words. Be direct, not structured.`;
 
 // Default suggested prompts
 export const DEFAULT_SUGGESTED_PROMPTS = [
-  "Ask about treatment alternatives",
-  "Ask a tough question",
-  "Construct a workup"
+  "My 72 year old patient has memory problems",
+  "How to handle a patient not remembering his family",
+  "My patient is not remembering his medications"
 ];
 
 // Default knowledge content (embedded in prompts for MiniMax)

@@ -126,7 +126,7 @@ export function ChatWindow({
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder={isStuck ? "Describe your stuck point..." : "Ask a medical question..."}
+                placeholder={isStuck ? "Describe your stuck point..." : "Explain the patient's situation..."}
                 className="w-full bg-transparent py-3 md:py-4 pl-4 md:pl-6 pr-12 md:pr-14 outline-none text-sm md:text-base text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400"
                 disabled={isLoading}
               />
