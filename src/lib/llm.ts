@@ -1,6 +1,7 @@
 import { GoogleGenAI } from '@google/genai';
 import { DEFAULT_KNOWLEDGE_CHUNKS } from './defaultData';
 import { retrieveRelevantChunks } from './rag';
+import { STUCK_MODE_PROMPT } from './stuckPrompts';
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 const LLM_PROVIDER = (process.env.LLM_PROVIDER || 'gemini').toLowerCase();
@@ -210,10 +211,29 @@ async function generateWithMinimax(
   return sanitizeModelOutput(rawText);
 }
 
+function buildStuckModeSystemPrompt(): string {
+  return `${STUCK_MODE_PROMPT}
+
+---
+
+## Toolkit reference (Ariadne Labs Essential Communications)
+
+${buildToolkitReferenceForPrompt()}
+
+---
+
+## Output format (STRICT — mandatory for Stuck Mode)
+
+Write directly and conversationally. Structure your response naturally without headers or bullet lists.
+Keep it under 100 words. Be direct and helpful.
+`;
+}
+
 export async function generateClinicalResponseWithHistory(
   query: string,
   history: { role: 'user' | 'assistant'; content: string }[],
-  currentPhase: string | null
+  currentPhase: string | null,
+  isStuck?: boolean
 ) {
   try {
     const contents = history.map(msg => ({
@@ -225,11 +245,14 @@ export async function generateClinicalResponseWithHistory(
       ? `\n\n[System Note: The user is currently focusing on the "${currentPhase}" phase of the dementia care framework. Please tailor your response to this phase.]`
       : '';
 
+    // Determine which system prompt to use based on stuck mode
+    const systemPrompt = isStuck ? buildStuckModeSystemPrompt() : SYSTEM_PROMPT;
+
     // MiniMax: no RAG — full toolkit text is embedded in the system prompt.
     if (LLM_PROVIDER === 'minimax') {
       const userContent = query + phaseContext;
       const minimaxMessages = [
-        { role: 'system', content: buildMinimaxSystemPrompt() },
+        { role: 'system', content: isStuck ? buildStuckModeSystemPrompt() : buildMinimaxSystemPrompt() },
         ...history.map((msg) => ({
           role: msg.role,
           content: msg.content,
@@ -264,7 +287,7 @@ export async function generateClinicalResponseWithHistory(
       model: 'gemini-3.1-pro-preview',
       contents: contents,
       config: {
-        systemInstruction: SYSTEM_PROMPT,
+        systemInstruction: systemPrompt,
         temperature: 0.2,
       },
     });

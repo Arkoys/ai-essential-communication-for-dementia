@@ -18,6 +18,7 @@ interface Message {
   role: 'user' | 'assistant';
   content: string;
   createdAt: Date;
+  isStuck?: boolean;
 }
 
 interface Conversation {
@@ -212,6 +213,7 @@ export default function App() {
           role: data.role,
           content: data.content,
           createdAt: data.createdAt?.toDate() || new Date(),
+          isStuck: data.isStuck || false,
         });
       });
       setMessages(msgs);
@@ -294,7 +296,7 @@ export default function App() {
     }
   };
 
-  const handleSendMessage = async (content: string) => {
+  const handleSendMessage = async (content: string, isStuck?: boolean) => {
     if (!user) return;
     setIsLoading(true);
 
@@ -329,7 +331,8 @@ export default function App() {
       const responseText = await generateClinicalResponseWithHistory(
         content,
         history,
-        effectivePhase
+        effectivePhase,
+        isStuck
       );
 
       const { phase: detectedPhase, step: detectedStep } = parseFrameworkPosition(responseText);
@@ -352,6 +355,7 @@ export default function App() {
         conversationId: convId,
         role: 'assistant',
         content: responseText,
+        isStuck: isStuck || false,
         createdAt: serverTimestamp(),
       });
 
@@ -527,7 +531,7 @@ export default function App() {
         <div className="flex-1 relative min-h-0">
           <ChatWindow
             messages={messages}
-            onSendMessage={handleSendMessage}
+            onSendMessage={(content, isStuck) => handleSendMessage(content, isStuck)}
             isLoading={isLoading}
           />
         </div>

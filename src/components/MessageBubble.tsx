@@ -1,21 +1,26 @@
 import React from 'react';
 import ReactMarkdown from 'react-markdown';
 import { cn } from '../lib/utils';
-import { User, Stethoscope } from 'lucide-react';
+import { User, Stethoscope, Zap } from 'lucide-react';
 
 interface MessageBubbleProps {
   role: 'user' | 'assistant';
   content: string;
+  isStuck?: boolean;
 }
 
-export function MessageBubble({ role, content }: MessageBubbleProps) {
+export function MessageBubble({ role, content, isStuck }: MessageBubbleProps) {
   const isUser = role === 'user';
 
   return (
     <div
       className={cn(
         "flex w-full py-6",
-        isUser ? "bg-white dark:bg-zinc-950" : "bg-zinc-50 dark:bg-zinc-900"
+        isUser 
+          ? "bg-white dark:bg-zinc-950" 
+          : isStuck 
+            ? "bg-green-50 dark:bg-green-900/20" 
+            : "bg-zinc-50 dark:bg-zinc-900"
       )}
     >
       <div className="max-w-3xl mx-auto flex gap-6 w-full px-4">
@@ -25,22 +30,40 @@ export function MessageBubble({ role, content }: MessageBubbleProps) {
               <User size={18} />
             </div>
           ) : (
-            <div className="w-8 h-8 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400">
-              <Stethoscope size={18} />
+            <div className={cn(
+              "w-8 h-8 rounded-full flex items-center justify-center",
+              isStuck 
+                ? "bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400" 
+                : "bg-blue-100 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400"
+            )}>
+              {isStuck ? <Zap size={18} /> : <Stethoscope size={18} />}
             </div>
           )}
         </div>
         <div className="flex-1 space-y-2 overflow-hidden">
-          <div className="font-semibold text-sm text-zinc-800 dark:text-zinc-200">
-            {isUser ? 'You' : 'Clinical Assistant'}
+          <div className={cn(
+            "font-semibold text-sm",
+            isUser ? "text-zinc-800 dark:text-zinc-200" : isStuck ? "text-green-800 dark:text-green-200" : "text-zinc-800 dark:text-zinc-200"
+          )}>
+            {isUser ? 'You' : isStuck ? 'Stuck Mode Assistant' : 'Clinical Assistant'}
           </div>
-          <div className="prose prose-zinc dark:prose-invert max-w-none text-sm leading-relaxed">
+          <div className={cn(
+            "prose max-w-none text-sm leading-relaxed",
+            isStuck ? "prose-green dark:prose-invert" : "prose-zinc dark:prose-invert"
+          )}>
             <ReactMarkdown
               components={{
                 h2: ({ children }) => (
-                  <h2 className="text-orange-800 font-semibold text-base mt-6 mb-2 border-l-4 border-orange-400 pl-3">
-                    {children}
-                  </h2>
+                  <h2
+  className={cn(
+    "font-semibold text-base mt-6 mb-2 border-l-4 pl-3",
+    isStuck
+      ? "text-green-800 dark:text-green-200 border-green-500"
+      : "text-orange-800 border-orange-400"
+  )}
+>
+  {children}
+</h2>
                 ),
               }}
             >
