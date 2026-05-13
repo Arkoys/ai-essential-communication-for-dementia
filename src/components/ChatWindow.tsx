@@ -10,22 +10,20 @@ interface Message {
   isStuck?: boolean;
 }
 
+import { DEFAULT_SUGGESTED_PROMPTS } from '../lib/promptSettings';
+
 interface ChatWindowProps {
   messages: Message[];
   onSendMessage: (content: string, isStuck?: boolean) => void;
   isLoading: boolean;
+  suggestedPrompts?: string[];
 }
-
-const SUGGESTED_PROMPTS = [
-  "Ask about treatment alternatives",
-  "Ask a tough question",
-  "Construct a workup"
-];
 
 export function ChatWindow({
   messages,
   onSendMessage,
   isLoading,
+  suggestedPrompts = DEFAULT_SUGGESTED_PROMPTS,
 }: ChatWindowProps) {
   const [input, setInput] = useState('');
   const [isStuck, setIsStuck] = useState(false);
@@ -68,7 +66,7 @@ export function ChatWindow({
             </div>
             
             <div className="flex flex-wrap justify-center gap-2 md:gap-3 max-w-2xl">
-              {SUGGESTED_PROMPTS.map((prompt) => (
+              {suggestedPrompts.map((prompt) => (
                 <button
                   key={prompt}
                   onClick={() => handleSuggestedPrompt(prompt)}

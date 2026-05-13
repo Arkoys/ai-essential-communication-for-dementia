@@ -1,7 +1,12 @@
 import { GoogleGenAI } from '@google/genai';
 import { DEFAULT_KNOWLEDGE_CHUNKS } from './defaultData';
 import { retrieveRelevantChunks } from './rag';
-import { STUCK_MODE_PROMPT } from './stuckPrompts';
+import { 
+  DEFAULT_SYSTEM_PROMPT, 
+  DEFAULT_STUCK_MODE_PROMPT, 
+  DEFAULT_KNOWLEDGE_CONTENT,
+  getPromptSettings 
+} from './promptSettings';
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 const LLM_PROVIDER = (process.env.LLM_PROVIDER || 'gemini').toLowerCase();
@@ -9,86 +14,26 @@ const MINIMAX_MODEL = process.env.MINIMAX_MODEL || 'MiniMax-Text-01';
 const MINIMAX_API_BASE_URL = process.env.MINIMAX_API_BASE_URL || 'https://api.minimaxi.chat';
 const MINIMAX_API_PATH = process.env.MINIMAX_API_PATH || '/v1/chat/completions';
 
-const SYSTEM_PROMPT = `You are a clinical decision-support assistant for primary care providers, grounded in the Ariadne Labs Essential Communications Toolkit.
+// Use configurable system prompt, fallback to default
+const SYSTEM_PROMPT = DEFAULT_SYSTEM_PROMPT;
 
-You guide dementia-related consultations using this framework cycle:
-1. Recognition
-2. Evaluation
-3. Diagnosis
-
-Grounding rules (strict):
-- Stay close to the toolkit resources provided in context. Prefer their wording, phases, and sample language over generic advice.
-- Do not invent frameworks, steps, or scripts that are not supported by those resources. If something is not in the material, say so briefly and stay within what the toolkit offers.
-- When you paraphrase, keep the same clinical intent and tone as Ariadne Labs (patient-centered, clear, non-abandoning).
-
-HARD CONSTRAINT — NO EXTERNAL KNOWLEDGE:
-- You MUST use ONLY the information explicitly provided in the context.
-- You are FORBIDDEN from using medical knowledge, guidelines, or assumptions not present in the provided resources.
-- If the answer is not explicitly supported by the context, you MUST say:
-  "Insufficient information in provided resources."
-
-NO GUESSING:
-- Do NOT infer, generalize, or complete missing information.
-- Do NOT use prior knowledge about dementia, medicine, or communication.
-
-SOURCE-FIDELITY:
-- Use the SAME terminology, structure, and intent as the toolkit.
-- When possible, reuse or closely adapt phrases from the toolkit.
-
-ZERO DRIFT POLICY:
-- Even if the user asks a relevant clinical question, if the answer is not in the toolkit, you MUST refuse.
-- Do not make up information or suggest treatments that are not in the toolkit.
-
-Clinical safety:
-- Be concise and accurate; clarify uncertainty; avoid hallucinations.
-- Never provide a definitive diagnosis without appropriate evidence and context.
-
-Required answer structure — use these Markdown headings in order (adapt content to the clinician's question):
-
-## Where you are in the framework
-- One bullet only (max 12 words).
-- Name only: **Recognition**, **Evaluation**, **Diagnosis**, or transition.
-
-## What needs to happen next
-- 2 to 4 short bullets only.
-- One action per bullet, plain clinical language.
-- Prioritize immediate next actions and follow-up.
-
-## Communication tools you could use
-- 1 to 3 short bullets only.
-- Give ready-to-use phrases/questions from the toolkit.
-- Keep each bullet under 14 words.
-
-## Stuck Points framework (relational)
-- One bullet only.
-- If relevant: identify the relational move (acknowledge/get curious/summarize-plan).
-- If not relevant: write exactly "No relational stuck point identified."
-
-End with a short line: **Suggested next step:** (one clear action).
-
-Readability and brevity rules (strict):
-- Keep total response under 140 words.
-- No paragraphs longer than one line.
-- No filler, no repetition, no background explanation unless asked.
-- Write for rapid point-of-care scanning by primary care clinicians.
-
-Format: Markdown with bullets only under section headers. Do not reveal chain-of-thought or internal reasoning; give only the final answer.`;
-
+// Build toolkit reference from default knowledge chunks
 function buildToolkitReferenceForPrompt(): string {
   return DEFAULT_KNOWLEDGE_CHUNKS.map(
     (chunk) => `### ${chunk.source}\n\n${chunk.content}`
   ).join('\n\n---\n\n');
 }
 
-function buildMinimaxSystemPrompt(): string {
-  return `${SYSTEM_PROMPT}
+// Build full MiniMax system prompt with knowledge embedded
+function buildMinimaxSystemPrompt(systemPrompt: string, knowledgeContent: string): string {
+  return `${systemPrompt}
 
 ---
 
 ## Toolkit reference (Ariadne Labs Essential Communications)
 The following excerpts are the authoritative in-app reference. Your answers must follow this material: same terminology, phases, and sample language. Do not drift into general advice that is not reflected here.
 
-${buildToolkitReferenceForPrompt()}
+${knowledgeContent || buildToolkitReferenceForPrompt()}
 
 ---
 
@@ -211,14 +156,14 @@ async function generateWithMinimax(
   return sanitizeModelOutput(rawText);
 }
 
-function buildStuckModeSystemPrompt(): string {
-  return `${STUCK_MODE_PROMPT}
+function buildStuckModeSystemPrompt(stuckModePrompt: string, knowledgeContent: string): string {
+  return `${stuckModePrompt}
 
 ---
 
 ## Toolkit reference (Ariadne Labs Essential Communications)
 
-${buildToolkitReferenceForPrompt()}
+${knowledgeContent || buildToolkitReferenceForPrompt()}
 
 ---
 
@@ -236,6 +181,9 @@ export async function generateClinicalResponseWithHistory(
   isStuck?: boolean
 ) {
   try {
+    // Load prompt settings from Firestore
+    const promptSettings = await getPromptSettings();
+    
     const contents = history.map(msg => ({
       role: msg.role === 'assistant' ? 'model' : 'user',
       parts: [{ text: msg.content }]
@@ -245,14 +193,30 @@ export async function generateClinicalResponseWithHistory(
       ? `\n\n[System Note: The user is currently focusing on the "${currentPhase}" phase of the dementia care framework. Please tailor your response to this phase.]`
       : '';
 
-    // Determine which system prompt to use based on stuck mode
-    const systemPrompt = isStuck ? buildStuckModeSystemPrompt() : SYSTEM_PROMPT;
+    // Use configurable prompts, fallback to defaults
+    const systemPrompt = isStuck 
+      ? buildStuckModeSystemPrompt(
+          promptSettings.stuckModePrompt || DEFAULT_STUCK_MODE_PROMPT,
+          promptSettings.knowledgeContent || DEFAULT_KNOWLEDGE_CONTENT
+        )
+      : promptSettings.systemPrompt || SYSTEM_PROMPT;
 
     // MiniMax: no RAG — full toolkit text is embedded in the system prompt.
     if (LLM_PROVIDER === 'minimax') {
       const userContent = query + phaseContext;
       const minimaxMessages = [
-        { role: 'system', content: isStuck ? buildStuckModeSystemPrompt() : buildMinimaxSystemPrompt() },
+        { 
+          role: 'system', 
+          content: isStuck 
+            ? buildStuckModeSystemPrompt(
+                promptSettings.stuckModePrompt || DEFAULT_STUCK_MODE_PROMPT,
+                promptSettings.knowledgeContent || DEFAULT_KNOWLEDGE_CONTENT
+              )
+            : buildMinimaxSystemPrompt(
+                promptSettings.systemPrompt || SYSTEM_PROMPT,
+                promptSettings.knowledgeContent || DEFAULT_KNOWLEDGE_CONTENT
+              )
+        },
         ...history.map((msg) => ({
           role: msg.role,
           content: msg.content,

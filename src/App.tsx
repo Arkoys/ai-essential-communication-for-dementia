@@ -6,7 +6,9 @@ import { SidebarHistory } from './components/SidebarHistory';
 import { ChatWindow } from './components/ChatWindow';
 import { NavigationMap, PhaseName } from './components/NavigationMap';
 import { AdminPanel } from './components/AdminPanel';
+import { SettingsPanel } from './components/SettingsPanel';
 import { generateClinicalResponseWithHistory } from './lib/llm';
+import { getPromptSettings, PromptSettings, DEFAULT_SUGGESTED_PROMPTS } from './lib/promptSettings';
 import { Stethoscope, Menu } from 'lucide-react';
 import { cn } from './lib/utils';
 
@@ -98,9 +100,30 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(false);
   
   const [showAdminPanel, setShowAdminPanel] = useState(false);
+  const [showSettingsPanel, setShowSettingsPanel] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [promptSettings, setPromptSettings] = useState<PromptSettings | null>(null);
+  
+  // Load prompt settings on mount
+  useEffect(() => {
+    const loadPromptSettings = async () => {
+      try {
+        const settings = await getPromptSettings();
+        setPromptSettings(settings);
+      } catch (error) {
+        console.error("Error loading prompt settings:", error);
+        setPromptSettings({
+          systemPrompt: '',
+          stuckModePrompt: '',
+          suggestedPrompts: DEFAULT_SUGGESTED_PROMPTS,
+          knowledgeContent: '',
+        });
+      }
+    };
+    loadPromptSettings();
+  }, []);
 
   const saveFrameworkState = async (
     conversationId: string,
@@ -504,6 +527,7 @@ export default function App() {
           onLogout={logOut}
           userEmail={user.email}
           setShowAdminPanel={setShowAdminPanel}
+          setShowSettingsPanel={setShowSettingsPanel}
           onClose={() => setIsSidebarOpen(false)}
         />
       </div>
@@ -533,12 +557,17 @@ export default function App() {
             messages={messages}
             onSendMessage={(content, isStuck) => handleSendMessage(content, isStuck)}
             isLoading={isLoading}
+            suggestedPrompts={promptSettings?.suggestedPrompts || DEFAULT_SUGGESTED_PROMPTS}
           />
         </div>
       </div>
       
       {showAdminPanel && user.email === 'victor.negadi@gmail.com' && (
         <AdminPanel onClose={() => setShowAdminPanel(false)} />
+      )}
+      
+      {showSettingsPanel && (
+        <SettingsPanel onClose={() => setShowSettingsPanel(false)} />
       )}
     </div>
   );
