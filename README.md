@@ -1,10 +1,10 @@
-# Dementia Clinical Assistant
+# Dementia Clinical Coach
 
 A clinical decision support web application designed for primary care providers. This tool assists them in the recognition, evaluation, and diagnosis of dementia by leveraging evidence-based medical resources.
 
 ## 🌟 Features
 
-- **Specialized AI Assistant:** A chatbot powered by the Google Gemini API, configured to provide relevant clinical guidance.
+- **Specialized AI Coach:** A chatbot powered by the Google Gemini API, configured to provide relevant clinical guidance.
 - **Integrated Knowledge Base (RAG):** The assistant uses Retrieval-Augmented Generation (RAG) to ground its responses in the Ariadne Labs "Essential Communications Toolkit".
 - **Consultation Management:** Conversation history is saved and organized by session via Firebase.
 - **Navigation Map:** An interface guiding the practitioner through 3 key phases: Recognition, Evaluation, and Diagnosis.

@@ -58,7 +58,7 @@ export function ChatWindow({
           <div className="h-full flex flex-col items-center justify-center p-4 md:p-8 text-center space-y-6 md:space-y-8">
             <div className="space-y-4">
               <h1 className="text-3xl md:text-4xl font-semibold text-zinc-800 dark:text-zinc-200">
-                Dementia Clinical Assistant
+                Dementia Clinical Coach
               </h1>
               <p className="text-zinc-500 dark:text-zinc-400 max-w-lg mx-auto text-sm md:text-base">
                 Evidence-based decision support for primary care providers.
