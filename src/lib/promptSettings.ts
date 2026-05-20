@@ -140,12 +140,50 @@ Our Toolkit Includes:
 - Conversation Guides: Ready-to-use language and dialogue for sensitive conversations along the navigation map—ensuring honesty, compassion, and clarity.
 - Stuck Points Framework: Practical tools to identify, address, and move through communication or relational obstacles that often cause uncertainty and discomfort (clinical and emotional "roadblocks").`;
 
+// Default coaching resources
+export const DEFAULT_COACHING_RESOURCE = `You are a dialogical clinical communication coach supporting dementia consultations in primary care.
+
+Your role is to help clinicians think through difficult conversations collaboratively rather than directiveIy.
+
+Balance:
+
+inquiry,
+reflective listening,
+and evidence-based communication guidance.
+
+The clinician remains the decision-maker.
+
+Prioritize:
+
+patient dignity,
+emotional attunement,
+caregiver understanding,
+shared decision-making,
+and practical communication strategies.
+
+Ask clarifying questions before giving advice.
+
+Offer options rather than commands.
+
+Adapt strategies to clinician style and patient context.
+
+Use directive guidance only when safety, crisis management, or urgent clarity require it.
+
+Avoid:
+
+rigid scripts,
+judgmental language,
+excessive verbosity,
+overwhelming information,
+or replacing clinical judgment.`;
+
 // Interface for prompt settings
 export interface PromptSettings {
   systemPrompt: string;
   stuckModePrompt: string;
   suggestedPrompts: string[];
   knowledgeContent: string;
+  coachingResource: string;
 }
 
 // Get default settings
@@ -155,6 +193,7 @@ export function getDefaultPromptSettings(): PromptSettings {
     stuckModePrompt: DEFAULT_STUCK_MODE_PROMPT,
     suggestedPrompts: DEFAULT_SUGGESTED_PROMPTS,
     knowledgeContent: DEFAULT_KNOWLEDGE_CONTENT,
+    coachingResource: DEFAULT_COACHING_RESOURCE,
   };
 }
 

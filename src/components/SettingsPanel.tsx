@@ -10,7 +10,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
   const [settings, setSettings] = useState<PromptSettings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState<'prompts' | 'knowledge' | 'quick'>('prompts');
+  const [activeTab, setActiveTab] = useState<'prompts' | 'knowledge' | 'quick' | 'coaching'>('prompts');
   const [hasChanges, setHasChanges] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
 
@@ -152,6 +152,17 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
             <MessageSquare size={18} />
             Quick Prompts
           </button>
+          <button
+            onClick={() => setActiveTab('coaching')}
+            className={`flex items-center gap-2 px-6 py-3 font-medium transition-colors ${
+              activeTab === 'coaching'
+                ? 'text-orange-600 border-b-2 border-orange-600 bg-white dark:bg-zinc-950'
+                : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
+            }`}
+          >
+            <BookOpen size={18} />
+            Coaching Resources
+          </button>
         </div>
 
         {/* Content */}
@@ -263,6 +274,36 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
                 </div>
                 <p className="text-xs text-zinc-500">
                   These appear as buttons on the chat home screen.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'coaching' && (
+            <div className="space-y-6">
+              {/* Coaching Resources */}
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <label className="text-lg font-semibold flex items-center gap-2">
+                    <BookOpen size={20} className="text-teal-500" />
+                    Three Approaches to Coaching
+                  </label>
+                  <div className="flex items-center gap-2 text-xs text-teal-600 dark:text-teal-400 bg-teal-50 dark:bg-teal-900/30 px-2 py-1 rounded-full">
+                    <Info size={12} />
+                    Coaching resource
+                  </div>
+                </div>
+                <div className="bg-teal-50 dark:bg-teal-900/20 border border-teal-200 dark:border-teal-800/50 rounded-lg p-3 text-sm text-teal-800 dark:text-teal-200">
+                  <strong>📊 Influence:</strong> Defines the coaching approach for clinical communication support. Guides the AI's balance between inquiry, reflective listening, and evidence-based guidance.
+                </div>
+                <textarea
+                  value={settings.coachingResource || ''}
+                  onChange={(e) => updateField('coachingResource', e.target.value)}
+                  className="w-full h-96 p-4 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 font-mono text-sm resize-y"
+                  placeholder="Enter coaching resource..."
+                />
+                <p className="text-xs text-zinc-500">
+                  {(settings.coachingResource || '').length} characters
                 </p>
               </div>
             </div>
