@@ -8,6 +8,7 @@ interface Message {
   role: 'user' | 'assistant';
   content: string;
   isStuck?: boolean;
+  isInsufficientInfo?: boolean;
 }
 
 import { DEFAULT_SUGGESTED_PROMPTS } from '../lib/promptSettings';
@@ -80,7 +81,7 @@ export function ChatWindow({
         ) : (
           <div className="pb-36 md:pb-32">
             {messages.map((msg) => (
-              <MessageBubble key={msg.id} role={msg.role} content={msg.content} isStuck={msg.isStuck} />
+              <MessageBubble key={msg.id} role={msg.role} content={msg.content} isStuck={msg.isStuck} isInsufficientInfo={msg.isInsufficientInfo} />
             ))}
             {isLoading && (
               <div className="flex w-full py-4 md:py-6 bg-zinc-50 dark:bg-zinc-900">

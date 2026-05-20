@@ -87,13 +87,15 @@ function isValidMessage(data) {
            'role',
            'content',
            'createdAt',
-           'isStuck'
+           'isStuck',
+           'isInsufficientInfo'
          ]) &&
          data.conversationId is string && data.conversationId.size() > 0 && data.conversationId.size() < 100 &&
          data.role is string && (data.role == 'user' || data.role == 'assistant') &&
          data.content is string && data.content.size() > 0 && data.content.size() < 50000 &&
          data.createdAt is timestamp &&
-         (!('isStuck' in data) || data.isStuck is bool);
+         (!('isStuck' in data) || data.isStuck is bool) &&
+         (!('isInsufficientInfo' in data) || data.isInsufficientInfo is bool);
 }
 
     // ===============================================================
