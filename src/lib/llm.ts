@@ -273,7 +273,12 @@ Your input needs more context for me to help you effectively.
 - ✅ "Patient showing memory lapses - what questions should I ask during evaluation?"
 
 - ❌ "confused patient"
-- ✅ "Wife of 80-year-old patient concerned he's repeating stories and getting lost"`;
+- ✅ "Wife of 80-year-old patient concerned he's repeating stories and getting lost"
+
+**Also:**
+
+💡 You can switch to Stuck Mode for a more open conversation.`;
+
 }
 
 async function generateWithMinimax(
