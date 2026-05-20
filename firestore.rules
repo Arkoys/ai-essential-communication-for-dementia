@@ -13,6 +13,9 @@ service cloud.firestore {
     //   - title: string (required) - Title of the conversation
     //   - createdAt: timestamp (required, immutable) - Creation time
     //   - updatedAt: timestamp (required) - Last update time
+    //   - currentPhase: string (optional) - 'Recognition', 'Evaluation', or 'Diagnosis'
+    //   - currentStep: string (optional) - Current step within phase
+    //   - lastDetectedPhase: string (optional) - Last detected framework phase
     //
     // Collection: conversations/{conversationId}/messages
     // Document ID: auto-generated
@@ -21,6 +24,24 @@ service cloud.firestore {
     //   - role: string (required, immutable, enum: 'user', 'assistant') - Sender role
     //   - content: string (required, immutable) - Message text
     //   - createdAt: timestamp (required, immutable) - Creation time
+    //   - isStuck: bool (optional) - Message was generated in stuck mode
+    //   - isInsufficientInfo: bool (optional) - Input was insufficient
+    //
+    // Collection: knowledge_chunks
+    // Document ID: auto-generated
+    // Fields:
+    //   - source: string (required) - Source of the knowledge chunk
+    //   - content: string (required) - Content of the chunk
+    //   - embedding: array (required) - Vector embedding for RAG
+    //
+    // Collection: app_settings
+    // Document ID: e.g., 'prompts'
+    // Fields:
+    //   - systemPrompt: string (required) - Main system prompt
+    //   - stuckModePrompt: string (required) - Stuck mode prompt
+    //   - suggestedPrompts: array (required) - Quick action prompts
+    //   - knowledgeContent: string (required) - Embedded toolkit content
+    //   - coachingResource: string (optional) - Coaching resource content
     //
     // ===============================================================
 
