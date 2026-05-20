@@ -7,7 +7,7 @@ import { ChatWindow } from './components/ChatWindow';
 import { NavigationMap, PhaseName } from './components/NavigationMap';
 import { AdminPanel } from './components/AdminPanel';
 import { SettingsPanel } from './components/SettingsPanel';
-import { generateClinicalResponseWithHistory } from './lib/llm';
+import { generateClinicalResponseWithHistory, isInsufficientInfoResponse, isInsufficientUserInput, getInsufficientInfoGuidance } from './lib/llm';
 import { getPromptSettings, PromptSettings, DEFAULT_SUGGESTED_PROMPTS } from './lib/promptSettings';
 import { Stethoscope, Menu } from 'lucide-react';
 import { cn } from './lib/utils';
@@ -21,6 +21,7 @@ interface Message {
   content: string;
   createdAt: Date;
   isStuck?: boolean;
+  isInsufficientInfo?: boolean;
 }
 
 interface Conversation {
@@ -237,6 +238,7 @@ export default function App() {
           content: data.content,
           createdAt: data.createdAt?.toDate() || new Date(),
           isStuck: data.isStuck || false,
+          isInsufficientInfo: data.isInsufficientInfo || false,
         });
       });
       setMessages(msgs);
@@ -347,18 +349,44 @@ export default function App() {
         createdAt: serverTimestamp(),
       });
 
-      // Prepare history for LLM
-      const history = messages.map(m => ({ role: m.role, content: m.content }));
+      // Check if user input is insufficient BEFORE calling LLM
+      // Skip this check for stuck mode - always allow LLM call in stuck mode
+      const inputIsInsufficient = isStuck ? false : isInsufficientUserInput(content);
       
-      // Generate response
-      const responseText = await generateClinicalResponseWithHistory(
-        content,
-        history,
-        effectivePhase,
-        isStuck
-      );
+      let finalContent: string;
+      let isInsufficientInfo: boolean;
+      let detectedPhase: PhaseName | null = null;
+      let detectedStep: string | null = null;
+      
+      if (inputIsInsufficient) {
+        // Skip LLM call - return guidance directly
+        finalContent = getInsufficientInfoGuidance();
+        isInsufficientInfo = true;
+      } else {
+        // Prepare history for LLM
+        const history = messages.map(m => ({ role: m.role, content: m.content }));
+        
+        // Generate response
+        const responseText = await generateClinicalResponseWithHistory(
+          content,
+          history,
+          effectivePhase,
+          isStuck
+        );
 
-      const { phase: detectedPhase, step: detectedStep } = parseFrameworkPosition(responseText);
+        // Check if the response indicates insufficient information
+        const responseIsInsufficient = isInsufficientInfoResponse(responseText);
+        
+        // If insufficient info detected, replace with guidance message
+        finalContent = responseIsInsufficient ? getInsufficientInfoGuidance() : responseText;
+        isInsufficientInfo = responseIsInsufficient;
+
+        // Parse framework position from LLM response
+        const parsed = parseFrameworkPosition(responseText);
+        detectedPhase = parsed.phase;
+        detectedStep = parsed.step;
+      }
+
       let nextPhase = currentPhase;
       let nextStep = currentStep;
       let nextDetectedPhase = lastDetectedPhase;
@@ -377,8 +405,9 @@ export default function App() {
       await addDoc(collection(db, `conversations/${convId}/messages`), {
         conversationId: convId,
         role: 'assistant',
-        content: responseText,
+        content: finalContent,
         isStuck: isStuck || false,
+        isInsufficientInfo: isInsufficientInfo,
         createdAt: serverTimestamp(),
       });
 

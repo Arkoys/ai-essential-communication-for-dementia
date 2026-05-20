@@ -117,6 +117,165 @@ function sanitizeModelOutput(text: string): string {
     .trim();
 }
 
+// Detection patterns for insufficient information responses
+const INSUFFICIENT_PATTERNS = [
+  /^insufficient information$/im,
+  /insufficient information in provided resources/i,
+  /not in the provided resources/i,
+  /not supported by the context/i,
+  /cannot provide.*because.*not in/i,
+  /cannot answer.*not enough/i,
+  /^insufficient$/im,
+  /the context.*not sufficient/i,
+  /not enough information/i,
+];
+
+// Check if the response indicates insufficient information
+export function isInsufficientInfoResponse(text: string): boolean {
+  const lowerText = text.toLowerCase();
+  
+  // Primary check: any mention of "insufficient" in the text
+  const hasInsufficient = lowerText.includes('insufficient');
+  
+  // Check if response has full framework format (3+ section headers)
+  const sectionCount = (text.match(/^## /gm) || []).length;
+  const hasFullFormat = sectionCount >= 3;
+  
+  // If contains "insufficient" but NOT full framework format → flag as insufficient
+  // This catches any response like "Insufficient information to determine..."
+  // but allows proper formatted responses through
+  if (hasInsufficient && !hasFullFormat) {
+    return true;
+  }
+  
+  // Also check for other "not enough context" patterns
+  if (lowerText.includes('not enough information') ||
+      lowerText.includes('cannot determine') ||
+      lowerText.includes('not enough context') ||
+      lowerText.includes('unable to determine')) {
+    return true;
+  }
+  
+  return false;
+}
+
+// Patterns for detecting insufficient user input
+const VAGUE_INPUT_PATTERNS = [
+  /^help$/i,
+  /^test$/i,
+  /^hi$/i,
+  /^hello$/i,
+  /^hey$/i,
+  /^dementia$/i,
+  /^patient$/i,
+  /^memory$/i,
+  /^confused$/i,
+  /^\?$/i,
+  /^.$/i,
+];
+
+const VAGUE_KEYWORDS = [
+  'help me',
+  'what to do',
+  'what should i',
+  'not sure',
+  'confused',
+  'don\'t know',
+  'idk',
+  'tell me about',
+  'explain',
+];
+
+// Check if user input is insufficient/lacking context
+// This is a SEPARATE lightweight check that runs BEFORE the main LLM call
+export function isInsufficientUserInput(query: string): boolean {
+  const trimmed = query.trim().toLowerCase();
+  
+  // DEFINITE insufficient patterns (immediate fail)
+  const immediateFailPatterns = [
+    /^help$/i, /^test$/i, /^hi$/i, /^hello$/i, /^hey$/i,
+    /^dementia$/i, /^patient$/i, /^memory$/i, /^confused$/i,
+    /^.$/, /^\?$/, /^ok$/i, /^yes$/i, /^no$/i, /^maybe$/i,
+  ];
+  
+  if (immediateFailPatterns.some(p => p.test(trimmed))) {
+    return true;
+  }
+  
+  // Check if input is very short
+  if (trimmed.length < 10) {
+    return true;
+  }
+  
+  // Check for vague greeting/question patterns
+  if (trimmed.match(/^(hi|hello|hey|help|please)/i) && trimmed.length < 20) {
+    return true;
+  }
+  
+  // Check for generic words without context
+  const genericPatterns = [
+    'what to do', 'what should i', 'not sure', 'don\'t know',
+    'idk', 'tell me about', 'explain', 'what is', 'how do',
+  ];
+  
+  if (genericPatterns.some(p => trimmed.includes(p)) && trimmed.length < 60) {
+    return true;
+  }
+  
+  // Score the input for specificity
+  let specificityScore = 0;
+  
+  // Positive indicators (add points)
+  const hasAge = /\d{1,3}\s*(year|yr|yo|y\/o|age)/i.test(trimmed);
+  if (hasAge) specificityScore += 2;
+  
+  const hasSymptoms = /forgot|confus|memory|cognitive|behavior|agitat|repeat|lost|wand|disorient|bathroom|kitchen|repeat/i.test(trimmed);
+  if (hasSymptoms) specificityScore += 2;
+  
+  const hasFamily = /wife|husband|son|daughter|family|carer|caregiver|partner|sibling/i.test(trimmed);
+  if (hasFamily) specificityScore += 1;
+  
+  const hasMedical = /medication|appointment|doctor|mri|ct|scan|test|diagnosis|moca|mmse/i.test(trimmed);
+  if (hasMedical) specificityScore += 1;
+  
+  const hasSpecificDetails = /monday|tuesday|wednesday|thursday|friday|saturday|sunday|this morning|yesterday|last week/i.test(trimmed);
+  if (hasSpecificDetails) specificityScore += 1;
+  
+  // Negative indicators (subtract points)
+  if (trimmed.includes('?')) specificityScore -= 1;
+  if (trimmed.match(/^(my|how|what|why|should)/)) specificityScore -= 1;
+  
+  // Final decision
+  // Input needs at least score of 2 OR length > 80 chars to be considered sufficient
+  if (specificityScore < 2 && trimmed.length < 80) {
+    return true;
+  }
+  
+  return false;
+}
+
+// Generate a user guidance message for insufficient information scenarios
+export function getInsufficientInfoGuidance(): string {
+  return `⚠️ **Information not clear enough**
+
+Your input needs more context for me to help you effectively.
+
+**Please provide:**
+• Patient's age and general situation
+• Specific symptoms or concerns
+• What you're trying to accomplish (assessment, communication, diagnosis)
+
+**Examples of better prompts:**
+- ❌ "help" 
+- ✅ "My 78-year-old patient forgot their medication and seems confused about their appointments"
+
+- ❌ "dementia" 
+- ✅ "Patient showing memory lapses - what questions should I ask during evaluation?"
+
+- ❌ "confused patient"
+- ✅ "Wife of 80-year-old patient concerned he's repeating stories and getting lost"`;
+}
+
 async function generateWithMinimax(
   messages: { role: string; content: string }[]
 ) {
