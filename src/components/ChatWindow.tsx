@@ -59,10 +59,10 @@ export function ChatWindow({
 
   return (
     <div className="flex flex-col h-full bg-white dark:bg-zinc-950">
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto ">
         {messages.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center p-6 md:p-12 text-center space-y-6">
-            <div className="space-y-4">
+          <div className="h-full flex flex-col  items-center justify-center p-6 md:p-12 text-center space-y-6">
+            <div className="space-y-4  md:pb-12">
               <h1 className="text-3xl md:text-4xl font-semibold text-zinc-800 dark:text-zinc-200">
                 Dementia Clinical Coach
               </h1>
@@ -71,7 +71,7 @@ export function ChatWindow({
               </p>
             </div>
             
-            <div className="flex flex-wrap justify-center gap-2 md:gap-3 max-w-2xl mt-16">
+            <div className="flex flex-wrap justify-center gap-2 md:gap-3 max-w-2xl py-0 -mt-10">
               {suggestedPrompts.map((prompt) => (
                 <button
                   key={prompt}
