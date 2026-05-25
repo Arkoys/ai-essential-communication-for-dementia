@@ -71,7 +71,7 @@ export function ChatWindow({
               </p>
             </div>
             
-            <div className="flex flex-wrap justify-center gap-2 md:gap-3 max-w-2xl mt-8">
+            <div className="flex flex-wrap justify-center gap-2 md:gap-3 max-w-2xl mt-16">
               {suggestedPrompts.map((prompt) => (
                 <button
                   key={prompt}
