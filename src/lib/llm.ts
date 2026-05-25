@@ -372,8 +372,8 @@ export async function generateClinicalResponseWithHistory(
         )
       : promptSettings.systemPrompt || SYSTEM_PROMPT;
 
-    // Determine provider from Firestore settings, fallback to env var, then default to gemini
-    const provider = promptSettings.provider || (process.env.LLM_PROVIDER || 'gemini').toLowerCase();
+    // Determine provider from Firestore settings, fallback to env var, then default to harvard
+    const provider = promptSettings.provider || (process.env.LLM_PROVIDER || 'harvard').toLowerCase();
     
     // Harvard: OpenAI-compatible gateway with api-key auth
     if (provider === 'harvard') {

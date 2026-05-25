@@ -5,7 +5,7 @@
 /**
  * Available AI providers in the application
  */
-export type AIProvider = 'gemini' | 'minimax' | 'harvard';
+export type AIProvider = 'minimax' | 'harvard';
 
 /**
  * Configuration for each provider
@@ -23,14 +23,6 @@ export interface ProviderConfig {
  * Provider registry with metadata
  */
 export const PROVIDER_REGISTRY: Record<AIProvider, ProviderConfig> = {
-  gemini: {
-    name: 'Google Gemini',
-    description: 'Google\'s Gemini models via Vertex AI',
-    models: ['gemini-3.1-pro-preview', 'gemini-2.5-pro-preview'],
-    requiresApiKey: true,
-    supportsStreaming: true,
-    isConfigured: Boolean(process.env.GEMINI_API_KEY),
-  },
   minimax: {
     name: 'MiniMax',
     description: 'MiniMax text generation models',
