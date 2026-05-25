@@ -346,10 +346,14 @@ export default function App() {
   // Create a new dual conversation
   const handleNewDualConversation = async () => {
     console.log('handleNewDualConversation called');
-    if (!user || !promptSettings) {
-      console.log('Early return: user or promptSettings missing', { user: !!user, promptSettings: !!promptSettings });
+    if (!user) {
+      console.log('Early return: user missing');
       return;
     }
+    
+    // Get provider settings with fallback defaults
+    const primaryProvider = promptSettings?.provider || 'harvard';
+    const secondaryProvider = promptSettings?.dualModeProvider || 'minimax';
     
     try {
       const title = `Dual Mode - ${new Date().toLocaleTimeString()}`;
@@ -359,8 +363,8 @@ export default function App() {
         userId: user.uid,
         title,
         type: 'dual',
-        primaryProvider: promptSettings.provider,
-        secondaryProvider: promptSettings.dualModeProvider,
+        primaryProvider: primaryProvider,
+        secondaryProvider: secondaryProvider,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });

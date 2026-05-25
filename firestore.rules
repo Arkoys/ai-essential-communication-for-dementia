@@ -3,49 +3,6 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     // ===============================================================
-    // Assumed Data Model
-    // ===============================================================
-    //
-    // Collection: conversations
-    // Document ID: auto-generated
-    // Fields:
-    //   - userId: string (required, immutable) - ID of the user who owns the conversation
-    //   - title: string (required) - Title of the conversation
-    //   - createdAt: timestamp (required, immutable) - Creation time
-    //   - updatedAt: timestamp (required) - Last update time
-    //   - currentPhase: string (optional) - 'Recognition', 'Evaluation', or 'Diagnosis'
-    //   - currentStep: string (optional) - Current step within phase
-    //   - lastDetectedPhase: string (optional) - Last detected framework phase
-    //
-    // Collection: conversations/{conversationId}/messages
-    // Document ID: auto-generated
-    // Fields:
-    //   - conversationId: string (required, immutable) - ID of the parent conversation
-    //   - role: string (required, immutable, enum: 'user', 'assistant') - Sender role
-    //   - content: string (required, immutable) - Message text
-    //   - createdAt: timestamp (required, immutable) - Creation time
-    //   - isStuck: bool (optional) - Message was generated in stuck mode
-    //   - isInsufficientInfo: bool (optional) - Input was insufficient
-    //
-    // Collection: knowledge_chunks
-    // Document ID: auto-generated
-    // Fields:
-    //   - source: string (required) - Source of the knowledge chunk
-    //   - content: string (required) - Content of the chunk
-    //   - embedding: array (required) - Vector embedding for RAG
-    //
-    // Collection: app_settings
-    // Document ID: e.g., 'prompts'
-    // Fields:
-    //   - systemPrompt: string (required) - Main system prompt
-    //   - stuckModePrompt: string (required) - Stuck mode prompt
-    //   - suggestedPrompts: array (required) - Quick action prompts
-    //   - knowledgeContent: string (required) - Embedded toolkit content
-    //   - coachingResource: string (optional) - Coaching resource content
-    //
-    // ===============================================================
-
-    // ===============================================================
     // Helper Functions
     // ===============================================================
     function isAuthenticated() {
@@ -64,112 +21,52 @@ service cloud.firestore {
       return request.resource.data.keys().hasAll(fields);
     }
 
-    function hasOnlyAllowedFields(fields) {
-      return request.resource.data.keys().hasOnly(fields);
-    }
-
-    function areImmutableFieldsUnchanged(fields) {
-      return !request.resource.data.diff(resource.data).affectedKeys().hasAny(fields);
-    }
-
     // ===============================================================
-    // Domain Validators
-    // ===============================================================
-    function isValidConversation(data) {
-      return hasOnlyAllowedFields([
-               'userId',
-               'title',
-               'createdAt',
-               'updatedAt',
-               'type',
-               'primaryProvider',
-               'secondaryProvider',
-               'currentPhase',
-               'currentStep',
-               'lastDetectedPhase'
-             ]) &&
-             data.userId is string && data.userId.size() > 0 && data.userId.size() < 100 &&
-             data.title is string && data.title.size() > 0 && data.title.size() < 200 &&
-             data.createdAt is timestamp &&
-             data.updatedAt is timestamp &&
-             (!('currentPhase' in data) ||
-               data.currentPhase == null ||
-               (data.currentPhase is string &&
-                (data.currentPhase == 'Recognition' || data.currentPhase == 'Evaluation' || data.currentPhase == 'Diagnosis'))) &&
-             (!('lastDetectedPhase' in data) ||
-               data.lastDetectedPhase == null ||
-               (data.lastDetectedPhase is string &&
-                (data.lastDetectedPhase == 'Recognition' || data.lastDetectedPhase == 'Evaluation' || data.lastDetectedPhase == 'Diagnosis'))) &&
-             (!('currentStep' in data) ||
-               data.currentStep == null ||
-               (data.currentStep is string && data.currentStep.size() > 0 && data.currentStep.size() < 200)) &&
-             (!('type' in data) ||
-               data.type == null ||
-               (data.type is string && (data.type == 'normal' || data.type == 'dual'))) &&
-             (!('primaryProvider' in data) ||
-               data.primaryProvider == null ||
-               data.primaryProvider is string) &&
-             (!('secondaryProvider' in data) ||
-               data.secondaryProvider == null ||
-               data.secondaryProvider is string);
-    }
-
-function isValidMessage(data) {
-  return hasOnlyAllowedFields([
-           'conversationId',
-           'role',
-           'content',
-           'createdAt',
-           'isStuck',
-           'isInsufficientInfo'
-         ]) &&
-         data.conversationId is string && data.conversationId.size() > 0 && data.conversationId.size() < 100 &&
-         data.role is string && (data.role == 'user' || data.role == 'assistant') &&
-         data.content is string && data.content.size() > 0 && data.content.size() < 50000 &&
-         data.createdAt is timestamp &&
-         (!('isStuck' in data) || data.isStuck is bool) &&
-         (!('isInsufficientInfo' in data) || data.isInsufficientInfo is bool);
-}
-
-    // ===============================================================
-    // Rules
+    // Rules for conversations collection
     // ===============================================================
     match /conversations/{conversationId} {
+      // Allow read if the user owns the conversation
       allow read: if isOwner(resource.data.userId);
+      
+      // Allow create if authenticated and data is valid
       allow create: if isAuthenticated() && 
-                    hasRequiredFields(['userId', 'title', 'createdAt', 'updatedAt']) &&
-                    isValidConversation(request.resource.data) &&
-                    isOwner(request.resource.data.userId);
-      allow update: if isOwner(resource.data.userId) &&
-                    hasRequiredFields(['userId', 'title', 'createdAt', 'updatedAt']) &&
-                    isValidConversation(request.resource.data) &&
-                    areImmutableFieldsUnchanged(['userId', 'createdAt']);
+                    hasRequiredFields(['userId', 'title', 'createdAt', 'updatedAt']);
+      
+      // Allow update if owner
+      allow update: if isOwner(resource.data.userId);
+      
+      // Allow delete if owner
       allow delete: if isOwner(resource.data.userId);
 
+      // Messages subcollection
       match /messages/{messageId} {
         // Allow read if the user owns the parent conversation
         allow read: if isOwner(get(/databases/$(database)/documents/conversations/$(conversationId)).data.userId);
         
-        // Allow create if the user owns the parent conversation, and the message references it correctly
+        // Allow create if authenticated and owns conversation
         allow create: if isAuthenticated() &&
                       isOwner(get(/databases/$(database)/documents/conversations/$(conversationId)).data.userId) &&
-                      hasRequiredFields(['conversationId', 'role', 'content', 'createdAt']) &&
-                      isValidMessage(request.resource.data) &&
-                      request.resource.data.conversationId == conversationId;
+                      hasRequiredFields(['conversationId', 'role', 'content', 'createdAt']);
                       
         // Messages are immutable once created
         allow update: if false;
         
-        // Allow delete if the user owns the parent conversation
+        // Allow delete if owns conversation
         allow delete: if isOwner(get(/databases/$(database)/documents/conversations/$(conversationId)).data.userId);
       }
     }
 
+    // ===============================================================
+    // Rules for knowledge_chunks collection
+    // ===============================================================
     match /knowledge_chunks/{chunkId} {
       allow read: if isAuthenticated();
       allow write: if isAdmin();
     }
 
+    // ===============================================================
+    // Rules for app_settings collection
+    // ===============================================================
     match /app_settings/{settingId} {
       allow read: if isAuthenticated();
       allow write: if isAdmin();
