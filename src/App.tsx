@@ -431,23 +431,32 @@ export default function App() {
         finalContent = getInsufficientInfoGuidance();
         isInsufficientInfo = true;
       } else {
-        const history = messages.map(m => ({ role: m.role, content: m.content }));
+        // Get current messages for history
+        const currentMessages = messages.map(m => ({ role: m.role, content: m.content }));
         
-        const responseText = await generateClinicalResponseWithHistory(
-          content,
-          history,
-          effectivePhase,
-          isStuck
-        );
+        try {
+          const responseText = await generateClinicalResponseWithHistory(
+            content,
+            currentMessages,
+            effectivePhase,
+            isStuck
+          );
 
-        const responseIsInsufficient = isInsufficientInfoResponse(responseText);
-        
-        finalContent = responseIsInsufficient ? getInsufficientInfoGuidance() : responseText;
-        isInsufficientInfo = responseIsInsufficient;
+          const responseIsInsufficient = isInsufficientInfoResponse(responseText);
+          
+          finalContent = responseIsInsufficient ? getInsufficientInfoGuidance() : responseText;
+          isInsufficientInfo = responseIsInsufficient;
 
-        const parsed = parseFrameworkPosition(responseText);
-        detectedPhase = parsed.phase;
-        detectedStep = parsed.step;
+          const parsed = parseFrameworkPosition(responseText);
+          detectedPhase = parsed.phase;
+          detectedStep = parsed.step;
+        } catch (llmError) {
+          console.error('LLM Error:', llmError);
+          // Show error to user
+          const errorMessage = llmError instanceof Error ? llmError.message : 'Failed to generate response';
+          finalContent = `❌ **Error:** ${errorMessage}\n\nPlease check your API configuration and try again.`;
+          isInsufficientInfo = false;
+        }
       }
 
       let nextPhase = currentPhase;
