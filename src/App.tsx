@@ -98,7 +98,6 @@ export default function App() {
   
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
-  const [activeConversation, setActiveConversation] = useState<Conversation | null>(null);
   
   const [messages, setMessages] = useState<Message[]>([]);
   const [currentPhase, setCurrentPhase] = useState<PhaseName | null>(null);
@@ -113,7 +112,7 @@ export default function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [promptSettings, setPromptSettings] = useState<PromptSettings | null>(null);
   
-  // Dual mode state - per conversation, not global
+  // Dual mode state
   const [dualMessages, setDualMessages] = useState<{
     primary: Message[];
     secondary: Message[];
@@ -133,7 +132,6 @@ export default function App() {
         console.error("Error loading prompt settings:", error);
         setPromptSettings({
           provider: 'harvard',
-          dualMode: false,
           dualModeProvider: 'minimax',
           systemPrompt: '',
           stuckModePrompt: '',
@@ -230,14 +228,6 @@ export default function App() {
         });
       });
       setConversations(convos);
-      
-      // Update active conversation if it changed
-      if (activeConversationId) {
-        const updated = convos.find(c => c.id === activeConversationId);
-        if (updated && updated.id !== activeConversation?.id) {
-          setActiveConversation(updated);
-        }
-      }
     }, (error) => {
       handleFirestoreError(error, OperationType.LIST, 'conversations');
     });
@@ -245,14 +235,20 @@ export default function App() {
     return () => unsubscribe();
   }, [user, isAuthReady]);
 
+  // Get active conversation from conversations array
+  const activeConversation = conversations.find(c => c.id === activeConversationId) || null;
+
   // Handle conversation selection
   const handleSelectConversation = (id: string) => {
-    // Clear dual messages when switching conversations
+    // Clear state when switching
+    setMessages([]);
     setDualMessages({ primary: [], secondary: [] });
     setDualLoading({ primary: false, secondary: false });
+    setCurrentPhase(null);
+    setCurrentStep(null);
+    setLastDetectedPhase(null);
     setActiveConversationId(id);
-    const conv = conversations.find(c => c.id === id);
-    setActiveConversation(conv || null);
+    setIsSidebarOpen(false);
   };
 
   // Fetch Messages for Active Conversation
@@ -338,14 +334,13 @@ export default function App() {
   const effectiveDetectedPhase: PhaseName | null =
     lastDetectedPhase || currentPhase || inferredFromOutput.phase || null;
 
-  const handleNewConversation = (type: 'normal' | 'dual' = 'normal') => {
+  const handleNewConversation = () => {
     setActiveConversationId(null);
     setMessages([]);
     setCurrentPhase(null);
     setCurrentStep(null);
     setLastDetectedPhase(null);
     setDualMessages({ primary: [], secondary: [] });
-    setActiveConversation(null);
   };
 
   // Create a new dual conversation
@@ -363,8 +358,15 @@ export default function App() {
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
-      setActiveConversationId(convRef.id);
+      
+      // Clear dual messages and set new conversation
       setDualMessages({ primary: [], secondary: [] });
+      setDualLoading({ primary: false, secondary: false });
+      setActiveConversationId(convRef.id);
+      setMessages([]);
+      setCurrentPhase(null);
+      setCurrentStep(null);
+      setLastDetectedPhase(null);
       setIsSidebarOpen(false);
     } catch (error) {
       console.error("Error creating dual conversation:", error);
@@ -693,7 +695,7 @@ export default function App() {
           conversations={conversations}
           activeId={activeConversationId}
           onSelect={handleSelectConversation}
-          onNew={() => handleNewConversation('normal')}
+          onNew={handleNewConversation}
           onNewDual={handleNewDualConversation}
           onDelete={handleDeleteConversation}
           onLogout={logOut}
