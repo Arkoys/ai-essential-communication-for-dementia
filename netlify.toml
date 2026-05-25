@@ -9,6 +9,16 @@
 
 # Redirect API calls to serverless functions
 [[redirects]]
+  from = "/api/harvard"
+  to = "/.netlify/functions/harvard"
+  status = 200
+
+[[redirects]]
+  from = "/api/harvardResponses"
+  to = "/.netlify/functions/harvardResponses"
+  status = 200
+
+[[redirects]]
   from = "/api/*"
   to = "/.netlify/functions/:splat"
   status = 200
