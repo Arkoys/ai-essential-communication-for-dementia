@@ -86,18 +86,17 @@ export function SidebarHistory({
             {isOpen && "New Consultation"}
           </button>
           
-          {isOpen && (
-            <button
-              onClick={() => {
-                onNewDual();
-                onClose?.();
-              }}
-              className="flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-2 py-2 rounded-lg transition-colors font-medium"
-            >
-              <Columns2 size={18} />
-              {isOpen && "Dual Mode"}
-            </button>
-          )}
+          <button
+            onClick={() => {
+              console.log('Dual Mode button clicked');
+              onNewDual();
+              onClose?.();
+            }}
+            className="flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-2 py-2 rounded-lg transition-colors font-medium"
+          >
+            <Columns2 size={18} />
+            {isOpen && "Dual Mode"}
+          </button>
         </div>
       </div>
 

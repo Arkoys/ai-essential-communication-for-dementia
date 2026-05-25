@@ -345,10 +345,16 @@ export default function App() {
 
   // Create a new dual conversation
   const handleNewDualConversation = async () => {
-    if (!user || !promptSettings) return;
+    console.log('handleNewDualConversation called');
+    if (!user || !promptSettings) {
+      console.log('Early return: user or promptSettings missing', { user: !!user, promptSettings: !!promptSettings });
+      return;
+    }
     
     try {
       const title = `Dual Mode - ${new Date().toLocaleTimeString()}`;
+      console.log('Creating dual conversation with title:', title);
+      
       const convRef = await addDoc(collection(db, 'conversations'), {
         userId: user.uid,
         title,
@@ -359,6 +365,8 @@ export default function App() {
         updatedAt: serverTimestamp(),
       });
       
+      console.log('Created conversation with id:', convRef.id);
+      
       // Clear dual messages and set new conversation
       setDualMessages({ primary: [], secondary: [] });
       setDualLoading({ primary: false, secondary: false });
@@ -368,6 +376,8 @@ export default function App() {
       setCurrentStep(null);
       setLastDetectedPhase(null);
       setIsSidebarOpen(false);
+      
+      console.log('State updated, conversation should be active now');
     } catch (error) {
       console.error("Error creating dual conversation:", error);
     }
