@@ -4,6 +4,8 @@ import { collection, query, where, orderBy, onSnapshot, addDoc, serverTimestamp,
 import { auth, db, signInWithGoogle, logOut, handleFirestoreError, OperationType } from './firebase';
 import { SidebarHistory } from './components/SidebarHistory';
 import { ChatWindow } from './components/ChatWindow';
+import { DualChatView } from './components/DualChatView';
+import { DualInputForm } from './components/DualInputForm';
 import { NavigationMap, PhaseName } from './components/NavigationMap';
 import { AdminPanel } from './components/AdminPanel';
 import { SettingsPanel } from './components/SettingsPanel';
@@ -106,6 +108,16 @@ export default function App() {
   const [loginError, setLoginError] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [promptSettings, setPromptSettings] = useState<PromptSettings | null>(null);
+  
+  // Dual mode state
+  const [dualMessages, setDualMessages] = useState<{
+    primary: Message[];
+    secondary: Message[];
+  }>({ primary: [], secondary: [] });
+  const [dualLoading, setDualLoading] = useState<{
+    primary: boolean;
+    secondary: boolean;
+  }>({ primary: false, secondary: false });
   
   // Load prompt settings on mount
   useEffect(() => {
@@ -466,6 +478,87 @@ export default function App() {
     handleSendMessage(prompt);
   };
 
+  // Dual mode: send message to both providers
+  const handleDualSendMessage = async (content: string, isStuck?: boolean) => {
+    if (!user || !promptSettings?.dualMode) return;
+    
+    const primaryProvider = promptSettings.provider;
+    const secondaryProvider = promptSettings.dualModeProvider;
+    
+    // Add user message to both conversations
+    const userMsgPrimary: Message = {
+      id: `user-${Date.now()}-primary`,
+      role: 'user',
+      content,
+      createdAt: new Date(),
+    };
+    const userMsgSecondary: Message = {
+      id: `user-${Date.now()}-secondary`,
+      role: 'user',
+      content,
+      createdAt: new Date(),
+    };
+    
+    setDualMessages(prev => ({
+      primary: [...prev.primary, userMsgPrimary],
+      secondary: [...prev.secondary, userMsgSecondary],
+    }));
+    
+    setDualLoading({ primary: true, secondary: true });
+
+    try {
+      // Run both models in parallel
+      const [primaryResponse, secondaryResponse] = await Promise.allSettled([
+        generateClinicalResponseWithHistory(content, [], null, isStuck, primaryProvider),
+        generateClinicalResponseWithHistory(content, [], null, isStuck, secondaryProvider),
+      ]);
+
+      // Handle primary response
+      if (primaryResponse.status === 'fulfilled') {
+        const assistantMsgPrimary: Message = {
+          id: `assistant-${Date.now()}-primary`,
+          role: 'assistant',
+          content: primaryResponse.value,
+          createdAt: new Date(),
+        };
+        setDualMessages(prev => ({ ...prev, primary: [...prev.primary, assistantMsgPrimary] }));
+      } else {
+        const errorMsgPrimary: Message = {
+          id: `error-${Date.now()}-primary`,
+          role: 'assistant',
+          content: `❌ Error: ${primaryResponse.reason?.message || 'Failed to get response from ' + primaryProvider}`,
+          createdAt: new Date(),
+        };
+        setDualMessages(prev => ({ ...prev, primary: [...prev.primary, errorMsgPrimary] }));
+      }
+      setDualLoading(prev => ({ ...prev, primary: false }));
+
+      // Handle secondary response
+      if (secondaryResponse.status === 'fulfilled') {
+        const assistantMsgSecondary: Message = {
+          id: `assistant-${Date.now()}-secondary`,
+          role: 'assistant',
+          content: secondaryResponse.value,
+          createdAt: new Date(),
+        };
+        setDualMessages(prev => ({ ...prev, secondary: [...prev.secondary, assistantMsgSecondary] }));
+      } else {
+        const errorMsgSecondary: Message = {
+          id: `error-${Date.now()}-secondary`,
+          role: 'assistant',
+          content: `❌ Error: ${secondaryResponse.reason?.message || 'Failed to get response from ' + secondaryProvider}`,
+          createdAt: new Date(),
+        };
+        setDualMessages(prev => ({ ...prev, secondary: [...prev.secondary, errorMsgSecondary] }));
+      }
+      setDualLoading(prev => ({ ...prev, secondary: false }));
+
+    } catch (error) {
+      console.error("Error in dual mode:", error);
+      setDualLoading({ primary: false, secondary: false });
+    }
+  };
+
   const handleLogin = async () => {
     if (isLoggingIn) return;
     setIsLoggingIn(true);
@@ -582,12 +675,33 @@ export default function App() {
         />
         
         <div className="flex-1 relative min-h-0">
-          <ChatWindow
-            messages={messages}
-            onSendMessage={(content, isStuck) => handleSendMessage(content, isStuck)}
-            isLoading={isLoading}
-            suggestedPrompts={promptSettings?.suggestedPrompts || DEFAULT_SUGGESTED_PROMPTS}
-          />
+          {promptSettings?.dualMode ? (
+            <>
+              <DualChatView
+                primaryMessages={dualMessages.primary}
+                secondaryMessages={dualMessages.secondary}
+                primaryProvider={promptSettings.provider}
+                secondaryProvider={promptSettings.dualModeProvider}
+                primaryLoading={dualLoading.primary}
+                secondaryLoading={dualLoading.secondary}
+              />
+              {/* Dual mode input overlay */}
+              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-white via-white to-transparent dark:from-zinc-950 dark:via-zinc-950 p-2 md:p-4 pt-8 md:pt-12">
+                <DualInputForm
+                  onSendMessage={handleDualSendMessage}
+                  primaryLoading={dualLoading.primary}
+                  secondaryLoading={dualLoading.secondary}
+                />
+              </div>
+            </>
+          ) : (
+            <ChatWindow
+              messages={messages}
+              onSendMessage={(content, isStuck) => handleSendMessage(content, isStuck)}
+              isLoading={isLoading}
+              suggestedPrompts={promptSettings?.suggestedPrompts || DEFAULT_SUGGESTED_PROMPTS}
+            />
+          )}
         </div>
       </div>
       

@@ -180,6 +180,8 @@ or replacing clinical judgment.`;
 // Interface for prompt settings
 export interface PromptSettings {
   provider: string;
+  dualMode: boolean;
+  dualModeProvider: string;
   systemPrompt: string;
   stuckModePrompt: string;
   suggestedPrompts: string[];
@@ -190,7 +192,9 @@ export interface PromptSettings {
 // Get default settings
 export function getDefaultPromptSettings(): PromptSettings {
   return {
-    provider: 'gemini',
+    provider: 'harvard',
+    dualMode: false,
+    dualModeProvider: 'minimax',
     systemPrompt: DEFAULT_SYSTEM_PROMPT,
     stuckModePrompt: DEFAULT_STUCK_MODE_PROMPT,
     suggestedPrompts: DEFAULT_SUGGESTED_PROMPTS,

@@ -349,7 +349,8 @@ export async function generateClinicalResponseWithHistory(
   query: string,
   history: { role: 'user' | 'assistant'; content: string }[],
   currentPhase: string | null,
-  isStuck?: boolean
+  isStuck?: boolean,
+  forceProvider?: string
 ) {
   try {
     // Load prompt settings from Firestore
@@ -372,8 +373,8 @@ export async function generateClinicalResponseWithHistory(
         )
       : promptSettings.systemPrompt || SYSTEM_PROMPT;
 
-    // Determine provider from Firestore settings, fallback to env var, then default to harvard
-    const provider = promptSettings.provider || (process.env.LLM_PROVIDER || 'harvard').toLowerCase();
+    // Determine provider: forceProvider (for dual mode) > Firestore settings > env var > default
+    const provider = forceProvider || promptSettings.provider || (process.env.LLM_PROVIDER || 'harvard').toLowerCase();
     
     // Harvard: OpenAI-compatible gateway with api-key auth
     if (provider === 'harvard') {
@@ -438,7 +439,7 @@ export async function generateClinicalResponseWithHistory(
       return await generateWithMinimax(minimaxMessages);
     }
 
-    // Gemini (default): RAG retrieval for relevant chunks only
+    // Gemini fallback: RAG retrieval for relevant chunks only
     const relevantChunks = await retrieveRelevantChunks(query);
     let contextString = '';
     if (relevantChunks.length > 0) {
