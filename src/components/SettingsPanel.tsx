@@ -201,11 +201,11 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
                   </label>
                   <div className="relative">
                     <select
-                      value={settings.provider || 'gemini'}
+                      value={settings.provider || 'harvard'}
                       onChange={(e) => updateField('provider', e.target.value)}
                       className="w-full p-3 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 appearance-none cursor-pointer pr-10"
                     >
-                      {(['gemini', 'minimax', 'harvard'] as const).map((providerKey) => {
+                      {(['minimax', 'harvard'] as const).map((providerKey) => {
                         const provider = PROVIDER_REGISTRY[providerKey];
                         const isConfigured = provider.isConfigured;
                         return (
@@ -225,7 +225,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
                 {/* Provider Cards */}
                 <div className="grid gap-4">
                   {(Object.entries(PROVIDER_REGISTRY) as [AIProvider, typeof PROVIDER_REGISTRY[AIProvider]][]).map(([providerKey, provider]) => {
-                    const currentProvider = settings.provider || 'gemini';
+                    const currentProvider = settings.provider || 'harvard';
                     const isActive = currentProvider === providerKey;
                     
                     return (
@@ -300,12 +300,6 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
                       <span className="text-zinc-600 dark:text-zinc-400">MINIMAX_API_KEY</span>
                       <span className={PROVIDER_REGISTRY.minimax.isConfigured ? 'text-green-600 dark:text-green-400' : 'text-red-500'}>
                         {PROVIDER_REGISTRY.minimax.isConfigured ? '✓ Server-side' : '✗ Not set'}
-                      </span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span className="text-zinc-600 dark:text-zinc-400">GEMINI_API_KEY</span>
-                      <span className={PROVIDER_REGISTRY.gemini.isConfigured ? 'text-green-600 dark:text-green-400' : 'text-red-500'}>
-                        {PROVIDER_REGISTRY.gemini.isConfigured ? '✓ Server-side' : '✗ Not set'}
                       </span>
                     </div>
                   </div>
