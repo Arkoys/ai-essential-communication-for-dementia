@@ -31,6 +31,9 @@ interface Conversation {
   title: string;
   createdAt: Date;
   updatedAt: Date;
+  type: 'normal' | 'dual';
+  primaryProvider?: string;
+  secondaryProvider?: string;
 }
 
 const PHASES: { name: PhaseName; steps: string[] }[] = [
@@ -95,6 +98,7 @@ export default function App() {
   
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [activeConversationId, setActiveConversationId] = useState<string | null>(null);
+  const [activeConversation, setActiveConversation] = useState<Conversation | null>(null);
   
   const [messages, setMessages] = useState<Message[]>([]);
   const [currentPhase, setCurrentPhase] = useState<PhaseName | null>(null);
@@ -109,7 +113,7 @@ export default function App() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [promptSettings, setPromptSettings] = useState<PromptSettings | null>(null);
   
-  // Dual mode state
+  // Dual mode state - per conversation, not global
   const [dualMessages, setDualMessages] = useState<{
     primary: Message[];
     secondary: Message[];
@@ -128,6 +132,9 @@ export default function App() {
       } catch (error) {
         console.error("Error loading prompt settings:", error);
         setPromptSettings({
+          provider: 'harvard',
+          dualMode: false,
+          dualModeProvider: 'minimax',
           systemPrompt: '',
           stuckModePrompt: '',
           suggestedPrompts: DEFAULT_SUGGESTED_PROMPTS,
@@ -154,7 +161,6 @@ export default function App() {
         { merge: true }
       );
     } catch (error) {
-      // Framework state must never block message delivery.
       console.error('Error saving framework state:', error);
     }
   };
@@ -218,15 +224,36 @@ export default function App() {
           title: data.title,
           createdAt: data.createdAt?.toDate() || new Date(),
           updatedAt: data.updatedAt?.toDate() || new Date(),
+          type: data.type || 'normal',
+          primaryProvider: data.primaryProvider,
+          secondaryProvider: data.secondaryProvider,
         });
       });
       setConversations(convos);
+      
+      // Update active conversation if it changed
+      if (activeConversationId) {
+        const updated = convos.find(c => c.id === activeConversationId);
+        if (updated && updated.id !== activeConversation?.id) {
+          setActiveConversation(updated);
+        }
+      }
     }, (error) => {
       handleFirestoreError(error, OperationType.LIST, 'conversations');
     });
 
     return () => unsubscribe();
   }, [user, isAuthReady]);
+
+  // Handle conversation selection
+  const handleSelectConversation = (id: string) => {
+    // Clear dual messages when switching conversations
+    setDualMessages({ primary: [], secondary: [] });
+    setDualLoading({ primary: false, secondary: false });
+    setActiveConversationId(id);
+    const conv = conversations.find(c => c.id === id);
+    setActiveConversation(conv || null);
+  };
 
   // Fetch Messages for Active Conversation
   useEffect(() => {
@@ -261,7 +288,7 @@ export default function App() {
     return () => unsubscribe();
   }, [activeConversationId, user, isAuthReady]);
 
-  // Fetch framework state for Active Conversation (source of truth from DB)
+  // Fetch framework state for Active Conversation
   useEffect(() => {
     if (!isAuthReady || !user || !activeConversationId) {
       setCurrentPhase(null);
@@ -295,6 +322,11 @@ export default function App() {
     return () => unsubscribe();
   }, [activeConversationId, user, isAuthReady]);
 
+  // Determine if current conversation is dual mode
+  const isDualMode = activeConversation?.type === 'dual';
+  const primaryProvider = activeConversation?.primaryProvider || promptSettings?.provider || 'harvard';
+  const secondaryProvider = activeConversation?.secondaryProvider || promptSettings?.dualModeProvider || 'minimax';
+
   // Fallback source: infer framework position from latest assistant output.
   const latestAssistantMessage = [...messages].reverse().find((m) => m.role === 'assistant') || null;
   const inferredFromOutput = latestAssistantMessage
@@ -306,23 +338,46 @@ export default function App() {
   const effectiveDetectedPhase: PhaseName | null =
     lastDetectedPhase || currentPhase || inferredFromOutput.phase || null;
 
-  const handleNewConversation = () => {
+  const handleNewConversation = (type: 'normal' | 'dual' = 'normal') => {
     setActiveConversationId(null);
     setMessages([]);
     setCurrentPhase(null);
     setCurrentStep(null);
     setLastDetectedPhase(null);
+    setDualMessages({ primary: [], secondary: [] });
+    setActiveConversation(null);
+  };
+
+  // Create a new dual conversation
+  const handleNewDualConversation = async () => {
+    if (!user || !promptSettings) return;
+    
+    try {
+      const title = `Dual Mode - ${new Date().toLocaleTimeString()}`;
+      const convRef = await addDoc(collection(db, 'conversations'), {
+        userId: user.uid,
+        title,
+        type: 'dual',
+        primaryProvider: promptSettings.provider,
+        secondaryProvider: promptSettings.dualModeProvider,
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+      setActiveConversationId(convRef.id);
+      setDualMessages({ primary: [], secondary: [] });
+      setIsSidebarOpen(false);
+    } catch (error) {
+      console.error("Error creating dual conversation:", error);
+    }
   };
 
   const handleDeleteConversation = async (id: string) => {
     try {
-      // Delete messages first
       const messagesRef = collection(db, `conversations/${id}/messages`);
       const snapshot = await getDocs(messagesRef);
       const deletePromises = snapshot.docs.map(doc => deleteDoc(doc.ref));
       await Promise.all(deletePromises);
 
-      // Delete conversation
       await deleteDoc(doc(db, 'conversations', id));
       
       if (activeConversationId === id) {
@@ -346,6 +401,7 @@ export default function App() {
         const convRef = await addDoc(collection(db, 'conversations'), {
           userId: user.uid,
           title,
+          type: 'normal',
           createdAt: serverTimestamp(),
           updatedAt: serverTimestamp(),
         });
@@ -361,8 +417,7 @@ export default function App() {
         createdAt: serverTimestamp(),
       });
 
-      // Check if user input is insufficient BEFORE calling LLM
-      // Skip this check for stuck mode - always allow LLM call in stuck mode
+      // Check if user input is insufficient
       const inputIsInsufficient = isStuck ? false : isInsufficientUserInput(content);
       
       let finalContent: string;
@@ -371,14 +426,11 @@ export default function App() {
       let detectedStep: string | null = null;
       
       if (inputIsInsufficient) {
-        // Skip LLM call - return guidance directly
         finalContent = getInsufficientInfoGuidance();
         isInsufficientInfo = true;
       } else {
-        // Prepare history for LLM
         const history = messages.map(m => ({ role: m.role, content: m.content }));
         
-        // Generate response
         const responseText = await generateClinicalResponseWithHistory(
           content,
           history,
@@ -386,14 +438,11 @@ export default function App() {
           isStuck
         );
 
-        // Check if the response indicates insufficient information
         const responseIsInsufficient = isInsufficientInfoResponse(responseText);
         
-        // If insufficient info detected, replace with guidance message
         finalContent = responseIsInsufficient ? getInsufficientInfoGuidance() : responseText;
         isInsufficientInfo = responseIsInsufficient;
 
-        // Parse framework position from LLM response
         const parsed = parseFrameworkPosition(responseText);
         detectedPhase = parsed.phase;
         detectedStep = parsed.step;
@@ -413,7 +462,6 @@ export default function App() {
         nextStep = detectedStep;
       }
 
-      // Add assistant message to Firestore
       await addDoc(collection(db, `conversations/${convId}/messages`), {
         conversationId: convId,
         role: 'assistant',
@@ -431,7 +479,6 @@ export default function App() {
 
     } catch (error) {
       console.error("Error sending message:", error);
-      // We could add an error message to the UI here
     } finally {
       setIsLoading(false);
     }
@@ -475,15 +522,17 @@ export default function App() {
     }
 
     const prompt = `I need help with the "${step}" step in the ${activePhase || 'current'} phase of dementia care.`;
-    handleSendMessage(prompt);
+    
+    if (isDualMode) {
+      handleDualSendMessage(prompt, false);
+    } else {
+      handleSendMessage(prompt, false);
+    }
   };
 
   // Dual mode: send message to both providers
   const handleDualSendMessage = async (content: string, isStuck?: boolean) => {
-    if (!user || !promptSettings?.dualMode) return;
-    
-    const primaryProvider = promptSettings.provider;
-    const secondaryProvider = promptSettings.dualModeProvider;
+    if (!user) return;
     
     // Add user message to both conversations
     const userMsgPrimary: Message = {
@@ -643,8 +692,9 @@ export default function App() {
         <SidebarHistory
           conversations={conversations}
           activeId={activeConversationId}
-          onSelect={setActiveConversationId}
-          onNew={handleNewConversation}
+          onSelect={handleSelectConversation}
+          onNew={() => handleNewConversation('normal')}
+          onNewDual={handleNewDualConversation}
           onDelete={handleDeleteConversation}
           onLogout={logOut}
           userEmail={user.email}
@@ -660,6 +710,7 @@ export default function App() {
           <div className="flex items-center gap-2 font-semibold">
             <Stethoscope size={20} className="text-orange-600 dark:text-orange-400" />
             Dementia Assistant
+            {isDualMode && <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded">Dual</span>}
           </div>
           <button onClick={() => setIsSidebarOpen(true)} className="p-2 -mr-2 text-zinc-600 dark:text-zinc-400">
             <Menu size={24} />
@@ -675,13 +726,13 @@ export default function App() {
         />
         
         <div className="flex-1 relative min-h-0">
-          {promptSettings?.dualMode ? (
+          {isDualMode ? (
             <>
               <DualChatView
                 primaryMessages={dualMessages.primary}
                 secondaryMessages={dualMessages.secondary}
-                primaryProvider={promptSettings.provider}
-                secondaryProvider={promptSettings.dualModeProvider}
+                primaryProvider={primaryProvider}
+                secondaryProvider={secondaryProvider}
                 primaryLoading={dualLoading.primary}
                 secondaryLoading={dualLoading.secondary}
               />
@@ -697,7 +748,7 @@ export default function App() {
           ) : (
             <ChatWindow
               messages={messages}
-              onSendMessage={(content, isStuck) => handleSendMessage(content, isStuck)}
+              onSendMessage={handleSendMessage}
               isLoading={isLoading}
               suggestedPrompts={promptSettings?.suggestedPrompts || DEFAULT_SUGGESTED_PROMPTS}
             />

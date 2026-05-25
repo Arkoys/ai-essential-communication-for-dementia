@@ -1,13 +1,24 @@
 import React, { useState } from 'react';
-import { Plus, MessageSquare, LogOut, Trash2, Settings, X, ChevronLeft, ChevronRight } from 'lucide-react';
+import { Plus, MessageSquare, LogOut, Trash2, Settings, X, ChevronLeft, ChevronRight, Columns2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '../lib/utils';
 
+interface Conversation {
+  id: string;
+  title: string;
+  createdAt: Date;
+  updatedAt: Date;
+  type?: 'normal' | 'dual';
+  primaryProvider?: string;
+  secondaryProvider?: string;
+}
+
 interface SidebarHistoryProps {
-  conversations: { id: string; title: string; createdAt: Date; updatedAt: Date }[];
+  conversations: Conversation[];
   activeId: string | null;
   onSelect: (id: string) => void;
   onNew: () => void;
+  onNewDual: () => void;
   onDelete: (id: string) => void;
   onLogout: () => void;
   userEmail: string;
@@ -21,6 +32,7 @@ export function SidebarHistory({
   activeId,
   onSelect,
   onNew,
+  onNewDual,
   onDelete,
   onLogout,
   userEmail,
@@ -29,6 +41,10 @@ export function SidebarHistory({
   onClose,
 }: SidebarHistoryProps) {
   const [isOpen, setIsOpen] = useState(true);
+
+  // Separate conversations by type
+  const normalConversations = conversations.filter(c => c.type !== 'dual');
+  const dualConversations = conversations.filter(c => c.type === 'dual');
 
   return (
     <div
@@ -57,17 +73,32 @@ export function SidebarHistory({
           </button>
         </div>
 
-        {/* New button */}
-        <button
-          onClick={() => {
-            onNew();
-            onClose?.();
-          }}
-          className="flex items-center justify-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-2 py-2 rounded-lg transition-colors font-medium"
-        >
-          <Plus size={18} />
-          {isOpen && "New Consultation"}
-        </button>
+        {/* New buttons */}
+        <div className="flex flex-col gap-2">
+          <button
+            onClick={() => {
+              onNew();
+              onClose?.();
+            }}
+            className="flex items-center justify-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-2 py-2 rounded-lg transition-colors font-medium"
+          >
+            <Plus size={18} />
+            {isOpen && "New Consultation"}
+          </button>
+          
+          {isOpen && (
+            <button
+              onClick={() => {
+                onNewDual();
+                onClose?.();
+              }}
+              className="flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-2 py-2 rounded-lg transition-colors font-medium"
+            >
+              <Columns2 size={18} />
+              {isOpen && "Dual Mode"}
+            </button>
+          )}
+        </div>
       </div>
 
       {/* CONVERSATIONS */}
@@ -79,46 +110,101 @@ export function SidebarHistory({
             </div>
           )
         ) : (
-          conversations.map((conv) => (
-            <div
-              key={conv.id}
-              className={cn(
-                "group flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-colors",
-                activeId === conv.id
-                  ? "bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100"
-                  : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900"
-              )}
-              onClick={() => {
-                onSelect(conv.id);
-                onClose?.();
-              }}
-            >
-              <div className="flex items-center gap-3 overflow-hidden">
-                <MessageSquare size={16} className="shrink-0" />
-                
-                {isOpen && (
-                  <div className="truncate text-sm font-medium">
-                    {conv.title || 'New Consultation'}
-                    <div className="text-xs text-zinc-400 dark:text-zinc-500 font-normal">
-                      {format(conv.updatedAt, 'MMM d, yyyy')}
+          <>
+            {/* Dual conversations section */}
+            {dualConversations.length > 0 && isOpen && (
+              <div className="text-xs font-semibold text-purple-600 dark:text-purple-400 uppercase tracking-wider mb-1 px-3">
+                Dual Mode
+              </div>
+            )}
+            {dualConversations.map((conv) => (
+              <div
+                key={conv.id}
+                className={cn(
+                  "group flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-colors",
+                  activeId === conv.id
+                    ? "bg-purple-100 dark:bg-purple-900/30 text-purple-900 dark:text-purple-200"
+                    : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900"
+                )}
+                onClick={() => {
+                  onSelect(conv.id);
+                  onClose?.();
+                }}
+              >
+                <div className="flex items-center gap-3 overflow-hidden">
+                  <Columns2 size={16} className="shrink-0 text-purple-500" />
+                  
+                  {isOpen && (
+                    <div className="truncate text-sm font-medium">
+                      {conv.title || 'Dual Mode'}
+                      <div className="text-xs text-zinc-400 dark:text-zinc-500 font-normal">
+                        {format(conv.updatedAt, 'MMM d, yyyy')}
+                      </div>
                     </div>
-                  </div>
+                  )}
+                </div>
+
+                {isOpen && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete(conv.id);
+                    }}
+                    className="opacity-0 group-hover:opacity-100 text-zinc-400 hover:text-red-500 transition-all p-1"
+                  >
+                    <Trash2 size={14} />
+                  </button>
                 )}
               </div>
+            ))}
 
-              {isOpen && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onDelete(conv.id);
-                  }}
-                  className="opacity-0 group-hover:opacity-100 text-zinc-400 hover:text-red-500 transition-all p-1"
-                >
-                  <Trash2 size={14} />
-                </button>
-              )}
-            </div>
-          ))
+            {/* Normal conversations section */}
+            {normalConversations.length > 0 && isOpen && (
+              <div className="text-xs font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1 px-3 mt-4">
+                Consultations
+              </div>
+            )}
+            {normalConversations.map((conv) => (
+              <div
+                key={conv.id}
+                className={cn(
+                  "group flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-colors",
+                  activeId === conv.id
+                    ? "bg-zinc-200 dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100"
+                    : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900"
+                )}
+                onClick={() => {
+                  onSelect(conv.id);
+                  onClose?.();
+                }}
+              >
+                <div className="flex items-center gap-3 overflow-hidden">
+                  <MessageSquare size={16} className="shrink-0" />
+                  
+                  {isOpen && (
+                    <div className="truncate text-sm font-medium">
+                      {conv.title || 'New Consultation'}
+                      <div className="text-xs text-zinc-400 dark:text-zinc-500 font-normal">
+                        {format(conv.updatedAt, 'MMM d, yyyy')}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {isOpen && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete(conv.id);
+                    }}
+                    className="opacity-0 group-hover:opacity-100 text-zinc-400 hover:text-red-500 transition-all p-1"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                )}
+              </div>
+            ))}
+          </>
         )}
       </div>
 

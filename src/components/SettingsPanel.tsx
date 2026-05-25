@@ -222,64 +222,54 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
                   </p>
                 </div>
 
-                {/* Dual Mode Toggle */}
+                {/* Dual Mode Info */}
                 <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-xl border border-purple-200 dark:border-purple-800/50 p-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <div>
+                  <div className="flex items-start gap-3">
+                    <div className="text-2xl">🔄</div>
+                    <div className="flex-1">
                       <h3 className="font-semibold text-zinc-800 dark:text-zinc-200 flex items-center gap-2">
-                        🔄 Dual Mode (Compare Models)
+                        Dual Mode (Compare Models)
                       </h3>
-                      <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1">
+                      <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1 mb-3">
                         Run two models simultaneously to compare their responses side-by-side
                       </p>
+                      <div className="bg-white/50 dark:bg-zinc-800/50 rounded-lg p-3 space-y-2">
+                        <p className="text-xs text-zinc-600 dark:text-zinc-400">
+                          <strong>How to use:</strong>
+                        </p>
+                        <ol className="text-xs text-zinc-600 dark:text-zinc-400 space-y-1 list-decimal list-inside">
+                          <li>Click "Dual Mode" in the sidebar to create a dual comparison session</li>
+                          <li>Select your primary and secondary providers below</li>
+                          <li>Both models will receive the same input and respond in parallel</li>
+                        </ol>
+                      </div>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => updateField('dualMode', String(!settings.dualMode))}
-                      className={`relative w-14 h-8 rounded-full transition-colors ${
-                        settings.dualMode 
-                          ? 'bg-purple-500' 
-                          : 'bg-zinc-300 dark:bg-zinc-700'
-                      }`}
-                    >
-                      <span
-                        className={`absolute top-1 left-1 w-6 h-6 rounded-full bg-white shadow transition-transform ${
-                          settings.dualMode ? 'translate-x-6' : ''
-                        }`}
-                      />
-                    </button>
                   </div>
                   
-                  {settings.dualMode && (
-                    <div className="mt-3 pt-3 border-t border-purple-200 dark:border-purple-800/50">
-                      <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                        Secondary Model (for comparison)
-                      </label>
-                      <div className="relative">
-                        <select
-                          value={settings.dualModeProvider || 'minimax'}
-                          onChange={(e) => updateField('dualModeProvider', e.target.value)}
-                          className="w-full p-3 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 appearance-none cursor-pointer pr-10"
-                        >
-                          {(['minimax', 'harvard'] as const).map((providerKey) => {
-                            // Can't compare with the same provider
-                            if (providerKey === settings.provider) return null;
-                            const provider = PROVIDER_REGISTRY[providerKey];
-                            const isConfigured = provider.isConfigured;
-                            return (
-                              <option key={providerKey} value={providerKey}>
-                                {provider.name} {!isConfigured ? '(Not configured)' : ''}
-                              </option>
-                            );
-                          })}
-                        </select>
-                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" size={20} />
-                      </div>
-                      <p className="mt-2 text-xs text-purple-600 dark:text-purple-400">
-                        💡 In dual mode, both models receive the same input and run in parallel
-                      </p>
+                  <div className="mt-3 pt-3 border-t border-purple-200 dark:border-purple-800/50">
+                    <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                      Default Secondary Model (for dual mode)
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={settings.dualModeProvider || 'minimax'}
+                        onChange={(e) => updateField('dualModeProvider', e.target.value)}
+                        className="w-full p-3 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 appearance-none cursor-pointer pr-10"
+                      >
+                        {(['minimax', 'harvard'] as const).map((providerKey) => {
+                          if (providerKey === settings.provider) return null;
+                          const provider = PROVIDER_REGISTRY[providerKey];
+                          const isConfigured = provider.isConfigured;
+                          return (
+                            <option key={providerKey} value={providerKey}>
+                              {provider.name} {!isConfigured ? '(Not configured)' : ''}
+                            </option>
+                          );
+                        })}
+                      </select>
+                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" size={20} />
                     </div>
-                  )}
+                  </div>
                 </div>
 
                 {/* Provider Cards */}
