@@ -7,12 +7,20 @@ import {
   DEFAULT_KNOWLEDGE_CONTENT,
   getPromptSettings 
 } from './promptSettings';
+import { 
+  harvardChatCompletion, 
+  isHarvardConfigured,
+  getHarvardClient 
+} from './providers/harvard';
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 const LLM_PROVIDER = (process.env.LLM_PROVIDER || 'gemini').toLowerCase();
 const MINIMAX_MODEL = process.env.MINIMAX_MODEL || 'MiniMax-Text-01';
 const MINIMAX_API_BASE_URL = process.env.MINIMAX_API_BASE_URL || 'https://api.minimaxi.chat';
 const MINIMAX_API_PATH = process.env.MINIMAX_API_PATH || '/v1/chat/completions';
+
+// Harvard configuration
+const HARVARD_MODEL = process.env.HARVARD_MODEL || 'gpt-4o-mini';
 
 // Use configurable system prompt, fallback to default
 const SYSTEM_PROMPT = DEFAULT_SYSTEM_PROMPT;
@@ -365,6 +373,43 @@ export async function generateClinicalResponseWithHistory(
         )
       : promptSettings.systemPrompt || SYSTEM_PROMPT;
 
+    // Harvard: OpenAI-compatible gateway with api-key auth
+    if (LLM_PROVIDER === 'harvard') {
+      if (!isHarvardConfigured()) {
+        throw new Error('Harvard provider not configured. Set HARVARD_OPENAI_KEY environment variable.');
+      }
+
+      const userContent = query + phaseContext;
+      // Build messages with proper typing for Harvard
+      const harvardMessages: { role: 'system' | 'user' | 'assistant'; content: string }[] = [
+        { 
+          role: 'system', 
+          content: isStuck 
+            ? buildStuckModeSystemPrompt(
+                promptSettings.stuckModePrompt || DEFAULT_STUCK_MODE_PROMPT,
+                promptSettings.knowledgeContent || DEFAULT_KNOWLEDGE_CONTENT
+              )
+            : buildMinimaxSystemPrompt(
+                promptSettings.systemPrompt || SYSTEM_PROMPT,
+                promptSettings.knowledgeContent || DEFAULT_KNOWLEDGE_CONTENT
+              )
+        },
+        ...history.map((msg) => ({
+          role: msg.role as 'user' | 'assistant',
+          content: msg.content,
+        })),
+        { role: 'user', content: userContent },
+      ];
+
+      const response = await harvardChatCompletion(harvardMessages, HARVARD_MODEL);
+      // Handle both streaming and non-streaming responses
+      if ('choices' in response) {
+        return sanitizeModelOutput(response.choices[0]?.message?.content || 'No response returned.');
+      }
+      // For streaming responses, return empty string (streaming handled separately)
+      return '';
+    }
+
     // MiniMax: no RAG — full toolkit text is embedded in the system prompt.
     if (LLM_PROVIDER === 'minimax') {
       const userContent = query + phaseContext;
@@ -391,7 +436,7 @@ export async function generateClinicalResponseWithHistory(
       return await generateWithMinimax(minimaxMessages);
     }
 
-    // Gemini: RAG retrieval for relevant chunks only
+    // Gemini (default): RAG retrieval for relevant chunks only
     const relevantChunks = await retrieveRelevantChunks(query);
     let contextString = '';
     if (relevantChunks.length > 0) {

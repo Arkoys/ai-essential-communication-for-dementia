@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, Save, RotateCcw, Loader2, BookOpen, Zap, MessageSquare, Info } from 'lucide-react';
+import { Settings, Save, RotateCcw, Loader2, BookOpen, Zap, MessageSquare, Info, Cpu, CheckCircle2 } from 'lucide-react';
 import { getPromptSettings, savePromptSettings, resetPromptSettings, PromptSettings, getDefaultPromptSettings } from '../lib/promptSettings';
+import { PROVIDER_REGISTRY, AIProvider } from '../lib/providers/types';
 
 interface SettingsPanelProps {
   onClose: () => void;
@@ -10,7 +11,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
   const [settings, setSettings] = useState<PromptSettings | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState<'prompts' | 'knowledge' | 'quick' | 'coaching'>('prompts');
+  const [activeTab, setActiveTab] = useState<'provider' | 'prompts' | 'knowledge' | 'quick' | 'coaching'>('provider');
   const [hasChanges, setHasChanges] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
 
@@ -118,10 +119,21 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
         </div>
 
         {/* Tabs */}
-        <div className="flex border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50">
+        <div className="flex border-b border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900/50 overflow-x-auto">
+          <button
+            onClick={() => setActiveTab('provider')}
+            className={`flex items-center gap-2 px-4 py-3 font-medium transition-colors whitespace-nowrap ${
+              activeTab === 'provider'
+                ? 'text-orange-600 border-b-2 border-orange-600 bg-white dark:bg-zinc-950'
+                : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
+            }`}
+          >
+            <Cpu size={18} />
+            AI Provider
+          </button>
           <button
             onClick={() => setActiveTab('prompts')}
-            className={`flex items-center gap-2 px-6 py-3 font-medium transition-colors ${
+            className={`flex items-center gap-2 px-4 py-3 font-medium transition-colors whitespace-nowrap ${
               activeTab === 'prompts'
                 ? 'text-orange-600 border-b-2 border-orange-600 bg-white dark:bg-zinc-950'
                 : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
@@ -132,7 +144,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
           </button>
           <button
             onClick={() => setActiveTab('knowledge')}
-            className={`flex items-center gap-2 px-6 py-3 font-medium transition-colors ${
+            className={`flex items-center gap-2 px-4 py-3 font-medium transition-colors whitespace-nowrap ${
               activeTab === 'knowledge'
                 ? 'text-orange-600 border-b-2 border-orange-600 bg-white dark:bg-zinc-950'
                 : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
@@ -143,7 +155,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
           </button>
           <button
             onClick={() => setActiveTab('quick')}
-            className={`flex items-center gap-2 px-6 py-3 font-medium transition-colors ${
+            className={`flex items-center gap-2 px-4 py-3 font-medium transition-colors whitespace-nowrap ${
               activeTab === 'quick'
                 ? 'text-orange-600 border-b-2 border-orange-600 bg-white dark:bg-zinc-950'
                 : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
@@ -154,19 +166,132 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
           </button>
           <button
             onClick={() => setActiveTab('coaching')}
-            className={`flex items-center gap-2 px-6 py-3 font-medium transition-colors ${
+            className={`flex items-center gap-2 px-4 py-3 font-medium transition-colors whitespace-nowrap ${
               activeTab === 'coaching'
                 ? 'text-orange-600 border-b-2 border-orange-600 bg-white dark:bg-zinc-950'
                 : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
             }`}
           >
             <BookOpen size={18} />
-            Coaching Resources
+            Coaching
           </button>
         </div>
 
         {/* Content */}
         <div className="flex-1 overflow-y-auto p-6">
+          {activeTab === 'provider' && (
+            <div className="space-y-6">
+              {/* AI Provider Selection */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <label className="text-lg font-semibold flex items-center gap-2">
+                    <Cpu size={20} className="text-orange-500" />
+                    AI Provider Selection
+                  </label>
+                  <div className="flex items-center gap-2 text-xs text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/30 px-2 py-1 rounded-full">
+                    <Info size={12} />
+                    Server-side configuration
+                  </div>
+                </div>
+                <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800/50 rounded-lg p-3 text-sm text-orange-800 dark:text-orange-200">
+                  <strong>📊 Note:</strong> AI Provider is configured via environment variables. The current active provider is determined by the <code className="bg-orange-100 dark:bg-orange-900/50 px-1 rounded">LLM_PROVIDER</code> setting. Check your <code className="bg-orange-100 dark:bg-orange-900/50 px-1 rounded">.env</code> file to change providers.
+                </div>
+
+                {/* Provider Cards */}
+                <div className="grid gap-4">
+                  {(Object.entries(PROVIDER_REGISTRY) as [AIProvider, typeof PROVIDER_REGISTRY[AIProvider]][]).map(([providerKey, provider]) => {
+                    const currentProvider = process.env.LLM_PROVIDER || 'gemini';
+                    const isActive = currentProvider === providerKey;
+                    
+                    return (
+                      <div 
+                        key={providerKey}
+                        className={`p-4 rounded-xl border-2 transition-all ${
+                          isActive 
+                            ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20' 
+                            : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900'
+                        }`}
+                      >
+                        <div className="flex items-start justify-between">
+                          <div className="flex-1">
+                            <div className="flex items-center gap-2 mb-2">
+                              <h3 className="font-semibold text-lg">{provider.name}</h3>
+                              {isActive && (
+                                <span className="flex items-center gap-1 text-xs bg-orange-500 text-white px-2 py-0.5 rounded-full">
+                                  <CheckCircle2 size={12} />
+                                  Active
+                                </span>
+                              )}
+                              {!provider.isConfigured && (
+                                <span className="text-xs bg-zinc-200 dark:bg-zinc-700 text-zinc-500 dark:text-zinc-400 px-2 py-0.5 rounded-full">
+                                  Not configured
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-sm text-zinc-600 dark:text-zinc-400 mb-3">
+                              {provider.description}
+                            </p>
+                            <div className="flex flex-wrap gap-2">
+                              {provider.models.map(model => (
+                                <span 
+                                  key={model}
+                                  className={`text-xs px-2 py-1 rounded-full ${
+                                    isActive 
+                                      ? 'bg-orange-200 dark:bg-orange-800 text-orange-800 dark:text-orange-200' 
+                                      : 'bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400'
+                                  }`}
+                                >
+                                  {model}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                          <div className="flex flex-col items-end gap-2 text-xs text-zinc-500">
+                            {provider.supportsStreaming && (
+                              <span className="flex items-center gap-1 text-green-600 dark:text-green-400">
+                                <CheckCircle2 size={14} />
+                                Streaming
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Environment Variable Reference */}
+                <div className="mt-6 p-4 bg-zinc-100 dark:bg-zinc-900 rounded-lg">
+                  <h4 className="font-medium text-sm mb-2">Environment Variables</h4>
+                  <div className="space-y-2 text-xs font-mono">
+                    <div className="flex justify-between">
+                      <span className="text-zinc-600 dark:text-zinc-400">LLM_PROVIDER</span>
+                      <span className="text-orange-600 dark:text-orange-400">{process.env.LLM_PROVIDER || 'gemini'}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-zinc-600 dark:text-zinc-400">HARVARD_OPENAI_KEY</span>
+                      <span className={PROVIDER_REGISTRY.harvard.isConfigured ? 'text-green-600 dark:text-green-400' : 'text-red-500'}>
+                        {process.env.HARVARD_OPENAI_KEY ? '✓ Set' : '✗ Not set'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-zinc-600 dark:text-zinc-400">MINIMAX_API_KEY</span>
+                      <span className={PROVIDER_REGISTRY.minimax.isConfigured ? 'text-green-600 dark:text-green-400' : 'text-red-500'}>
+                        {PROVIDER_REGISTRY.minimax.isConfigured ? '✓ Set' : '✗ Not set'}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-zinc-600 dark:text-zinc-400">GEMINI_API_KEY</span>
+                      <span className={PROVIDER_REGISTRY.gemini.isConfigured ? 'text-green-600 dark:text-green-400' : 'text-red-500'}>
+                        {PROVIDER_REGISTRY.gemini.isConfigured ? '✓ Set' : '✗ Not set'}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
           {activeTab === 'prompts' && (
             <div className="space-y-6">
               {/* System Prompt */}

@@ -14,6 +14,10 @@ export default defineConfig(({mode}) => {
       'process.env.MINIMAX_MODEL': JSON.stringify(env.MINIMAX_MODEL),
       'process.env.MINIMAX_API_BASE_URL': JSON.stringify(env.MINIMAX_API_BASE_URL),
       'process.env.MINIMAX_API_PATH': JSON.stringify(env.MINIMAX_API_PATH),
+      // Harvard HUIT OpenAI Direct v2 configuration
+      'process.env.HARVARD_OPENAI_KEY': JSON.stringify(env.HARVARD_OPENAI_KEY),
+      'process.env.HARVARD_OPENAI_BASE_URL': JSON.stringify(env.HARVARD_OPENAI_BASE_URL),
+      'process.env.HARVARD_MODEL': JSON.stringify(env.HARVARD_MODEL),
     },
     resolve: {
       alias: {
