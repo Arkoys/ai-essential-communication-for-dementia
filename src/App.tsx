@@ -776,6 +776,7 @@ export default function App() {
               onSendMessage={handleSendMessage}
               isLoading={isLoading}
               suggestedPrompts={promptSettings?.suggestedPrompts || DEFAULT_SUGGESTED_PROMPTS}
+              provider={primaryProvider}
             />
           )}
         </div>

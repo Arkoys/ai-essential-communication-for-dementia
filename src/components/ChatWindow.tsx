@@ -18,6 +18,7 @@ interface ChatWindowProps {
   onSendMessage: (content: string, isStuck?: boolean) => void;
   isLoading: boolean;
   suggestedPrompts?: string[];
+  provider?: string;
 }
 
 export function ChatWindow({
@@ -25,6 +26,7 @@ export function ChatWindow({
   onSendMessage,
   isLoading,
   suggestedPrompts = DEFAULT_SUGGESTED_PROMPTS,
+  provider = 'harvard',
 }: ChatWindowProps) {
   const [input, setInput] = useState('');
   const [isStuck, setIsStuck] = useState(false);
@@ -52,8 +54,20 @@ export function ChatWindow({
     onSendMessage(prompt);
   };
 
+  // Display name for provider
+  const providerDisplayName = provider === 'harvard' ? 'Harvard GPT' : provider === 'minimax' ? 'MiniMax' : provider;
+
   return (
     <div className="flex flex-col h-full bg-white dark:bg-zinc-950">
+      {/* Provider indicator - minimal badge */}
+      {messages.length > 0 && (
+        <div className="shrink-0 px-4 py-2 border-b border-zinc-100 dark:border-zinc-900">
+          <span className="text-[10px] text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">
+            {providerDisplayName}
+          </span>
+        </div>
+      )}
+      
       <div className="flex-1 overflow-y-auto">
         {messages.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center p-4 md:p-8 text-center space-y-6 md:space-y-8">
