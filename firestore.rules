@@ -81,6 +81,9 @@ service cloud.firestore {
                'title',
                'createdAt',
                'updatedAt',
+               'type',
+               'primaryProvider',
+               'secondaryProvider',
                'currentPhase',
                'currentStep',
                'lastDetectedPhase'
@@ -99,7 +102,16 @@ service cloud.firestore {
                 (data.lastDetectedPhase == 'Recognition' || data.lastDetectedPhase == 'Evaluation' || data.lastDetectedPhase == 'Diagnosis'))) &&
              (!('currentStep' in data) ||
                data.currentStep == null ||
-               (data.currentStep is string && data.currentStep.size() > 0 && data.currentStep.size() < 200));
+               (data.currentStep is string && data.currentStep.size() > 0 && data.currentStep.size() < 200)) &&
+             (!('type' in data) ||
+               data.type == null ||
+               (data.type is string && (data.type == 'normal' || data.type == 'dual'))) &&
+             (!('primaryProvider' in data) ||
+               data.primaryProvider == null ||
+               data.primaryProvider is string) &&
+             (!('secondaryProvider' in data) ||
+               data.secondaryProvider == null ||
+               data.secondaryProvider is string);
     }
 
 function isValidMessage(data) {
