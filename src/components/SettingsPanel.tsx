@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Settings, Save, RotateCcw, Loader2, BookOpen, Zap, MessageSquare, Info, Cpu, CheckCircle2 } from 'lucide-react';
+import { Settings, Save, RotateCcw, Loader2, BookOpen, Zap, MessageSquare, Info, Cpu, CheckCircle2, ChevronDown } from 'lucide-react';
 import { getPromptSettings, savePromptSettings, resetPromptSettings, PromptSettings, getDefaultPromptSettings } from '../lib/promptSettings';
 import { PROVIDER_REGISTRY, AIProvider } from '../lib/providers/types';
 
@@ -188,28 +188,54 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
                     <Cpu size={20} className="text-orange-500" />
                     AI Provider Selection
                   </label>
-                  <div className="flex items-center gap-2 text-xs text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/30 px-2 py-1 rounded-full">
+                  <div className="flex items-center gap-2 text-xs text-green-600 dark:text-green-400 bg-green-50 dark:bg-green-900/30 px-2 py-1 rounded-full">
                     <Info size={12} />
-                    Server-side configuration
+                    In-app configuration
                   </div>
                 </div>
-                <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800/50 rounded-lg p-3 text-sm text-orange-800 dark:text-orange-200">
-                  <strong>📊 Note:</strong> AI Provider is configured via environment variables. The current active provider is determined by the <code className="bg-orange-100 dark:bg-orange-900/50 px-1 rounded">LLM_PROVIDER</code> setting. Check your <code className="bg-orange-100 dark:bg-orange-900/50 px-1 rounded">.env</code> file to change providers.
+                
+                {/* Provider Dropdown Selector */}
+                <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-4">
+                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                    Select AI Provider
+                  </label>
+                  <div className="relative">
+                    <select
+                      value={settings.provider || 'gemini'}
+                      onChange={(e) => updateField('provider', e.target.value)}
+                      className="w-full p-3 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 appearance-none cursor-pointer pr-10"
+                    >
+                      {(['gemini', 'minimax', 'harvard'] as const).map((providerKey) => {
+                        const provider = PROVIDER_REGISTRY[providerKey];
+                        const isConfigured = provider.isConfigured;
+                        return (
+                          <option key={providerKey} value={providerKey}>
+                            {provider.name} {!isConfigured ? '(Not configured)' : ''}
+                          </option>
+                        );
+                      })}
+                    </select>
+                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" size={20} />
+                  </div>
+                  <p className="mt-2 text-xs text-zinc-500">
+                    Changes take effect after saving and refreshing the page.
+                  </p>
                 </div>
 
                 {/* Provider Cards */}
                 <div className="grid gap-4">
                   {(Object.entries(PROVIDER_REGISTRY) as [AIProvider, typeof PROVIDER_REGISTRY[AIProvider]][]).map(([providerKey, provider]) => {
-                    const currentProvider = process.env.LLM_PROVIDER || 'gemini';
+                    const currentProvider = settings.provider || 'gemini';
                     const isActive = currentProvider === providerKey;
                     
                     return (
                       <div 
                         key={providerKey}
-                        className={`p-4 rounded-xl border-2 transition-all ${
+                        onClick={() => updateField('provider', providerKey)}
+                        className={`p-4 rounded-xl border-2 transition-all cursor-pointer ${
                           isActive 
                             ? 'border-orange-500 bg-orange-50 dark:bg-orange-900/20' 
-                            : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900'
+                            : 'border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 hover:border-orange-300 dark:hover:border-orange-700'
                         }`}
                       >
                         <div className="flex items-start justify-between">
@@ -262,31 +288,30 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
 
                 {/* Environment Variable Reference */}
                 <div className="mt-6 p-4 bg-zinc-100 dark:bg-zinc-900 rounded-lg">
-                  <h4 className="font-medium text-sm mb-2">Environment Variables</h4>
+                  <h4 className="font-medium text-sm mb-2">Server Configuration Status</h4>
                   <div className="space-y-2 text-xs font-mono">
-                    <div className="flex justify-between">
-                      <span className="text-zinc-600 dark:text-zinc-400">LLM_PROVIDER</span>
-                      <span className="text-orange-600 dark:text-orange-400">{process.env.LLM_PROVIDER || 'gemini'}</span>
-                    </div>
                     <div className="flex justify-between">
                       <span className="text-zinc-600 dark:text-zinc-400">HARVARD_OPENAI_KEY</span>
                       <span className={PROVIDER_REGISTRY.harvard.isConfigured ? 'text-green-600 dark:text-green-400' : 'text-red-500'}>
-                        {process.env.HARVARD_OPENAI_KEY ? '✓ Set' : '✗ Not set'}
+                        {PROVIDER_REGISTRY.harvard.isConfigured ? '✓ Server-side' : '✗ Not set'}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-zinc-600 dark:text-zinc-400">MINIMAX_API_KEY</span>
                       <span className={PROVIDER_REGISTRY.minimax.isConfigured ? 'text-green-600 dark:text-green-400' : 'text-red-500'}>
-                        {PROVIDER_REGISTRY.minimax.isConfigured ? '✓ Set' : '✗ Not set'}
+                        {PROVIDER_REGISTRY.minimax.isConfigured ? '✓ Server-side' : '✗ Not set'}
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-zinc-600 dark:text-zinc-400">GEMINI_API_KEY</span>
                       <span className={PROVIDER_REGISTRY.gemini.isConfigured ? 'text-green-600 dark:text-green-400' : 'text-red-500'}>
-                        {PROVIDER_REGISTRY.gemini.isConfigured ? '✓ Set' : '✗ Not set'}
+                        {PROVIDER_REGISTRY.gemini.isConfigured ? '✓ Server-side' : '✗ Not set'}
                       </span>
                     </div>
                   </div>
+                  <p className="mt-3 text-xs text-zinc-500">
+                    API keys are configured server-side and are never exposed to the client.
+                  </p>
                 </div>
               </div>
             </div>

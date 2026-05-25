@@ -14,7 +14,6 @@ import {
 } from './providers/harvard';
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-const LLM_PROVIDER = (process.env.LLM_PROVIDER || 'gemini').toLowerCase();
 const MINIMAX_MODEL = process.env.MINIMAX_MODEL || 'MiniMax-Text-01';
 const MINIMAX_API_BASE_URL = process.env.MINIMAX_API_BASE_URL || 'https://api.minimaxi.chat';
 const MINIMAX_API_PATH = process.env.MINIMAX_API_PATH || '/v1/chat/completions';
@@ -373,8 +372,11 @@ export async function generateClinicalResponseWithHistory(
         )
       : promptSettings.systemPrompt || SYSTEM_PROMPT;
 
+    // Determine provider from Firestore settings, fallback to env var, then default to gemini
+    const provider = promptSettings.provider || (process.env.LLM_PROVIDER || 'gemini').toLowerCase();
+    
     // Harvard: OpenAI-compatible gateway with api-key auth
-    if (LLM_PROVIDER === 'harvard') {
+    if (provider === 'harvard') {
       if (!isHarvardConfigured()) {
         throw new Error('Harvard provider not configured. Set HARVARD_OPENAI_KEY environment variable.');
       }
@@ -411,7 +413,7 @@ export async function generateClinicalResponseWithHistory(
     }
 
     // MiniMax: no RAG — full toolkit text is embedded in the system prompt.
-    if (LLM_PROVIDER === 'minimax') {
+    if (provider === 'minimax') {
       const userContent = query + phaseContext;
       const minimaxMessages = [
         { 
