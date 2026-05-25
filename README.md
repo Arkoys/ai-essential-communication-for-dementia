@@ -243,16 +243,56 @@ erDiagram
 
 ## 🔧 Environment Variables
 
+### Frontend (Vite - Client-side)
+
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
+| `VITE_FIREBASE_API_KEY` | Yes | - | Firebase API key |
+| `VITE_FIREBASE_AUTH_DOMAIN` | Yes | - | Firebase auth domain |
+| `VITE_FIREBASE_PROJECT_ID` | Yes | - | Firebase project ID |
+| `VITE_FIREBASE_APP_ID` | Yes | - | Firebase app ID |
 | `GEMINI_API_KEY` | Yes* | - | Google Gemini API key |
-| `LLM_PROVIDER` | No | `gemini` | LLM provider: `gemini` or `minimax` |
+| `LLM_PROVIDER` | No | `gemini` | LLM provider: `gemini`, `minimax`, or `harvard` |
 | `MINIMAX_API_KEY` | No* | - | MiniMax API key (required if LLM_PROVIDER=minimax) |
-| `MINIMAX_MODEL` | No | `MiniMax-Text-01` | MiniMax model name |
-| `MINIMAX_API_BASE_URL` | No | `https://api.minimaxi.chat` | MiniMax API base URL |
-| `MINIMAX_API_PATH` | No | `/v1/chat/completions` | MiniMax API path |
+
+### Backend (Netlify Functions - Server-side only)
+
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `HARVARD_OPENAI_KEY` | If using Harvard | Harvard HUIT API key |
+| `HARVARD_OPENAI_BASE_URL` | No | Harvard gateway URL (default: https://go.apis.huit.harvard.edu/ais-openai-direct/v2/) |
 
 *At least one LLM provider API key is required.
+
+## 🚀 Deployment (Netlify)
+
+This application uses Netlify Functions to proxy API calls and avoid CORS issues.
+
+### 1. Set Environment Variables in Netlify Dashboard
+
+Go to **Site Settings → Environment Variables** and add:
+
+For **Harvard Provider:**
+- `HARVARD_OPENAI_KEY` = your Harvard API key
+- `HARVARD_OPENAI_BASE_URL` = https://go.apis.huit.harvard.edu/ais-openai-direct/v2/
+
+### 2. Deploy
+
+The `netlify.toml` file is pre-configured to:
+- Build the React app
+- Deploy serverless functions from `netlify/functions/`
+- Redirect `/api/*` requests to Netlify Functions
+
+Simply push to your connected Git repository and Netlify will:
+1. Run `npm run build`
+2. Deploy functions from `netlify/functions/`
+3. Serve the app from `dist/`
+
+### 3. Verify Harvard Provider Setup
+
+After deployment, check the **AI Provider** tab in Prompt Settings to confirm:
+- Harvard is shown as configured
+- When `LLM_PROVIDER=harvard`, responses will be routed through the proxy function
 
 ## 🤝 In Collaboration With
 
