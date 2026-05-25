@@ -92,7 +92,7 @@ export async function harvardResponsesAPI(
   }
 ) {
   // Use proxy URL for both development and production
-  const proxyUrl = `${API_BASE_URL}/harvard-responses`;
+  const proxyUrl = `${API_BASE_URL}/harvardResponses`;
 
   try {
     const response = await fetch(proxyUrl, {
