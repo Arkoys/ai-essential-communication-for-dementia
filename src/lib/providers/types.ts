@@ -34,7 +34,7 @@ export const PROVIDER_REGISTRY: Record<AIProvider, ProviderConfig> = {
   harvard: {
     name: 'Harvard HUIT',
     description: 'Harvard\'s OpenAI-compatible gateway (api-key auth)',
-    models: ['gpt-4o-mini', 'gpt-4.1', 'gpt-5'],
+    models: ['gpt-4o-mini', 'gpt-4.1'],
     requiresApiKey: true,
     supportsStreaming: true,
     isConfigured: Boolean(process.env.HARVARD_OPENAI_KEY),
