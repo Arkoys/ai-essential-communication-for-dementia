@@ -14,12 +14,12 @@ import {
 } from './providers/harvard';
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-const MINIMAX_MODEL = process.env.MINIMAX_MODEL || 'MiniMax-Text-01';
 const MINIMAX_API_BASE_URL = process.env.MINIMAX_API_BASE_URL || 'https://api.minimaxi.chat';
 const MINIMAX_API_PATH = process.env.MINIMAX_API_PATH || '/v1/chat/completions';
 
 // Harvard configuration
-const HARVARD_MODEL = process.env.HARVARD_MODEL || 'gpt-4o-mini';
+const HARVARD_DEFAULT_MODEL = 'gpt-4o-mini';
+const MINIMAX_DEFAULT_MODEL = 'MiniMax-Text-01';
 
 // Use configurable system prompt, fallback to default
 const SYSTEM_PROMPT = DEFAULT_SYSTEM_PROMPT;
@@ -289,16 +289,18 @@ Your input needs more context for me to help you effectively.
 }
 
 async function generateWithMinimax(
-  messages: { role: string; content: string }[]
+  messages: { role: string; content: string }[],
+  model?: string
 ) {
   const apiKey = process.env.MINIMAX_API_KEY;
   if (!apiKey) {
     throw new Error('MINIMAX_API_KEY is missing. Add it to your local env file.');
   }
 
+  const minimaxModel = model || promptSettings?.selectedModel || MINIMAX_DEFAULT_MODEL;
   const url = `${MINIMAX_API_BASE_URL}${MINIMAX_API_PATH}`;
   const body: Record<string, unknown> = {
-    model: MINIMAX_MODEL,
+    model: minimaxModel,
     messages,
     temperature: 0.2,
   };
@@ -383,6 +385,9 @@ export async function generateClinicalResponseWithHistory(
       }
 
       const userContent = query + phaseContext;
+      // Get the selected model from settings, fallback to default
+      const harvardModel = promptSettings.selectedModel || HARVARD_DEFAULT_MODEL;
+      
       // Build messages with proper typing for Harvard
       const harvardMessages: { role: 'system' | 'user' | 'assistant'; content: string }[] = [
         { 
@@ -404,7 +409,7 @@ export async function generateClinicalResponseWithHistory(
         { role: 'user', content: userContent },
       ];
 
-      const response = await harvardChatCompletion(harvardMessages, HARVARD_MODEL);
+      const response = await harvardChatCompletion(harvardMessages, harvardModel);
       // Handle both streaming and non-streaming responses
       if ('choices' in response) {
         return sanitizeModelOutput(response.choices[0]?.message?.content || 'No response returned.');
@@ -416,6 +421,9 @@ export async function generateClinicalResponseWithHistory(
     // MiniMax: no RAG — full toolkit text is embedded in the system prompt.
     if (provider === 'minimax') {
       const userContent = query + phaseContext;
+      // Get the selected model from settings, fallback to default
+      const minimaxModel = promptSettings.selectedModel || MINIMAX_DEFAULT_MODEL;
+      
       const minimaxMessages = [
         { 
           role: 'system', 
@@ -436,7 +444,7 @@ export async function generateClinicalResponseWithHistory(
         { role: 'user', content: userContent },
       ];
 
-      return await generateWithMinimax(minimaxMessages);
+      return await generateWithMinimax(minimaxMessages, minimaxModel);
     }
 
     // Gemini fallback: RAG retrieval for relevant chunks only

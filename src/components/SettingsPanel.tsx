@@ -195,29 +195,50 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
                 </div>
                 
                 {/* Provider Dropdown Selector */}
-                <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-4">
-                  <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                    Select AI Provider
-                  </label>
-                  <div className="relative">
-                    <select
-                      value={settings.provider || 'harvard'}
-                      onChange={(e) => updateField('provider', e.target.value)}
-                      className="w-full p-3 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 appearance-none cursor-pointer pr-10"
-                    >
-                      {(['minimax', 'harvard'] as const).map((providerKey) => {
-                        const provider = PROVIDER_REGISTRY[providerKey];
-                        const isConfigured = provider.isConfigured;
-                        return (
-                          <option key={providerKey} value={providerKey}>
-                            {provider.name} {!isConfigured ? '(Not configured)' : ''}
-                          </option>
-                        );
-                      })}
-                    </select>
-                    <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" size={20} />
+                <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                      Select AI Provider
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={settings.provider || 'harvard'}
+                        onChange={(e) => updateField('provider', e.target.value)}
+                        className="w-full p-3 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 appearance-none cursor-pointer pr-10"
+                      >
+                        {(['minimax', 'harvard'] as const).map((providerKey) => {
+                          const provider = PROVIDER_REGISTRY[providerKey];
+                          const isConfigured = provider.isConfigured;
+                          return (
+                            <option key={providerKey} value={providerKey}>
+                              {provider.name} {!isConfigured ? '(Not configured)' : ''}
+                            </option>
+                          );
+                        })}
+                      </select>
+                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" size={20} />
+                    </div>
                   </div>
-                  <p className="mt-2 text-xs text-zinc-500">
+                  <div>
+                    <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                      Select Model
+                    </label>
+                    <div className="relative">
+                      <select
+                        value={settings.selectedModel || PROVIDER_REGISTRY[settings.provider as keyof typeof PROVIDER_REGISTRY]?.models[0]}
+                        onChange={(e) => updateField('selectedModel', e.target.value)}
+                        className="w-full p-3 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 appearance-none cursor-pointer pr-10"
+                      >
+                        {PROVIDER_REGISTRY[settings.provider as keyof typeof PROVIDER_REGISTRY]?.models.map((model) => (
+                          <option key={model} value={model}>
+                            {model}
+                          </option>
+                        ))}
+                      </select>
+                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" size={20} />
+                    </div>
+                  </div>
+                  <p className="mt-2 text-xs text-zinc-500 md:col-span-2">
                     Changes take effect after saving and refreshing the page.
                   </p>
                 </div>
@@ -246,28 +267,49 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
                     </div>
                   </div>
                   
-                  <div className="mt-3 pt-3 border-t border-purple-200 dark:border-purple-800/50">
-                    <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                      Default Secondary Model (for dual mode)
-                    </label>
-                    <div className="relative">
-                      <select
-                        value={settings.dualModeProvider || 'minimax'}
-                        onChange={(e) => updateField('dualModeProvider', e.target.value)}
-                        className="w-full p-3 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 appearance-none cursor-pointer pr-10"
-                      >
-                        {(['minimax', 'harvard'] as const).map((providerKey) => {
-                          if (providerKey === settings.provider) return null;
-                          const provider = PROVIDER_REGISTRY[providerKey];
-                          const isConfigured = provider.isConfigured;
-                          return (
-                            <option key={providerKey} value={providerKey}>
-                              {provider.name} {!isConfigured ? '(Not configured)' : ''}
+                  <div className="mt-3 pt-3 border-t border-purple-200 dark:border-purple-800/50 grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                        Default Secondary Provider (for dual mode)
+                      </label>
+                      <div className="relative">
+                        <select
+                          value={settings.dualModeProvider || 'minimax'}
+                          onChange={(e) => updateField('dualModeProvider', e.target.value)}
+                          className="w-full p-3 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 appearance-none cursor-pointer pr-10"
+                        >
+                          {(['minimax', 'harvard'] as const).map((providerKey) => {
+                            if (providerKey === settings.provider) return null;
+                            const provider = PROVIDER_REGISTRY[providerKey];
+                            const isConfigured = provider.isConfigured;
+                            return (
+                              <option key={providerKey} value={providerKey}>
+                                {provider.name} {!isConfigured ? '(Not configured)' : ''}
+                              </option>
+                            );
+                          })}
+                        </select>
+                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" size={20} />
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                        Secondary Model
+                      </label>
+                      <div className="relative">
+                        <select
+                          value={settings.dualModeSelectedModel || PROVIDER_REGISTRY[settings.dualModeProvider as keyof typeof PROVIDER_REGISTRY]?.models[0]}
+                          onChange={(e) => updateField('dualModeSelectedModel', e.target.value)}
+                          className="w-full p-3 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 appearance-none cursor-pointer pr-10"
+                        >
+                          {PROVIDER_REGISTRY[settings.dualModeProvider as keyof typeof PROVIDER_REGISTRY]?.models.map((model) => (
+                            <option key={model} value={model}>
+                              {model}
                             </option>
-                          );
-                        })}
-                      </select>
-                      <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" size={20} />
+                          ))}
+                        </select>
+                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" size={20} />
+                      </div>
                     </div>
                   </div>
                 </div>

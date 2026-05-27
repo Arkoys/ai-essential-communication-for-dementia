@@ -181,6 +181,8 @@ or replacing clinical judgment.`;
 export interface PromptSettings {
   provider: string;
   dualModeProvider: string;
+  selectedModel: string;
+  dualModeSelectedModel: string;
   systemPrompt: string;
   stuckModePrompt: string;
   suggestedPrompts: string[];
@@ -193,6 +195,8 @@ export function getDefaultPromptSettings(): PromptSettings {
   return {
     provider: 'harvard',
     dualModeProvider: 'minimax',
+    selectedModel: 'gpt-4o-mini',
+    dualModeSelectedModel: 'MiniMax-Text-01',
     systemPrompt: DEFAULT_SYSTEM_PROMPT,
     stuckModePrompt: DEFAULT_STUCK_MODE_PROMPT,
     suggestedPrompts: DEFAULT_SUGGESTED_PROMPTS,
