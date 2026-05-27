@@ -422,7 +422,8 @@ export async function generateClinicalResponseWithHistory(
     if (provider === 'minimax') {
       const userContent = query + phaseContext;
       // Get the selected model from settings, fallback to default
-      const minimaxModel = promptSettings.selectedModel || MINIMAX_DEFAULT_MODEL;
+      // Use dualModeSelectedModel for MiniMax in dual mode, selectedModel as fallback
+      const minimaxModel = promptSettings.dualModeSelectedModel || promptSettings.selectedModel || MINIMAX_DEFAULT_MODEL;
       
       const minimaxMessages = [
         { 
