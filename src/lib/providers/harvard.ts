@@ -14,6 +14,16 @@ const HARVARD_BASE_URL = process.env.HARVARD_OPENAI_BASE_URL || 'https://go.apis
 // API base URL - uses proxy in production to avoid CORS
 const API_BASE_URL = import.meta.env.VITE_API_PROXY_URL || '/api';
 
+// Models that don't support temperature parameter (or only support default value 1)
+const NO_TEMP_MODELS = ['gpt-5.5', 'gpt-5.4-mini', 'gpt-5.4-nano'];
+
+/**
+ * Check if a model supports the temperature parameter.
+ */
+function modelSupportsTemperature(model: string): boolean {
+  return !NO_TEMP_MODELS.includes(model);
+}
+
 /**
  * Generate chat completion using Harvard gateway via proxy.
  * Uses Netlify Function proxy in production to avoid CORS issues.
@@ -31,21 +41,31 @@ export async function harvardChatCompletion(
   const proxyUrl = `${API_BASE_URL}/harvard`;
 
   try {
+    // Build request body dynamically based on model capabilities
+    const requestBody: Record<string, unknown> = {
+      messages: messages.map(msg => ({
+        role: msg.role,
+        content: msg.content,
+      })),
+      model,
+      stream: options?.stream ?? false,
+    };
+
+    // Only include temperature for models that support it
+    if (modelSupportsTemperature(model)) {
+      requestBody.temperature = options?.temperature ?? 0.2;
+    }
+
+    if (options?.maxTokens) {
+      requestBody.max_tokens = options.maxTokens;
+    }
+
     const response = await fetch(proxyUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        messages: messages.map(msg => ({
-          role: msg.role,
-          content: msg.content,
-        })),
-        model,
-        temperature: options?.temperature ?? 0.2,
-        max_tokens: options?.maxTokens,
-        stream: options?.stream ?? false,
-      }),
+      body: JSON.stringify(requestBody),
     });
 
     if (!response.ok) {
@@ -95,18 +115,28 @@ export async function harvardResponsesAPI(
   const proxyUrl = `${API_BASE_URL}/harvardResponses`;
 
   try {
+    // Build request body dynamically based on model capabilities
+    const requestBody: Record<string, unknown> = {
+      input,
+      model,
+      stream: options?.stream ?? false,
+    };
+
+    // Only include temperature for models that support it
+    if (modelSupportsTemperature(model)) {
+      requestBody.temperature = options?.temperature ?? 0.2;
+    }
+
+    if (options?.instructions) {
+      requestBody.instructions = options.instructions;
+    }
+
     const response = await fetch(proxyUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({
-        input,
-        model,
-        instructions: options?.instructions,
-        temperature: options?.temperature ?? 0.2,
-        stream: options?.stream ?? false,
-      }),
+      body: JSON.stringify(requestBody),
     });
 
     if (!response.ok) {
