@@ -12,6 +12,9 @@
 const HARVARD_API_KEY = process.env.HARVARD_OPENAI_KEY;
 const HARVARD_BASE_URL = process.env.HARVARD_OPENAI_BASE_URL || 'https://go.apis.huit.harvard.edu/ais-openai-direct/v2/';
 
+// Models that don't support temperature parameter (or only support default value 1)
+const NO_TEMP_MODELS = ['gpt-5.5', 'gpt-5.4', 'gpt-5.4-mini', 'gpt-5.4-nano'];
+
 exports.handler = async function(event, context) {
   // Only allow POST requests
   if (event.httpMethod !== 'POST') {
@@ -54,6 +57,22 @@ exports.handler = async function(event, context) {
       };
     }
 
+    // Build request body dynamically based on model capabilities
+    const harvardRequest = {
+      model: model || 'gpt-4.1',
+      input,
+      stream: stream ?? false,
+    };
+
+    // Only include temperature for models that support it
+    if (!NO_TEMP_MODELS.includes(harvardRequest.model)) {
+      harvardRequest.temperature = temperature ?? 0.2;
+    }
+
+    if (instructions !== undefined) {
+      harvardRequest.instructions = instructions;
+    }
+
     // Forward request to Harvard Responses API
     const response = await fetch(`${HARVARD_BASE_URL}responses`, {
       method: 'POST',
@@ -62,13 +81,7 @@ exports.handler = async function(event, context) {
         'api-key': HARVARD_API_KEY,
         'Authorization': `Bearer ${HARVARD_API_KEY}`,
       },
-      body: JSON.stringify({
-        model: model || 'gpt-4.1',
-        input,
-        instructions,
-        temperature: temperature ?? 0.2,
-        stream: stream ?? false,
-      }),
+      body: JSON.stringify(harvardRequest),
     });
 
     if (!response.ok) {
