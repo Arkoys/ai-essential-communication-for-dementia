@@ -1,0 +1,40 @@
+\newpage
+\section{Related Work}\label{sec:relatedwork}
+
+Recent advances in LLMs have enabled a new generation of clinical support tools designed to improve healthcare workflows and assist clinical reasoning. Existing approaches span AI-assisted documentation, clinical decision support systems, and LLM-based medical assistants. While these systems demonstrate growing feasibility for AI-assisted healthcare, important gaps remain regarding communication-centered workflows and specialized domains such as dementia care.
+
+\subsection{AI-Assisted Clinical Documentation}
+
+A significant body of work has focused on automating clinical documentation through AI scribes and note-taking systems. Platforms such as Doctolib and Tandem have demonstrated that AI can effectively capture and summarize medical encounters, highlighting key information for clinical review. Similarly, Suki.ai has developed voice-activated AI assistants for clinical documentation. These tools have shown strong adoption rates due to their focus on reducing administrative burden.
+
+The primary strength of documentation-focused AI lies in its reliability and alignment with established workflows. However, these systems operate primarily as passive observers, capturing information rather than actively guiding clinicians through complex consultations. They do not address the communicative and relational challenges inherent in sensitive clinical conversations.
+
+\subsection{Clinical Decision Support Systems}
+
+Traditional clinical decision support systems, including UpToDate and Isabel Active, provide evidence-based medical guidance through curated knowledge bases and algorithmic recommendations. These platforms have demonstrated clinical utility in diagnostic reasoning and treatment planning. More recently, LLM-based systems such as OpenEvidence and Glass Health have emerged, offering medical knowledge access through natural language interfaces.
+
+While these systems improve access to medical knowledge, they typically function as retrieval engines or diagnostic aids rather than consultation guides. They do not provide structured communication support tailored to the interpersonal dynamics of specific clinical scenarios, such as dementia consultations where patients and caregivers may experience fear, denial, or emotional distress.
+
+\subsection{LLM Applications in Healthcare}
+
+Research has identified three primary use cases for LLMs in medicine: clinical documentation, cognitive support, and patient communication. Clinical documentation represents the most mature application, with reliable generation of medical notes and consultation summaries. Cognitive support applications, including record summarization and diagnostic hypothesis generation, have shown promise but require careful oversight. Patient communication applications, such as translating medical terminology into plain language, remain at earlier stages of development.
+
+Despite these advances, key limitations constrain clinical adoption. Hallucinations---the generation of plausible but incorrect information---represent a major risk in clinical settings. Variable reliability dependent on prompts and context limits reproducibility. The lack of explainability in LLM outputs reduces clinician trust, while ethical and legal concerns regarding patient data privacy and accountability in case of errors further complicate deployment.
+
+\subsection{Communication-Centered AI in Healthcare}
+
+A notable gap exists in AI systems specifically designed to support clinician-patient communication during sensitive consultations. While general-purpose clinical support tools have proliferated, few systems address the relational and communicative challenges specific to domains such as dementia care, where conversations involve cognitive decline, loss of autonomy, and caregiver concerns.
+
+Frameworks such as the Ariadne Labs Essential Communications Toolkit have been developed to guide clinicians through structured dementia consultations, providing evidence-based communication strategies and sample language. However, these frameworks have not been integrated into AI-assisted clinical support systems, representing an opportunity for combining structured communication guidance with LLM capabilities.
+
+\subsection{Positioning This Project}
+
+This project addresses the identified gap by developing a guided consultation assistant that combines LLMs with structured communication frameworks for dementia care. Unlike existing documentation-focused AI, the proposed system actively guides clinicians through consultation phases and relational challenges. Unlike general clinical decision support systems, it provides domain-specific communication strategies grounded in evidence-based resources. By integrating the Navigation Map framework and Stuck Points Framework, this project demonstrates how LLMs can support communication-centered clinical workflows while maintaining evidence grounding and source fidelity.
+
+Table~\ref{tab:relatedwork_gap_template} provides a comparison of existing approaches against the contribution of this project.
+
+% =====================TABLE START============================
+
+\input{tables/02tab_litcomparison}
+
+% =====================TALBE END==============================

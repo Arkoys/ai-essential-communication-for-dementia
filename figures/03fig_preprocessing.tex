@@ -1,0 +1,44 @@
+\begin{figure}[p]
+\centering
+% --- Knowledge base construction pipeline (TikZ) ---
+\begin{tikzpicture}[
+  font=\small,
+  node distance=8mm,
+  box/.style={draw, rounded corners, align=center, inner sep=6pt, text width=0.85\textwidth},
+  arrow/.style={-{Latex[length=2mm]}, thick}
+]
+\node[box] (source) {
+\textbf{Source materials} \\
+Ariadne Labs Essential Communications Toolkit documents
+};
+\node[box, below=of source] (parse) {
+\textbf{Chunking and structuring} \\
+Separate Navigation Map, Conversation Guides, Stuck Points Framework
+};
+\node[box, below=of parse] (embed) {
+\textbf{Embedding generation} \\
+Vector representations for semantic retrieval
+};
+\node[box, below=of embed] (store) {
+\textbf{Vector storage} \\
+Indexed knowledge base for context retrieval
+};
+\node[box, below=of store] (retrieve) {
+\textbf{Retrieval at inference} \\
+Query matching against knowledge chunks
+};
+\node[box, below=of retrieve] (context) {
+\textbf{Context assembly} \\
+Retrieved chunks + system prompt $\rightarrow$ LLM
+};
+\draw[arrow] (source) -- (parse);
+\draw[arrow] (parse) -- (embed);
+\draw[arrow] (embed) -- (store);
+\draw[arrow] (store) -- (retrieve);
+\draw[arrow] (retrieve) -- (context);
+\end{tikzpicture}
+\caption{
+Knowledge base construction and retrieval pipeline.
+The system used retrieval-augmented generation to ground responses in validated toolkit resources.}
+\label{fig:preprocessing_pipeline}
+\end{figure}

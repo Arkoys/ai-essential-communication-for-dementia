@@ -1,0 +1,38 @@
+\begin{table}[htbp]
+\centering
+\caption{Illustrative comparison of methodological coverage in related work}
+\label{tab:relatedwork_gap_template}
+\setlength{\tabcolsep}{4pt}
+renewcommand{\arraystretch}{1.2}
+
+\begin{threeparttable}
+\begin{tabularx}{\textwidth}{p{2.4cm} X *{5}{>{\centering\arraybackslash}p{1.5cm}}}
+\toprule
+\textbf{Category} &
+\textbf{Representative Systems} &
+\textbf{Documentation support} &
+\textbf{Communication guidance} &
+\textbf{Domain-specific strategies} &
+\textbf{Active consultation guidance} &
+\textbf{Source grounding} \\
+\midrule
+AI Documentation & Doctolib, Suki.ai & \yes & \no & \no & \no & \no \\
+\midrule
+Clinical Decision Support & UpToDate, OpenEvidence & \no & \no & \partialsymbol & \no & \partialsymbol \\
+\midrule
+LLM Medical Assistants & Glass Health & \yes & \partialsymbol & \no & \no & \no \\
+\midrule
+Communication Frameworks & Ariadne Labs Toolkit & \no & \yes & \yes & \partialsymbol & \yes \\
+\midrule
+\textbf{This project} & \lightexample{(Navigation Assistant)} & \yes & \yes & \yes & \yes & \yes \\
+\bottomrule
+\end{tabularx}
+
+\begin{tablenotes}\small
+\item \yes\ indicates full coverage of the property.
+\item \partialsymbol\ indicates partial or limited coverage.
+\item \no\ indicates absence of evidence in the cited work.
+\item Source grounding refers to explicit citation and attribution of evidence-based resources.
+\end{tablenotes}
+\end{threeparttable}
+\end{table}

@@ -1,0 +1,88 @@
+
+
+% Palette (print-safe, clear hierarchy for dementia consultation system)
+\definecolor{fillCore}{RGB}{210,235,220}     % light green: core contribution
+\definecolor{fillPartial}{RGB}{232,245,236}  % lighter green: partial contribution
+\definecolor{fillContext}{RGB}{235,235,235}  % grey: context / not contributed
+\definecolor{fillExisting}{RGB}{245,245,245} % very light grey: pre-existing / setting
+\definecolor{accentGreen}{RGB}{70,140,95}    % green text/accent
+
+\begin{figure}[p]
+\centering
+\begin{tikzpicture}[
+  font=\small,
+  node distance=7mm,
+  box/.style={draw=black, rounded corners, align=center, inner sep=6pt, text width=0.90\textwidth},
+  arrow/.style={-{Latex[length=2mm]}, thick, draw=black}
+]
+
+% Pre-existing / setting context (very light grey)
+\node[box, fill=fillExisting] (patient) {
+\textbf{Clinical consultation (primary care)} \\
+Patient presenting with memory concerns or cognitive decline \\
+Complex interactions involving patient and caregiver emotions
+};
+
+% Core contributions (light green fill)
+\node[box, fill=fillCore, below=of patient] (navigation) {
+\textbf{Navigation Map guidance (Objective 3)} \\
+Three-phase structured workflow: Recognition, Evaluation, Diagnosis \\
+Provides phase-specific communication strategies and sample language
+};
+
+\node[box, fill=fillCore, below=of navigation] (rag) {
+\textbf{Retrieval-Augmented Generation (Objective 2)} \\
+Grounds LLM responses in Ariadne Labs Essential Communications Toolkit \\
+Ensures source-faithful, evidence-based guidance
+};
+
+\node[box, fill=fillCore, below=of rag] (stuck) {
+\textbf{Stuck Points Framework (Objective 4)} \\
+Identifies and addresses relational communication obstacles \\
+Strategies: Acknowledge, Get Curious, Summarize and Plan
+};
+
+% Partial contribution (lighter green fill)
+\node[box, fill=fillPartial, below=of stuck] (llm) {
+\textbf{LLM-powered conversational interface} \\
+Real-time contextual guidance during consultations \\
+Dual-mode architecture for multi-provider comparison
+};
+
+% Context / not contributed (grey fill)
+\node[box, fill=fillContext, below=of llm] (eval) {
+\textbf{Evaluation and validation} \\
+Evidence grounding \quad • \quad Source fidelity \quad • \quad Clinical relevance \\
+{\color{accentGreen}\textbf{Framework integration and user-centered design}}
+};
+
+% Arrows
+\draw[arrow] (patient) -- (navigation);
+\draw[arrow] (navigation) -- (rag);
+\draw[arrow] (rag) -- (stuck);
+\draw[arrow] (stuck) -- (llm);
+\draw[arrow] (llm) -- (eval);
+
+% Legend (fill-based semantics)
+\node[box, fill=white, below=10mm of eval] (legend) {
+\textbf{Legend} \\[2pt]
+\begin{tabular}{@{}p{0.30\textwidth} p{0.66\textwidth}@{}}
+\textbf{\colorbox{fillCore}{\strut\hspace{14pt}}} &
+Core contribution: Navigation Map, RAG pipeline, Stuck Points Framework. \\
+\textbf{\colorbox{fillPartial}{\strut\hspace{14pt}}} &
+Partial contribution: LLM interface and dual-mode architecture. \\
+\textbf{\colorbox{fillContext}{\strut}} &
+Context or evaluation components. \\
+\textbf{\colorbox{fillExisting}{\strut\hspace{14pt}}} &
+Pre-existing clinical setting and patient context. \\
+\end{tabular}
+};
+
+\end{tikzpicture}
+
+\caption{
+End-to-end overview of an LLM-guided dementia consultation system.
+Box fill indicates contribution level; green text marks key thesis contributions.
+}
+\label{fig:graphical_abstract_overview}
+\end{figure}

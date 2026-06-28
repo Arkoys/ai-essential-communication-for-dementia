@@ -1,0 +1,107 @@
+\newpage
+\section{Discussion}\label{sec:discussion}
+
+\lightbadexample{
+\textbf{Bad discussion habits}
+
+-- Repeating numerical results without interpretation \\
+-- Introducing analyses not reported in Results \\
+-- Claiming clinical readiness without evidence \\
+-- Explaining mechanisms without support \\
+-- Using causal operators without causal identification
+}
+
+% ============================================================
+\subsection{Key findings and relation to the project aim}
+
+This project aimed to develop a guided consultation assistant for dementia care communications that combines structured communication frameworks with large language model capabilities.
+
+The results show that RAG and prompt engineering yield comparable output quality, while also revealing that model selection should prioritize task-specific alignment over raw capability. The findings further indicate that phase recognition shows non-deterministic variability inherent to dementia as a disease domain, and that clinicians value proactive relational communication support but require refined interface design.
+
+Together, these findings support further development of the consultation assistant in bounded evaluation settings, but do not justify clinical deployment without prospective validation and interface refinement. The comparable performance of RAG and prompt engineering is particularly important context: this finding reflects the current state of the Ariadne Labs toolkit, which is not yet complete. As the toolkit materials are expanded and finalized, the value of RAG retrieval is expected to increase substantially.
+
+% ============================================================
+\subsection{Interpretation of primary performance differences}
+
+The comparable output quality between RAG and prompt engineering approaches reflects the current scope and size of the Ariadne Labs Essential Communications Toolkit. The toolkit documents, while comprehensive in communication guidance, represent a manageable volume of content that can be incorporated directly into prompt context without exceeding token limits. This explains why retrieval did not provide perceptible quality improvements during the evaluation phase.
+
+The finding that Minimax M2.7 outperformed larger frontier models in clinical communication tasks aligns with research suggesting that model scale does not uniformly benefit specialized domains. Minimax M2.7's superior performance may reflect inductive biases or training data that better aligned with the structured, patient-centered communication patterns embodied in the Ariadne Labs frameworks. GPT 4.5 and GPT 5's tendency toward verbose, generically clinical language may indicate training on datasets that reward elaboration over precision.
+
+The non-deterministic phase recognition behavior reflects the inherent ambiguity in dementia as a disease domain. Unlike conditions with clear diagnostic criteria, dementia consultations involve gradual transitions between concern, assessment, and diagnosis. This ambiguity is a feature of the clinical reality, not a limitation of the model.
+
+% ============================================================
+\subsection{Trade-offs and implications for intended use}
+
+The results reveal several trade-offs relevant to system design decisions. The RAG versus prompt engineering trade-off represents a choice between production efficiency and development flexibility. RAG reduces token consumption by approximately 50\% during inference, which translates to lower operational costs in production environments. However, prompt engineering offers greater development flexibility and faster iteration during experimentation, which may be preferable during active refinement phases.
+
+The model selection trade-off between frontier and mid-range models reflects a balance between capability and task alignment. Larger frontier models such as GPT 5 provide more advanced reasoning but tend toward verbose, generically clinical outputs. Smaller models such as Minimax M2.7 demonstrate better task-specific alignment but may lack capabilities for edge cases. For the intended use of structured communication guidance, task alignment appears to outweigh raw capability.
+
+The Stuck Points Framework presents a trade-off between proactive support and cognitive load. Clinicians appreciated anticipatory guidance but noted that interface navigation required refinement. This suggests that proactive features must be integrated thoughtfully to avoid overwhelming users with information.
+
+% ============================================================
+\subsection{Error analysis and failure modes as scientific constraints}
+
+The observed non-deterministic phase recognition behavior constitutes a scientific constraint on the system's validity. Phase assignments varied across identical inputs, particularly in the Evaluation phase and at boundaries between phases. This variability reflects the inherent ambiguity of dementia consultations rather than model failure, but it establishes boundary conditions for system use.
+
+The boundary conditions include: (1) phase tracking features should not be relied upon for chronological progress monitoring without clinician verification, (2) boundary cases between Recognition, Evaluation, and Diagnosis should present multiple phase options to clinicians rather than forcing a single assignment, and (3) deployment contexts requiring deterministic phase identification may need additional constraints such as temperature zero inference.
+
+The Stuck Points Framework showed consistent appreciation for proactive relational guidance but revealed interface integration challenges. This failure mode represents a design constraint rather than a capability limitation: the underlying communication support functioned as intended, but delivery through the interface did not optimally support workflow integration.
+
+% ============================================================
+\subsection{Comparison with prior work}
+
+This work contributes to the emerging literature on large language models in clinical communication support. Prior studies have primarily focused on documentation tasks, history-taking, or diagnostic decision support. This project extends the application domain to consultation guidance, where the goal is supporting communication processes rather than extracting or processing clinical information.
+
+The finding that smaller task-aligned models outperform larger frontier models in specialized communication domains aligns with observations in other healthcare AI applications. Medical imaging and clinical note generation tasks have similarly shown that domain-specific fine-tuning or selection can outweigh the benefits of general-purpose capability scaling.
+
+The use of structured communication frameworks (Navigation Map, Conversation Guides, Stuck Points) as knowledge sources represents a methodological contribution. This approach to grounding LLM outputs in validated clinical communication resources may generalize to other sensitive communication domains such as palliative care, pediatrics, or mental health.
+
+% ============================================================
+\subsection{What the study demonstrates, and what it does not}
+
+This study demonstrates that a RAG-based consultation assistant can provide clinically appropriate communication guidance grounded in validated resources. It demonstrates that model selection for specialized clinical communication tasks should prioritize task alignment over model scale. It demonstrates that clinicians appreciate proactive relational communication support delivered through structured frameworks.
+
+This study does not establish that the system improves patient outcomes, clinician efficiency, or diagnostic accuracy in real consultations. It does not establish safe deployment thresholds or appropriate use contexts. It does not demonstrate performance across diverse patient populations, cultural contexts, or healthcare systems.
+
+The study establishes proof-of-concept for the technical and clinical approach, but clinical translation requires prospective evaluation with patient and clinician outcome measures.
+
+% ============================================================
+\subsection{Limitations and boundaries of inference}\label{sec:discussion_limitations}
+
+Each limitation constrains inference, generalizability, or use.
+
+\subsubsection{Study design limitations}
+
+This project conducted evaluation both with synthetic clinical scenarios for controlled comparison testing and with real patient consultations during clinicians' weekly meetings. This dual evaluation approach supports claims about output quality, clinician perception, and practical utility in real clinical workflows. However, the study does not establish causal impact on patient outcomes or long-term consultation quality, which would require larger-scale prospective evaluation.
+
+\subsubsection{Toolkit scope limitations}
+
+The Ariadne Labs Essential Communications Toolkit was not yet complete during the evaluation period. This limits conclusions about RAG value, which is expected to increase as toolkit materials are expanded. Conclusions about source grounding quality are specific to the current toolkit content and may not generalize to future versions.
+
+\subsubsection{Technical and analytical limitations}
+
+Temperature settings for LLM inference were not systematically varied to evaluate their impact on phase recognition variability. The study did not establish optimal temperature configurations for balancing creativity and consistency in clinical communication guidance.
+
+Uncertainty estimation and abstention policies were not evaluated, limiting conclusions about safe deployment thresholds or appropriate use contexts for declining to respond.
+
+\subsubsection{Generalizability and equity limitations}
+
+The evaluation was conducted with English-speaking clinicians in Western healthcare contexts. The Conversation Guides and Stuck Points Framework were developed for these settings and may not generalize to other cultural contexts, healthcare systems, or languages.
+
+Clinician feedback was collected from a limited pool of professionals associated with the Ariadne Labs project. No demographic stratification of clinician responses was performed, preventing assessment of how clinician background influences perception of system outputs.
+
+% ============================================================
+\subsection{Future work justified by observed limitations}\label{sec:discussion_future}
+
+The limitations identified throughout this study suggest several directions for future research. First, prospective evaluation with clinicians during real patient consultations is needed to determine whether the consultation assistant improves communication quality, consultation efficiency, and patient satisfaction in clinical practice.
+
+As the Ariadne Labs communication toolkit continues to expand, the system should be re-evaluated to compare retrieval-augmented generation (RAG) with prompt engineering approaches. While prompt engineering proved sufficient for the current toolkit, the increasing volume of communication guidance is expected to exceed prompt context limits, making retrieval-based methods a more promising solution.
+
+The user interface also requires further refinement to better support integration of the Stuck Points Framework while minimizing clinician cognitive load and disruption to existing workflows. Iterative usability studies involving diverse clinician populations will provide valuable insights for optimizing the interface design.
+
+Further work should also investigate strategies for improving the consistency of consultation phase recognition. In particular, systematic evaluation of temperature settings and deterministic phase assignment methods may provide more stable progress tracking during consultations.
+
+Finally, external validation across diverse healthcare systems, patient populations, and cultural contexts is necessary to assess the generalizability of both the communication frameworks and the proposed consultation assistant.
+
+Beyond research evaluation, ongoing collaboration with Ariadne Labs will focus on developing a roadmap for the potential public release of the consultation assistant. This roadmap will address branding, deployment strategy, production-ready technical architecture, infrastructure requirements, scalability, and long-term system maintenance.
+

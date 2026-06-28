@@ -1,0 +1,801 @@
+\section{\LiGHTempLaTeX: \LaTeX{} template for \LiGHT{}ers}
+
+This section introduces the \LaTeX{} template designed specifically for \LiGHT{}ers. Built upon the standard \LaTeX{} article class, the template offers a professional appearance while maintaining simplicity and ease of use. It includes custom commands and environments to streamline report formatting.
+
+\subsection{Basic text and document formatting}
+
+The template provides comprehensive text formatting features and document structuring capabilities. 
+
+\subsubsection{Text styling and fonts}
+
+\LaTeX{} provides various text formatting commands, as shown in \Cref{tab:text-formatting}.
+
+\begin{table}[htb]
+    \centering
+    \caption{Text formatting commands in \LaTeX}\label{tab:text-formatting}
+    \begin{tabular}{lll}
+        \toprule
+        \textbf{Category} & \textbf{Command} & \textbf{Output} \\
+        \midrule
+        \multirow{6}{*}{Basic styles} 
+            & \mintinline{latex}{\textbf{bold text}} & \textbf{bold text} \\
+            & \mintinline{latex}{\textit{italic text}} & \textit{italic text} \\
+            & \mintinline{latex}{\uline{underlined text}} & \uline{underlined text} \\
+            & \mintinline{latex}{\sout{strikethrough text}} & \sout{strikethrough text} \\
+            & \mintinline{latex}{\textsuperscript{superscript}} & text\textsuperscript{superscript} \\
+            & \mintinline{latex}{\textsubscript{subscript}} & text\textsubscript{subscript} \\
+        \midrule
+        \multirow{4}{*}{Font families}
+            & \mintinline{latex}{\texttt{typewriter text}} & \texttt{typewriter text} \\
+            & \mintinline{latex}{\textsc{small caps text}} & \textsc{small caps text} \\
+            & \mintinline{latex}{\textsf{sans serif text}} & \textsf{sans serif text} \\
+            & \mintinline{latex}{\textrm{roman text (default)}} & \textrm{roman text (default)} \\
+        \midrule
+        \multirow{6}{*}{Combined styles} 
+            & \mintinline{latex}{\textbf{\textit{bold italic}}} & \textbf{\textit{bold italic}} \\
+            & \mintinline{latex}{\textit{\texttt{italic typewriter}}} & \textit{\texttt{italic typewriter}} \\
+            & \mintinline{latex}{\textbf{\texttt{bold typewriter}}} & \textbf{\texttt{bold typewriter}} \\
+            & \mintinline{latex}{\uline{\textbf{underlined bold}}} & \uline{\textbf{underlined bold}} \\
+            & \mintinline{latex}{\textit{\textsf{italic sans serif}}} & \textit{\textsf{italic sans serif}} \\
+            & \mintinline{latex}{\textsc{\textbf{bold small caps}}} & \textsc{\textbf{bold small caps}} \\
+        \midrule
+        \multirow{3}{*}{Color and style} 
+            & \mintinline{latex}{\textcolor{red}{red text}} & \textcolor{red}{red text} \\
+            & \mintinline{latex}{\textcolor{blue}{\textbf{blue bold}}} & \textcolor{blue}{\textbf{blue bold}} \\
+            & \mintinline{latex}{\textit{\textcolor{red}{italic red}}} & \textit{\textcolor{red}{italic red}} \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+Commands can be nested in any order to combine different styles. For example, ``\mintinline{latex}{\textbf{\textit{\textcolor{blue}{bold italic blue text}}}}'' produces \textbf{\textit{\textcolor{blue}{bold italic blue text}}}.
+
+Footnotes can be added using the \mintinline{latex}{\footnote{}} command\footnote{Footnotes appear at the bottom of the page and are automatically numbered.}. They are useful for providing additional information without interrupting the main text flow\footnote{Multiple footnotes can be used on the same page, and their numbering is handled automatically.}.
+
+\subsubsection{Font sizes}
+
+\LaTeX{} provides predefined font size commands ranging from \mintinline{latex}{\tiny} to \mintinline{latex}{\Huge}, with \mintinline{latex}{\normalsize} being the default. These commands are listed in \Cref{tab:font-sizes} in descending order of size.
+
+For custom font sizes, you can use the \mintinline{latex}{\fontsize{size}{skip}} command, where \verb|size| specifies the desired font size in points, and \verb|skip| defines the baseline skip (vertical space between lines).
+
+Important: Always enclose font size commands in braces to limit their scope, \eg, ``\mintinline{latex}{{\large This text is large} but this is normal size.}'' produces:
+{\large This text is large} but this is normal size.
+
+
+\begin{table}[htb]
+    \centering
+    \caption{Standard font sizes in \LaTeX}\label{tab:font-sizes}
+    \begin{tabular}{llr}
+        \toprule
+        \textbf{Command} & \textbf{Relative Size} & \textbf{Example} \\
+        \midrule
+        \mintinline{latex}{\Huge} & Largest & {\Huge Sample} \\
+        \mintinline{latex}{\huge} & Very large & {\huge Sample} \\
+        \mintinline{latex}{\LARGE} & Larger & {\LARGE Sample} \\
+        \mintinline{latex}{\Large} & Large & {\Large Sample} \\
+        \mintinline{latex}{\large} & Slightly large & {\large Sample} \\
+        \mintinline{latex}{\normalsize} & Default & {\normalsize Sample} \\
+        \mintinline{latex}{\small} & Slightly small & {\small Sample} \\
+        \mintinline{latex}{\footnotesize} & Footnote & {\footnotesize Sample} \\
+        \mintinline{latex}{\scriptsize} & Script & {\scriptsize Sample} \\
+        \mintinline{latex}{\tiny} & Smallest & {\tiny Sample} \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\subsubsection{Document structure}
+
+\LaTeX{} provides a hierarchical structure for organizing documents through various sectioning commands. The main sectioning levels are shown in \Cref{tab:headings}, from highest (\mintinline{latex}{\section}) to lowest (\mintinline{latex}{\subparagraph}).
+
+For clarity and readability, it is recommended to use no more than 3--4 levels in most documents. Using too many levels can make the document structure confusing and harder to follow. A typical thesis or report usually employs \mintinline{latex}{\section} for major divisions, \mintinline{latex}{\subsection} for main topics within sections, and \mintinline{latex}{\subsubsection} for detailed subtopics. The \mintinline{latex}{\paragraph} command should be used sparingly, while \mintinline{latex}{\subparagraph} is rarely needed.
+
+\begin{table}[htb]
+    \centering
+    \caption{Document heading hierarchy in \LaTeX}\label{tab:headings}
+    \begin{tabular}{clll}
+        \toprule
+        \textbf{Level} & \textbf{Command} & \textbf{Numbering} & \textbf{Style} \\
+        \midrule
+        1 & \mintinline{latex}{\section} & {\large\bfseries 1.} & {\large\bfseries Title} \\
+        2 & \mintinline{latex}{\subsection} & \textbf{1.1} & {\normalsize\bfseries Title} \\
+        3 & \mintinline{latex}{\subsubsection} & \textit{1.1.1} & {\normalsize\itshape Title} \\
+        4 & \mintinline{latex}{\paragraph} & - & \textbf{Title} (run-in) \\
+        5 & \mintinline{latex}{\subparagraph} & - & \textbf{\textit{Title}} (run-in \& italic) \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+\subsubsection{Special commands and logos}
+
+The template provides custom commands for consistent formatting of special terms, logos, and acronyms related to the Laboratory for Intelligent Global Health and Humanitarian Response Technologies (\LiGHT).
+
+\Cref{tab:logos} lists the available logo commands. These include the laboratory acronym (\mintinline{latex}{\LiGHT{}}), the template name (\mintinline{latex}{\LiGHTempLaTeX{}}), and various institutional logos; additional logos await your suggestions and contributions!
+
+\begin{table}[htb]
+    \centering
+    \caption{Special in-text logo commands}\label{tab:logos}
+    \begin{tabular}{lll}
+        \toprule
+        \textbf{Command} & \textbf{Output} & \textbf{Description} \\
+        \midrule
+        \mintinline{latex}{\LiGHT{}} & \LiGHT{} & Laboratory acronym \\
+        \mintinline{latex}{\LiGHTLogo{}} & \LiGHTLogo{} & Laboratory logo (color) \\
+        \mintinline{latex}{\LiGHTLogo*{}} & \LiGHTLogo*{} & Laboratory logo (monochrome) \\
+        \mintinline{latex}{\LiGHTeX{}} & \LiGHTeX{} & Laboratory \LaTeX{} acronym \\
+        \mintinline{latex}{\LiGHTempLaTeX{}} & \LiGHTempLaTeX{} & Template name \\
+        \mintinline{latex}{\EPFLLogo{}} & \EPFLLogo{} & EPFL logo (color) \\
+        \mintinline{latex}{\EPFLLogo*{}} & \EPFLLogo*{} & EPFL logo (monochrome) \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+We also provide custom environments for information notes, tips, important notices, warnings, and cautions. These environments follow the same design principles as \href{https://docs.github.com/en/get-started/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax#alerts}{GitHub's alert system}, making the documentation style familiar to users of both platforms.
+These environments are particularly useful for highlighting key information in technical reports and academic writing, especially in the medical domain where clear communication of critical information is essential. \Cref{tab:infoboxes} demonstrates these environments with examples.
+
+\clearpage
+\begin{table}[htb]
+    \centering
+    \caption{Information box environments}\label{tab:infoboxes}
+    \resizebox{0.98\textwidth}{!}{%
+    \begin{tabular}{lm{5cm}p{9cm}}
+        \toprule
+        \textbf{Environment} & \textbf{Purpose} & \textbf{Example} \\
+        \midrule
+        \texttt{infonote} & Highlights information that users should take into account & 
+        \begin{minipage}[c]{9cm}
+            \begin{infonote}
+            All patient data must be properly anonymized.
+            \end{infonote}
+        \end{minipage} \\[2em]
+        \texttt{infotip} & Provides optional information to help users succeed & 
+        \begin{minipage}[c]{9cm}
+            \begin{infotip}
+            Consider using k-anonymization for datasets.
+            \end{infotip}
+        \end{minipage} \\[2em]
+        \texttt{infoimportant} & Emphasizes crucial information for success & 
+        \begin{minipage}[c]{9cm}
+            \begin{infoimportant}
+            Comply with HIPAA and GDPR regulations.
+            \end{infoimportant}
+        \end{minipage} \\[2em]
+        \texttt{infowarning} & Presents critical content requiring immediate attention & 
+        \begin{minipage}[c]{9cm}
+            \begin{infowarning}
+            Never store raw patient data publicly.
+            \end{infowarning}
+        \end{minipage} \\[2em]
+        \texttt{infocaution} & Highlights potential negative consequences & 
+        \begin{minipage}[c]{9cm}
+            \begin{infocaution}
+            Unencrypted data risks legal consequences.
+            \end{infocaution}
+        \end{minipage} \\
+        \bottomrule
+    \end{tabular}
+    }%
+\end{table}
+
+\subsection{Mathematical notation and equations}
+
+LaTeX excels at typesetting mathematical content, offering precise control over notation and layout. This section covers essential mathematical typesetting features, from basic inline expressions to complex multi-line equations.
+
+\subsubsection{Basic mathematical typesetting}
+
+LaTeX provides two main methods for including mathematical expressions: inline math (enclosed in single dollars \mintinline{latex}{$...$}) and displayed math (using specific environments). For example:
+\begin{itemize}
+    \item Inline math: The mean age was $\mu = 42.5$ years with standard deviation $\sigma = 8.3$ years
+    \item Displayed equation:
+    \[
+        \text{BMI} = \frac{\text{weight (kg)}}{\text{height (m)}^2}
+    \]
+\end{itemize}
+
+Following ISO standards, certain mathematical elements require specific formatting:
+\begin{itemize}
+    \item Constants use upright font: $\uppi$ (\mintinline{latex}{\uppi}), $\ee$ (\mintinline{latex}{\ee})
+    \item Differential operators: $\dd x$ (\mintinline{latex}{\dd}) instead of $dx$
+    \item Imaginary units: $\ii$ (\mintinline{latex}{\ii}), $\jj$ (\mintinline{latex}{\jj})
+\end{itemize}
+
+\subsubsection{Numbers and physical units}
+
+The \pkg{siunitx} package ensures consistent formatting of numbers and units across your document. Common use cases include:
+
+\begin{itemize}
+    \item Large numbers: \mintinline{latex}{\num{1.23e4}} → \num{1.23e4}
+    \item Units: \mintinline{latex}{\si{\micro\gram\per\milli\litre}} → \si{\micro\gram\per\milli\litre}
+    \item Combined: \mintinline{latex}{\SI{37.5}{\degreeCelsius}} → \SI{37.5}{\degreeCelsius}
+\end{itemize}
+
+Medical examples:
+\begin{itemize}
+    \item Blood pressure: \SI{120}{\mmHg}
+    \item Dosage: \SI{500}{\milli\gram} twice daily
+    \item Lab values: \SI{5.5}{\milli\mole\per\litre} glucose
+\end{itemize}
+
+\subsubsection{Equation environments}
+
+LaTeX offers several environments for displaying equations, each serving different purposes:
+
+\paragraph{Simple equations} Use the \texttt{equation} environment for single equations that need referencing:
+\begin{equation}\label{eq:bmi}
+    \text{BMI} = \frac{\text{weight (kg)}}{\text{height (m)}^2}
+\end{equation}
+
+\paragraph{Aligned equations} The \texttt{align} environment handles multiple equations with alignment points:
+\begin{align}
+    \text{Sensitivity} &= \frac{\text{True Positives}}{\text{True Positives} + \text{False Negatives}} \label{eq:sens} \\
+    \text{Specificity} &= \frac{\text{True Negatives}}{\text{True Negatives} + \text{False Positives}} \label{eq:spec} \\
+    \text{F1 Score} &= 2 \cdot \frac{\text{Precision} \cdot \text{Recall}}{\text{Precision} + \text{Recall}} \label{eq:f1}
+\end{align}
+
+\paragraph{Multiple equations} For related equations without alignment, use \texttt{gather}:
+\begin{gather}
+    \text{SBP} = \text{DBP} + \frac{1}{3}(\text{PP}) \\
+    \text{PP} = \text{SBP} - \text{DBP} \\
+    \text{MAP} = \text{DBP} + \frac{1}{3}(\text{SBP} - \text{DBP})
+\end{gather}
+
+\paragraph{Long equations} The \texttt{multline} environment handles equations that need to break across lines:
+\begin{multline}\label{eq:longeq}
+    S(t|\mathbf{X}) = S_0(t)^{\exp(\sum_{i=1}^p \beta_i X_i)} \cdot 
+    \exp\left(-\int_0^t \lambda_0(u)\exp\left(\sum_{j=1}^q \gamma_j Z_j(u)\right)\dd u\right) \\
+    + \alpha \sum_{k=1}^K \omega_k \exp\left(-\frac{(t-\mu_k)^2}{2\sigma_k^2}\right) 
+    \prod_{l=1}^L \theta_l^{\delta_l}(1-\theta_l)^{1-\delta_l} \\
+    + \frac{\partial}{\partial t}\left[\int_0^t h_0(s)\exp\left(\mathbf{X}^\top\boldsymbol{\beta} 
+    + \sum_{m=1}^M g_m(t)\right)\dd s\right] \\
+    + \sum_{n=1}^N \pi_n\left(\frac{\exp(-\lambda_n t)(\lambda_n t)^{y_n}}{y_n!}\right)
+    \cdot \exp\left(-\frac{1}{2}(\mathbf{Z}-\boldsymbol{\mu})^\top\Sigma^{-1}(\mathbf{Z}-\boldsymbol{\mu})\right)
+\end{multline}
+
+
+For equations that shouldn't be referenced, use the starred versions of these environments (\texttt{equation*}, \texttt{align*}, \etc).
+
+\subsubsection{Mathematical constructs}
+
+\paragraph{Common operators and functions}
+\begin{itemize}
+    \item Basic operators: $+$, $-$, $\times$, $\div$, $\pm$
+    \item Standard functions: $\sin \theta$, $\log x$, $\exp(x)$
+    \item Statistical: $\mathbb{E}[X]$, $\mathbb{P}(A)$, $\text{Var}(X)$
+    \item Calculus: $\int_a^b f(x)\,\dd x$, $\frac{\dd y}{\dd x}$, $\frac{\partial f}{\partial x}$
+\end{itemize}
+
+\paragraph{Matrices and vectors}
+Different bracket styles serve specific purposes in mathematical notation:
+
+\begin{align}
+    \text{Parentheses for general matrices: } & \mathbf{A} = \begin{pmatrix}
+        1 & r_{12} & r_{13} \\
+        r_{21} & 1 & r_{23} \\
+        r_{31} & r_{32} & 1
+    \end{pmatrix} \\[1em]
+    \text{Brackets for data matrices: } & \mathbf{B} = \begin{bmatrix}
+        x_{11} & x_{12} \\
+        x_{21} & x_{22}
+    \end{bmatrix} \\[1em]
+    \text{Vertical bars for determinants: } & \det{\mathbf{C}} = \begin{vmatrix}
+        a & b \\
+        c & d
+    \end{vmatrix} = ad - bc
+\end{align}
+
+Column and row vectors are typically written as:
+\begin{equation}
+    \mathbf{x} = \begin{pmatrix} x_1 \\ x_2 \\ x_3 \end{pmatrix}, \quad
+    \mathbf{x}^\top = \begin{pmatrix} x_1 & x_2 & x_3 \end{pmatrix}
+\end{equation}
+
+\paragraph{Proper spacing}
+Mathematical expressions often need manual spacing adjustments:
+\begin{itemize}
+    \item Thin space: \mintinline{latex}{\,} ($a\,b$ vs $ab$)
+    \item Medium space: \mintinline{latex}{\:} ($a\:b$)
+    \item Thick space: \mintinline{latex}{\;} ($a\;b$)
+    \item Quad space: \mintinline{latex}{\quad} ($a\quad b$)
+    \item Double quad: \mintinline{latex}{\qquad} ($a\qquad b$)
+\end{itemize}
+
+Example combining these elements:
+\begin{equation}
+    p(x) = \frac{1}{\sigma\sqrt{2\uppi}} \exp\left(-\frac{(x-\mu)^2}{2\sigma^2}\right) \quad \text{for } x \in \mathbb{R}
+\end{equation}
+
+For specialized notation or advanced mathematical typesetting needs, consult the documentation of packages like \pkg{amsmath}, \pkg{mathtools}, and \pkg{physics}.
+
+\subsection{References: cross-referencing, citations, bibliography, and hyperlinks}
+
+Until now, we have focused on formatting text and equations. However, academic writing often requires referencing external sources, figures, tables, and equations. This section covers the comprehensive referencing capabilities in \LaTeX{}, essential for creating well-documented academic works.
+
+\subsubsection{Cross-referencing}
+
+\LaTeX{} allows for seamless cross-referencing of document elements. The process involves two steps: labeling elements and referring to them. Use the \mintinline{latex}{\label} command to assign a unique identifier to an element, and \mintinline{latex}{\ref} to reference it. For example, \mintinline{latex}{\label{sec:introduction}} assigns a label to a section, and \mintinline{latex}{\ref{sec:introduction}} produces Section~\ref{sec:introduction}. Note that you need to manually add the word ``Section'' (the type of element) before the reference.
+
+For enhanced cross-referencing functionality, the \pkg{cleveref} package automatically formats references based on the element type and number of elements referenced:
+
+\begin{itemize}
+    \item Multiple references: \mintinline{latex}{\Cref{tab:logos,tab:font-sizes,tab:headings}} produces \Cref{tab:logos,tab:font-sizes,tab:headings}
+    \item Equation references: \mintinline{latex}{\cref{eq:sens,eq:f1}} produces \cref{eq:sens,eq:f1}
+    \item Single figure reference: \mintinline{latex}{\Cref{fig:modelarch}} produces \Cref{fig:modelarch}
+\end{itemize}
+
+The distinction between \mintinline{latex}{\Cref} and \mintinline{latex}{\cref} lies in capitalization: the former capitalizes the first letter, useful for starting sentences, while the latter maintains lowercase, suitable for mid-sentence references.
+
+For page references, \mintinline{latex}{\pageref{sec:introduction}} produces the page number where the section begins: page~\pageref{sec:introduction}. This feature is particularly valuable in lengthy documents where sections span multiple pages or when readers need quick navigation.
+
+\subsubsection{Citations and bibliography}
+
+The \LiGHTempLaTeX{} template employs \pkg{biblatex} for citation management, with \pkg{natbib} compatibility for legacy support. \BibLaTeX{} offers extensive customization options and supports various citation styles, including APA, IEEE, and Chicago. The template defaults to the IEEE citation style (common in engineering and computer science), which can be modified through the \verb|style| option in \mintinline{latex}{\usepackage[style=ieee]{biblatex}} within \texttt{main.tex}.
+
+Bibliographic entries are stored in a \texttt{.bib} file, containing metadata such as author names, titles, years, and publication details. The \texttt{.bib} file is imported using \mintinline{latex}{\addbibresource{references.bib}} in the preamble. 
+
+\paragraph{\BibLaTeX{} citation commands}
+The primary citation commands in \BibLaTeX{} include:
+
+\begin{itemize}
+    \item Basic citation: \mintinline{latex}{\cite{key}} → \cite{mannarini_what_2022,heitmann_deepbreathautomated_2023,naumova_mythisyourthat_2024}
+    \item Text citation: \mintinline{latex}{\textcite{key}} → \textcite{naumova_mythisyourthat_2024,mannarini_what_2022}
+    \item Parenthetical: \mintinline{latex}{\parencite{key}} → \parencite{mannarini_what_2022,naumova_mythisyourthat_2024}
+    \item Full citation: \mintinline{latex}{\fullcite{key}} → \fullcite{naumova_mythisyourthat_2024}
+    \item Footnote citation: \mintinline{latex}{\footfullcite{key}} → \footfullcite{mannarini_what_2022}
+\end{itemize}
+
+\paragraph{\pkg{natbib} compatibility commands}
+For those familiar with \pkg{natbib}, \BibLaTeX{} provides these traditional commands:
+
+\begin{itemize}
+    \item \mintinline{latex}{\citet{key}}: Text citation (equivalent to \mintinline{latex}{\textcite}) → \citet{naumova_mythisyourthat_2024}
+    \item \mintinline{latex}{\citep{key}}: Parenthetical citation (equivalent to \mintinline{latex}{\parencite}) → \citep{mannarini_what_2022}
+    \item \mintinline{latex}{\citet*{key}}: Text citation with full author list → \citet*{heitmann_deepbreathautomated_2023}
+\end{itemize}
+
+\paragraph{Reference management}
+Efficient bibliography management is essential for academic writing. The template uses \texttt{.bib} files, with a sample \texttt{references.bib} provided. For effective reference management:
+
+\begin{itemize}
+    \item Use reference management software: Zotero (recommended), Mendeley, or EndNote
+    
+    \item Take advantage of cloud features:
+    \begin{itemize}
+        \item Zotero and Mendeley offer direct Overleaf integration
+        \item Use browser extensions for one-click reference saving
+        \item Enable automatic syncing for collaborative work
+    \end{itemize}
+    
+    \item Maintain organization:
+    \begin{itemize}
+        \item Use consistent citation keys (auto-generated by reference managers)
+        \item Verify metadata accuracy during import
+        \item Export to \texttt{.bib} format regularly while writing
+    \end{itemize}
+\end{itemize}
+
+To generate the bibliography, place \mintinline{latex}{\printbibliography} where desired in your document. The bibliography automatically includes all cited references. Use \mintinline{latex}{\nocite{key}} to include specific uncited references, or \mintinline{latex}{\nocite{*}} to include all references from the \texttt{.bib} file.
+
+\subsubsection{Hyperlinks}
+
+The \pkg{hyperref} package enhances documents with clickable links and interactive features. It automatically converts cross-references, citations, and URLs into clickable links in PDF output. Key features include:
+
+\begin{itemize}
+    \item Internal linking: Cross-references become clickable
+    \item External linking: URLs and DOIs become active
+    \item PDF bookmarks: Automatic generation of PDF bookmarks
+    \item Custom links: Create custom hyperlinks with \mintinline{latex}{\href{URL}{text}}
+\end{itemize}
+
+The default \pkg{hyperref} settings are configured in the template, with all links not colored to maintain readability. However, you can customize link colors and styles by adjusting the package options in the preamble, or by using the \mintinline{latex}{\hypersetup} command.
+
+Example hyperlink commands:
+\begin{itemize}
+    \item URL: \mintinline{latex}{\url{https://www.epfl.ch}} → \url{https://www.epfl.ch}
+    \item Custom link: \mintinline{latex}{\href{https://www.epfl.ch}{EPFL website}} → \href{https://www.epfl.ch}{EPFL website}
+    \item Email: \mintinline{latex}{\href{mailto:example@epfl.ch}{Email me}} → \href{mailto:example@epfl.ch}{Email me}
+\end{itemize}
+
+The package also allows customization of link appearance through color and style options, which can be adjusted in the preamble of your document.
+
+\subsection{Floating environments: figures, tables, and algorithms}\label{sec:floating-environments}
+
+Floating environments in \LaTeX{} are used for elements that should not be split across pages, such as figures, tables, and algorithms. These environments automatically position elements to optimize page layout, ensuring consistent formatting and readability.
+
+\begin{infocaution}
+The data, images, and results presented in this section are artificially generated 
+for demonstration purposes only and do not represent real medical findings or patient data. For accurate medical information and advice, please consult qualified healthcare professionals.
+\end{infocaution}
+
+\subsubsection{Figures}
+
+Figures in \LaTeX{} are created using the \texttt{figure} environment. This environment allows you to include images, diagrams, or plots in your document. To add a figure, use the \texttt{includegraphics} command within the \texttt{figure} environment. \Cref{fig:lung_measurement} demonstrates a basic figure setup.
+
+\begin{figure}[htb]
+    \centering
+    \includegraphics[width=0.6\textwidth]{example-image}
+    \caption{A sample medical image showing lung capacity measurement setup}
+    \label{fig:lung_measurement}
+\end{figure}
+
+If you need to include multiple subfigures, use the \pkg{subcaption} package. This package provides the \texttt{subfigure} environment, allowing you to create subfigures with individual captions and labels. The \texttt{subcaption} package also supports subfigure referencing, enabling you to refer to specific subfigures within the main figure. \Cref{fig:lung_comparison} demonstrates the use of subfigures.
+
+\Cref{fig:lung_comparison} shows an example of a figure with multiple subfigures. Each subfigure is labeled with a unique caption and reference, \eg, \Cref{fig:lung_pre}. 
+
+\begin{figure}[htb]
+    \centering
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{example-image-a}
+        \caption{Pre-treatment scan}
+        \label{fig:lung_pre}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{example-image-b}
+        \caption{Post-treatment scan}
+        \label{fig:lung_post}
+    \end{subfigure}
+    
+    \vspace{0.5em}  % Adjust this value to control spacing between rows
+    
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{example-image-c}
+        \caption{Comparison}
+        \label{fig:lung_comp}
+    \end{subfigure}
+    \hfill
+    \begin{subfigure}[b]{0.48\textwidth}
+        \centering
+        \includegraphics[width=\textwidth]{example-image}
+        \caption{Control scan}
+        \label{fig:lung_control}
+    \end{subfigure}
+    \caption{Comparative analysis of lung scans throughout treatment process}
+    \label{fig:lung_comparison}
+\end{figure}
+
+\subsubsection{Tables}
+
+Tables in \LaTeX{} are created using the \texttt{tabular} environment. This environment allows you to define the table structure, including the number of columns, alignment, and content. For more complex tables, consider using the \pkg{booktabs} package for improved horizontal rules and spacing. The \pkg{longtable} package enables tables to span multiple pages, useful for large datasets or lengthy tables. Moreover, the \pkg{multirow} package allows cells to span multiple rows in a table. 
+
+For creating more complex tables, we can use online tools like \href{https://www.tablesgenerator.com/}{\textsf{Tables Generator}} to generate \LaTeX{} code. This tool supports various table types and styles, with real-time preview and code generation capabilities.
+
+\Cref{tab:pft_results} demonstrates a basic table setup with multirow cells.
+
+\begin{table}[htb]
+    \centering
+    \caption{Pulmonary function test results}
+    \label{tab:pft_results}
+    \begin{tabular}{@{}llcccc@{}}
+        \toprule
+        \multirow{2}{*}{\textbf{Group}} & \multirow{2}{*}{\textbf{Parameter}} & \multicolumn{2}{c}{\textbf{Baseline}} & \multicolumn{2}{c}{\textbf{Post-bronchodilator}} \\
+        & & \multicolumn{1}{c}{\textit{Value}} & \multicolumn{1}{c}{\textit{\% Pred}} & \multicolumn{1}{c}{\textit{Value}} & \multicolumn{1}{c}{\textit{\% Pred}} \\
+        \midrule
+        \multirow{3}{*}{Control}
+            & FEV\textsubscript{1} (L) & 3.82 & 98.5 & 3.90 & 100.2 \\
+            & FVC (L) & 4.75 & 97.3 & 4.80 & 98.4 \\
+            & FEV\textsubscript{1}/FVC (\%) & 80.4 & -- & 81.3 & -- \\
+        \midrule
+        \multirow{3}{*}{COPD} 
+            & FEV\textsubscript{1} (L) & 2.15 & 55.4 & 2.45 & 63.1 \\
+            & FVC (L) & 3.52 & 72.1 & 3.78 & 77.5 \\
+            & FEV\textsubscript{1}/FVC (\%) & 61.1 & -- & 64.8 & -- \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+
+You can add notes to tables using the \pkg{threeparttable} or \pkg{threeparttablex} package. These packages provide the \texttt{tablenotes} environment, allowing you to add footnotes or additional information below the table. The \pkg{threeparttablex} package extends the functionality of \pkg{threeparttable} to work with the \pkg{longtable} environment, enabling notes for tables that span multiple pages. Please note that the \texttt{longtable} environment should be used rarely, as it can disrupt the document's flow and layout, and in most cases, it is better to split the table into smaller parts or to put the long table in an appendix.
+
+\Cref{tab:reference_values} shows a table implemented with the \pkg{threeparttable} package.%, while \Cref{tab:pft_longitudinal} shows an extra-long page-spanning table with notes using the \pkg{threeparttablex} package.
+
+\begin{table}[htb]
+    \centering
+    \caption{Comprehensive reference values for pulmonary function parameters}
+    \label{tab:reference_values}
+    \resizebox{0.95\textwidth}{!}{%
+    \begin{threeparttable}
+        \begin{tabular}{@{}lcccccc@{}}
+            \toprule
+            \textbf{Parameter} & \textbf{Males} & \textbf{Females} & \textbf{Age Range} & \textbf{Height Range} & \textbf{Units}\tnote{a} & \textbf{Clinical Significance} \\
+            \midrule
+            TLC\tnote{b} & 6.5--8.0 & 4.5--6.0 & 20--40 years & 165--180 cm & L & Primary measure of lung volume \\
+            FVC\tnote{c} & 4.8--5.8 & 3.5--4.5 & 20--40 years & 165--180 cm & L & Indicator of ventilatory capacity \\
+            FEV\textsubscript{1}\tnote{d} & 3.8--4.8 & 2.8--3.8 & 20--40 years & 165--180 cm & L & Airflow assessment \\
+            RV\tnote{e} & 1.5--2.0 & 1.2--1.8 & 20--40 years & 165--180 cm & L & Air trapped in lungs \\
+            FEV\textsubscript{1}/FVC & 75--85 & 75--85 & All ages & All heights & \% & Obstruction indicator \\
+            DLCO\tnote{f} & 25--35 & 20--30 & 20--40 years & 165--180 cm & mL/min/mmHg & Gas exchange capacity \\
+            \bottomrule
+        \end{tabular}
+        \begin{tablenotes}[para]
+            \item[a] L = liters
+            \item[b] Total Lung Capacity
+            \item[c] Forced Vital Capacity
+            \item[d] Forced Expiratory Volume in 1 second
+            \item[e] Residual Volume
+            \item[f] Diffusing Capacity for Carbon Monoxide
+        \end{tablenotes}
+    \end{threeparttable}
+    }
+\end{table}
+
+% \begin{ThreePartTable}
+%     \begin{TableNotes}
+%       \item[a] Values adjusted for age and height according to GLI-2012 equations
+%       \item[b] Abnormal values require clinical correlation
+%       \item[c] Predicted values based on healthy non-smoking population
+%       \item[d] Age groups: Y = Young adults (18-35), M = Middle-aged (36-55), E = Elderly (>55)
+%     \end{TableNotes}
+%     \begin{longtable}[c]{l*{6}{r}}
+%       \caption{Longitudinal pulmonary function test results across different patient groups}
+%       \label{tab:pft_longitudinal}                                                                                                                      \\
+%       \toprule
+%       \textbf{Patient Group\tnote{c}} & \multicolumn{1}{c}{\textbf{FEV\textsubscript{1}}} & \multicolumn{1}{c}{\textbf{FVC}} 
+%                              & \multicolumn{1}{c}{\textbf{TLC}} & \multicolumn{1}{c}{\textbf{DLCO}}
+%                              & \multicolumn{1}{c}{\textbf{\% Pred}} & \multicolumn{1}{c}{\textbf{Z-score}\tnote{a}}                                              \\
+%                              & \multicolumn{1}{c}{\textbf{(L)\phantom{x}}} & \multicolumn{1}{c}{\textbf{(L)\phantom{x}}}
+%                              & \multicolumn{1}{c}{\textbf{(L)\phantom{x}}} & \multicolumn{1}{c}{\textbf{(mL/min/mmHg)\phantom{x}}}
+%                              & \multicolumn{1}{c}{\textbf{(\%)}} & \multicolumn{1}{c}{\textbf{Value}\tnote{b}}                                                               \\
+%       \midrule
+%       \\[2pt]
+%       \endfirsthead
+%       \multicolumn{7}{r}{\small\textit{Continued from previous page}}\\[2pt]
+%       \toprule
+%       \textbf{Patient Group\tnote{c}} & \multicolumn{1}{c}{\textbf{FEV\textsubscript{1}}} & \multicolumn{1}{c}{\textbf{FVC}} 
+%                              & \multicolumn{1}{c}{\textbf{TLC}} & \multicolumn{1}{c}{\textbf{DLCO}}
+%                              & \multicolumn{1}{c}{\textbf{\% Pred}} & \multicolumn{1}{c}{\textbf{Z-score}\tnote{a}}                                              \\
+%                              & \multicolumn{1}{c}{\textbf{(L)\phantom{x}}} & \multicolumn{1}{c}{\textbf{(L)\phantom{x}}}
+%                              & \multicolumn{1}{c}{\textbf{(L)\phantom{x}}} & \multicolumn{1}{c}{\textbf{(mL/min/mmHg)\phantom{x}}}
+%                              & \multicolumn{1}{c}{\textbf{(\%)}} & \multicolumn{1}{c}{\textbf{Value}\tnote{b}}                                                               \\
+%       \midrule
+%       \\[2pt]
+%       \endhead
+%       \hline
+%       \multicolumn{7}{r}{\small\textit{Continued on next page}}
+%       \endfoot
+%       \bottomrule
+%       \insertTableNotes
+%       \endlastfoot
+%       Healthy Controls-Y    & 3.82 & 4.75 & 6.20 & 28.5 & 98.5 & 0.12 \\
+%       Healthy Controls-M    & 3.65 & 4.52 & 5.95 & 27.2 & 97.3 & 0.08 \\
+%       Healthy Controls-E    & 3.41 & 4.28 & 5.75 & 25.8 & 96.1 & -0.15 \\
+%       Mild COPD-Y          & 2.85 & 4.12 & 6.15 & 24.5 & 75.4 & -1.85 \\
+%       Mild COPD-M          & 2.68 & 3.95 & 5.92 & 23.2 & 73.2 & -1.92 \\
+%       Mild COPD-E          & 2.45 & 3.75 & 5.68 & 21.8 & 71.5 & -2.05 \\
+%       Moderate COPD-Y      & 1.95 & 3.52 & 6.25 & 20.5 & 55.4 & -2.85 \\
+%       Moderate COPD-M      & 1.82 & 3.38 & 6.05 & 19.2 & 53.2 & -2.92 \\
+%       Moderate COPD-E      & 1.65 & 3.15 & 5.85 & 17.8 & 51.5 & -3.05 \\
+%       Severe COPD-Y        & 1.15 & 2.82 & 6.35 & 16.5 & 35.4 & -3.85 \\
+%       Severe COPD-M        & 1.02 & 2.68 & 6.15 & 15.2 & 33.2 & -3.92 \\
+%       Severe COPD-E        & 0.95 & 2.45 & 5.95 & 13.8 & 31.5 & -4.05 \\
+%       Asthma-Controlled    & 3.25 & 4.35 & 6.10 & 26.5 & 88.4 & -0.85 \\
+%       Asthma-Partial       & 2.85 & 4.12 & 6.05 & 25.2 & 78.2 & -1.42 \\
+%       Asthma-Uncontrolled  & 2.45 & 3.85 & 5.95 & 23.8 & 68.5 & -2.05 \\
+%       Restrictive-Y        & 2.95 & 3.85 & 5.75 & 24.8 & 75.5 & -1.75 \\
+%       Restrictive-M        & 2.78 & 3.68 & 5.55 & 23.5 & 73.3 & -1.82 \\
+%       Restrictive-E        & 2.55 & 3.45 & 5.35 & 22.1 & 71.6 & -1.95 \\
+%     \end{longtable}
+%   \end{ThreePartTable}
+
+\subsubsection{Algorithms}
+
+The \pkg{algorithm2e} package provides a comprehensive environment for typesetting algorithms in \LaTeX{}. It offers various customization options, including line numbering, captions, and formatting. The package is widely used in computer science and engineering disciplines for presenting algorithms in research papers and reports.
+
+To include an algorithm in your document, use the \texttt{algorithm} environment provided by the \pkg{algorithm2e} package. Within this environment, you can define the algorithm steps using the package's syntax. \Cref{alg:lung_assessment} demonstrates the basic structure of an algorithm.
+
+\begin{algorithm}[htb]
+    \caption{Automated lung capacity assessment}\label{alg:lung_assessment}
+    \SetAlgoLined
+    \KwIn{Patient data: age, height, weight, gender}
+    \KwOut{Predicted TLC and assessment}
+    
+    \BlankLine
+    Calculate BMI $\gets$ weight / height$^2$\;
+    Predict TLC using ERS equations\;
+    \eIf{gender is Male}{
+        expected\_tlc $\gets 7.99H - 7.08A + 1.62 - 0.015\text{BMI}$\;
+    }{
+        expected\_tlc $\gets 6.60H - 5.79A + 1.58 - 0.013\text{BMI}$\;
+    }
+    
+    \BlankLine
+    \If{measured\_tlc < 0.8 $\times$ expected\_tlc}{
+        \Return{Restrictive pattern suspected}\;
+    }
+    \Return{Normal lung capacity}\;
+\end{algorithm}
+
+\subsubsection{Code listings}
+
+When including code snippets in your document, use the \pkg{minted} package for syntax highlighting. The package supports various programming languages and styles, enhancing code readability. To include a code listing, use the \texttt{listing} environment with the desired language specified. \Cref{lst:lung_capacity} demonstrates code formatting with syntax highlighting.
+
+\begin{listing}[htb]
+    \centering
+    \begin{minted}{python}
+# European Respiratory Society equations for Total Lung Capacity:
+#
+# Males:   $\mathit{TLC} = 7.99H - 7.08A + 1.62 - 0.015\mathit{BMI}$
+# Females: $\mathit{TLC} = 6.60H - 5.79A + 1.58 - 0.013\mathit{BMI}$
+# where $H$ is height (m), $A$ is age (years), $\mathit{BMI} = w/h^2$
+
+def predict_lung_capacity(age: float, height: float, gender: str, weight: float) -> float:
+    """Calculate predicted Total Lung Capacity (TLC) in liters.
+    
+    Args:
+        age: Patient age in years
+        height: Height in meters
+        gender: 'M' for male, 'F' for female
+        weight: Weight in kilograms
+    """
+    bmi = weight / (height ** 2)
+    tlc = (7.99 if gender == 'M' else 6.60) * height - \
+          (7.08 if gender == 'M' else 5.79) * (age / 100) + \
+          (1.62 if gender == 'M' else 1.58) - \
+          (0.015 if gender == 'M' else 0.013) * bmi
+    
+    return round(tlc, 2)
+    \end{minted}
+    \caption{Lung capacity prediction implementing ERS equations}\label{lst:lung_capacity}
+\end{listing}
+
+\subsubsection{Verbatim text}
+
+For displaying unformatted text, use the \texttt{Verbatim} environment provided by the \pkg{fancyvrb} package. This environment preserves the text exactly as entered, without any formatting or interpretation, which could be also wrapped in a \texttt{listing} environment for better presentation. \Cref{lst:raw_output} shows how verbatim text can be displayed.
+
+\begin{listing}[htb]
+    \centering
+    \begin{Verbatim}
+Raw Spirometry Output:                                                                          
+-------------------------------------------------------------------------------------------
+Patient ID: TEST123                     Test Date: 2024-02-10                Time: 14:30:22    
+Test Type: Full PFT                    Quality Control: Grade A              Technician: JD     
+-------------------------------------------------------------------------------------------
+Primary Measurements:                                    Reference Values:
+    FEV1: 3.2L (82% predicted)                             FEV1 Expected: 3.9L
+    FVC:  4.1L (85% predicted)                             FVC Expected:  4.8L
+    TLC:  6.2L (88% predicted)                             TLC Expected:  7.1L
+    RV:   2.1L (90% predicted)                             RV Expected:   2.3L
+-------------------------------------------------------------------------------------------
+Test Quality Metrics:
+    Acceptability: All criteria met
+    Reproducibility: Within 150mL
+    Number of Acceptable Maneuvers: 3
+-------------------------------------------------------------------------------------------
+Notes: Test performed according to ATS/ERS standards
+    \end{Verbatim}
+    \caption{Raw output from spirometry measurement device, with test results and quality metrics}\label{lst:raw_output}
+\end{listing}
+
+These floating environments provide flexible and professional ways to present various types of content in medical and scientific documents. When used with appropriate packages and careful formatting, they ensure consistent presentation while maintaining the document's flow and readability. The examples throughout this section demonstrate common use cases and implementations of these environments, but once again, those examples are totally made up and do not reflect any real-world data or results.
+
+\subsection{Lists: enumerations, itemizations, and descriptions}
+
+Lists are essential for organizing information in a structured and readable manner. \LaTeX{} provides three primary list environments: \texttt{enumerate} for numbered lists, \texttt{itemize} for bullet-point lists, and \texttt{description} for term-definition lists. These environments can be nested to create complex hierarchies of information.
+
+\subsubsection{Basic list environments}
+
+The basic list environments in \LaTeX{} form the foundation of structured content presentation. Each environment serves a distinct purpose: \texttt{enumerate} for sequential items, \texttt{itemize} for unordered collections, and \texttt{description} for paired terms and definitions. Let's explore how these environments can be used effectively in scientific writing.
+
+When working with ordered lists, the \texttt{enumerate} environment automatically handles numbering and indentation:
+
+\begin{enumerate}
+    \item First-level items use Arabic numerals
+    \item Consistent formatting is maintained
+    \begin{enumerate}
+        \item Second-level items use letters
+        \item Nesting preserves document structure
+        \begin{enumerate}
+            \item Third-level uses Roman numerals
+            \item Deep nesting supports complex hierarchies
+        \end{enumerate}
+    \end{enumerate}
+\end{enumerate}
+
+For unordered collections, the \texttt{itemize} environment provides clear visual separation:
+
+\begin{itemize}
+    \item Main points use standard bullets
+    \item Visual hierarchy guides readers
+    \begin{itemize}
+        \item Supporting points use different symbols
+        \item Consistent visual structure
+        \begin{itemize}
+            \item Detailed points maintain clarity
+            \item Deep structure remains readable
+        \end{itemize}
+    \end{itemize}
+\end{itemize}
+
+The \texttt{description} environment excels at presenting paired information:
+
+\begin{description}
+    \item[Concept] Primary term explanation
+    \item[Structure] Organization pattern
+    \item[Application] Implementation details
+    \begin{description}
+        \item[Details] Nested descriptions
+        \item[Format] Consistent presentation
+    \end{description}
+\end{description}
+
+\subsubsection{Specialized lists}
+
+Scientific documents often require specialized list formats for different purposes:
+
+\begin{enumerate}[label=\Roman*.]
+    \item \textbf{Status tracking}
+    \begin{itemize}[label=$\square$]
+        \item[$\square$] Pending items
+        \item[$\checkmark$] Completed items
+        \item[$\square$] Future items
+    \end{itemize}
+
+    \item \textbf{Technical definitions}
+    \begin{description}[style=nextline]
+        \item[Primary] Main concept definition
+        \item[Secondary] Supporting information
+    \end{description}
+\end{enumerate}
+
+If you need to customize list formatting further, the \pkg{enumitem} package documentation provides detailed guidance on advanced list manipulation and customization.
+
+\subsection{Useful information and writing tips}
+
+\begin{infonote}
+\textbf{Consistency} is key in scientific writing. You do not have to follow each and every rule in this guide, but you should maintain consistency within your document. Consistent formatting, terminology, and style enhance readability and professionalism.
+\end{infonote}
+
+Writing scientific documents requires attention to detail, clarity, and precision. One needs to communicate complex ideas effectively, ensuring that readers can understand the content\footnote{Many of these tips are adapted from EPFL Data Science Lab's paper-writing guidelines: \url{https://dlab.epfl.ch/onboarding/paper-writing/}}.
+
+\subsubsection{Writing environment and tools}
+
+Overleaf provides an excellent collaborative platform for \LaTeX{} document preparation. With an institutional email address (such as from \EPFLLogo*{}), you can access professional features including version control, Dropbox and GitHub integration, and real-time collaboration. This online platform eliminates many common issues with local \LaTeX{} installations and package management.
+
+To enhance writing quality, consider using the Grammarly browser extension while working in Overleaf. This tool helps identify grammatical errors, suggests style improvements, and checks for clarity issues. However, remember that Grammarly's suggestions should be reviewed carefully in the context of technical writing, as it may not always understand field-specific terminology or conventions.
+
+\subsubsection{Technical writing fundamentals}
+
+Maintain a single tense throughout your document---either present (``the model shows'') or past (``the experiments demonstrated''), but avoid mixing them. This consistency helps readers follow your narrative more easily.
+
+Capitalization plays a crucial role in professional documents. Section and subsection headings typically use sentence case rather than title case, though specific requirements may vary by publication venue. For example, write ``Data collection procedure'' instead of ``Data Collection Procedure.'' Reserve title case for the paper's main title and other elements as required by your chosen style guide.
+
+In technical writing, precision extends to punctuation. The Oxford comma (the comma before ``and'' in a series) helps avoid ambiguity. For example, write ``We analyzed data from experiments, simulations, and theoretical models'' rather than ``We analyzed data from experiments, simulations and theoretical models.''
+
+We use quite a few abbreviations in scientific writing. When introducing an abbreviation, spell out the full term followed by the abbreviation in parentheses. For example, write ``Artificial Intelligence (AI)'' the first time you use the term, then use the abbreviation consistently throughout the document. This practice ensures clarity for readers unfamiliar with the abbreviation. However, you should avoid overusing abbreviations, as they can hinder readability.
+
+Latin words and phrases are common in both scientific writing and medical literature. Full Latin phrases (e.g., ``\invivo'', ``\apriori'', ``\perse'') are traditionally italicized to distinguish them from the main text. Common Latin abbreviations (\eg, ``\etal'', ``\ie'', ``\cf'') are typically not italicized, though some style guides prefer them italicized. If you need all Latin text italicized, you can redefine the \mintinline{latex}{\latinabbr} command in the preamble: \mintinline{latex}{\renewcommand{\latinabbr}[1]{\textit{#1}}} to ensure consistent formatting.
+
+\subsubsection{Document structure and flow}
+
+The introduction section deserves special attention as it sets the tone for your entire document. Consider addressing these fundamental questions in your opening paragraphs:
+\begin{enumerate}
+    \item What problem does your work address?
+    \item Why is this problem significant?
+    \item What is the current state of research?
+    \item What is your novel contribution?
+    \item How do you validate your approach?
+\end{enumerate}
+
+When organizing your document, use a clear hierarchical structure but avoid excessive subdivisions. Three or four levels of headings usually suffice for most technical documents. Within sections, use paragraph breaks thoughtfully to group related ideas and maintain readable chunks of text.
+
+\subsubsection{Citations and references}
+
+Citation style significantly impacts readability. When using numeric citations, integrate them naturally into your text. Instead of writing ``as shown by \cite{heitmann_deepbreathautomated_2023}'', prefer ``as \citet{heitmann_deepbreathautomated_2023} demonstrated'' or ``recent work by \citet{heitmann_deepbreathautomated_2023} shows.'' This approach maintains better readability while properly attributing ideas.
+
+References require consistent formatting throughout your bibliography. Whether using abbreviated or full conference names, journal volumes, or page numbers, maintain the same style across all entries. This attention to detail reflects the overall quality of your work.
+
+\subsubsection{Technical considerations}
+
+Use macros to maintain consistency in frequently used terms or notations. This practice not only saves time but also ensures uniformity throughout your document. When definitions need updating, changing the macro definition automatically updates all instances\footnote{The EPFL Data Science Lab provides a comprehensive set of macros at \url{https://dlab.epfl.ch/onboarding/paper-writing/dlab_macros.tex}. While our template has reimplemented some using modern packages, you can adapt these or create your own set to suit your research needs.}.
+
+\subsubsection{Final steps}
+
+Before submitting your document, conduct a thorough review focusing on different aspects in each pass:
+\begin{itemize}
+    \item First, check the overall structure and flow of your argument
+    \item Then review technical accuracy and consistency in terminology
+    \item Finally, examine formatting details including figures, tables, and references
+\end{itemize}
+
+Consider sharing your document with colleagues for feedback before final submission. Fresh eyes often catch issues that become invisible to authors after multiple revisions. Allow sufficient time for this review process to incorporate valuable suggestions.
+
+Remember that professional scientific writing is an iterative process. Each revision should bring your document closer to clearly communicating your research contributions to your intended audience.

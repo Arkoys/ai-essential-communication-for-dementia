@@ -6,4 +6,25 @@ coverage/
 *.log
 .env*
 !.env.example
+
+# Firebase credentials (DO NOT COMMIT - contains API keys)
+firebase-applet-config.json
+!firebase-applet-config.example.json
+firebase-service-account.json
+google-credentials.json
+
+# API keys and secrets
+*.key
+secrets/
+credentials/
 package-lock.json
+main.aux
+main.bbl
+main.bbl-SAVE-ERROR
+main.bcf
+main.fdb_latexmk
+main.fls
+main.run.xml
+main.synctex.gz
+main.blg
+main.bcf-SAVE-ERROR
