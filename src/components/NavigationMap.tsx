@@ -5,21 +5,26 @@ import { ChevronUp, ChevronDown } from 'lucide-react';
 export type PhaseName = 'Recognition' | 'Evaluation' | 'Naming & Diagnosis';
 
 const STEPS = [
-  'Understand Concern',
+  'Open the Conversation',
   'Assess Function',
   'Assess Cognition',
-  'Name Findings',
   'Assess Safety',
   'Targeted Exam',
   'Labs and Imaging',
   'Medication Review',
-  'Name Condition',
   'Assess and Align Understanding',
-  'Address Risks and Concerns',
   'Apply Diagnosis',
   'Stage Condition',
+  'Address Risks and Concerns',
   'Plan Follow-up',
 ];
+
+// Exact hex colors for phase bars (solid, fully saturated)
+const PHASE_BAR_COLOR: Record<string, string> = {
+  teal: '#2AA6C4',
+  emerald: '#2F9E8F',
+  orange: '#F2A93B',
+};
 
 const PHASES = [
   {
@@ -27,21 +32,21 @@ const PHASES = [
     subtitle: 'Is there a cognitive problem?',
     color: 'teal',
     start: 0,
-    end: 4,
+    end: 3,
   },
   {
     name: 'Evaluation' as PhaseName,
     subtitle: 'What do we know about the problem?',
     color: 'emerald',
     start: 1,
-    end: 8,
+    end: 7,
   },
   {
     name: 'Naming & Diagnosis' as PhaseName,
     subtitle: 'What do we call the problem?',
     color: 'orange',
-    start: 9,
-    end: 14,
+    start: 7,
+    end: 11,
   },
 ];
 
@@ -100,7 +105,7 @@ export function NavigationMap({
       </button>
 
       {!isOpen && visiblePhase && (
-        <div className="mx-4 mb-2 rounded-xl border border-orange-200 dark:border-orange-800/60 bg-orange-50/80 dark:bg-orange-950/40 px-3 py-2 text-xs text-orange-800 dark:text-orange-200 shadow-sm backdrop-blur-sm">
+        <div className="mx-4 mb-2 rounded-lg border border-orange-200 dark:border-orange-800/60 bg-orange-50/80 dark:bg-orange-950/40 px-3 py-1.5 text-xs text-orange-800 dark:text-orange-200">
           <span className="font-semibold">Current phase:</span> {visiblePhase}
         </div>
       )}
@@ -108,25 +113,25 @@ export function NavigationMap({
       <div
         className={cn(
           'overflow-hidden transition-all duration-300',
-          isOpen ? 'max-h-[650px] opacity-100' : 'max-h-0 opacity-0'
+          isOpen ? 'max-h-[400px] opacity-100' : 'max-h-0 opacity-0'
         )}
       >
-        <div className="overflow-x-auto px-4 pb-4">
+        <div className="overflow-x-auto px-4 py-2">
 
-          {/* GRID */}
+          {/* Main grid with consistent columns */}
           <div
-            className="grid gap-x-2 gap-y-3"
-            style={{ gridTemplateColumns: `200px repeat(${COLS}, minmax(72px, 1fr))` }}
+            className="grid gap-y-2"
+            style={{ gridTemplateColumns: `140px repeat(${COLS}, minmax(52px, 1fr))` }}
           >
 
-            {/* STEP HEADER ROW (more vertical space for readability) */}
-            <div />
+            {/* STEP HEADERS ROW */}
+            <div className="h-16" /> {/* Label column spacer */}
             {STEPS.map((step) => (
               <div
                 key={step}
-                className="flex items-end justify-center h-16 pb-2"
+                className="flex items-end justify-center h-16 pb-1 overflow-visible"
               >
-                <div className="text-[9px] text-center text-zinc-400 leading-tight rotate-[-35deg] origin-bottom whitespace-nowrap">
+                <div className="text-[10px] text-center text-zinc-800 dark:text-zinc-200 font-semibold leading-tight rotate-[-35deg] origin-bottom whitespacenowrap" style={{ maxWidth: '52px' }}>
                   {step}
                 </div>
               </div>
@@ -134,60 +139,76 @@ export function NavigationMap({
 
             {/* PHASE ROWS */}
             {PHASES.map((phase) => {
-              const isActive = activePhase === phase.name;
+              const barColor = PHASE_BAR_COLOR[phase.color];
 
               return (
                 <React.Fragment key={phase.name}>
 
-                  {/* LABEL */}
+                  {/* Label cell */}
                   <div
                     onClick={() => onSelectPhase(phase.name)}
-                    className={cn(
-                      "flex flex-col justify-center px-2 py-2 rounded-lg cursor-pointer transition",
-                      "text-xs leading-tight",
-                      phase.color === 'teal' && "bg-blue-50 text-teal-900 dark:bg-teal-900/20 dark:text-teal-200",
-                      phase.color === 'emerald' && "bg-emerald-50 text-emerald-900 dark:bg-emerald-900/20 dark:text-emerald-200",
-                      phase.color === 'orange' && "bg-orange-50 text-orange-900 dark:bg-orange-900/20 dark:text-orange-200",
-                      isActive && "ring-2 ring-orange-400"
-                    )}
+                    className="flex flex-col justify-center px-1 cursor-pointer border-l-2"
+                    style={{ borderColor: barColor }}
                   >
-                    <div className="font-semibold text-[10px] uppercase">
+                    <div className="text-[8px] uppercase tracking-wider text-zinc-500 dark:text-zinc-400">
                       {phase.name}
                     </div>
-                    <div className="text-[9px] opacity-70">
+                    <div
+                      className="text-[10px] font-bold leading-tight"
+                      style={{ color: barColor }}
+                    >
                       {phase.subtitle}
                     </div>
                   </div>
 
-                  {/* STEPS ROW */}
+                  {/* Timeline row - each cell has a dot */}
                   {STEPS.map((step, i) => {
                     const inPhase = i >= phase.start && i <= phase.end;
                     const isStepActive = currentStep === step;
+                    const isFirst = i === phase.start;
+                    const isLast = i === phase.end;
 
                     return (
                       <div
                         key={step}
-                        className="flex items-center justify-center h-10 relative"
+                        className="relative flex items-center justify-center h-7"
                       >
-                        {/* vertical guide */}
-                        <div className="absolute inset-y-0 left-1/2 border-l border-dashed border-zinc-200 dark:border-zinc-700" />
+                        {/* Pill bar segment - only first/last have rounded ends */}
+                        {inPhase && (
+                          <div
+                            className={cn(
+                              "absolute h-6",
+                              isFirst && "rounded-l-full",
+                              isLast && "rounded-r-full",
+                            )}
+                            style={{
+                              backgroundColor: barColor,
+                              left: '0',
+                              right: '0',
+                            }}
+                          />
+                        )}
 
+                        {/* Dot */}
                         {inPhase && (
                           <button
                             onClick={() => onSelectStep(step)}
                             className={cn(
-                              "w-4 h-4 rounded-full transition z-10",
+                              "w-3 h-3 rounded-full transition z-10 border",
                               isStepActive
-                                ? "bg-orange-500 scale-125"
-                                : "bg-zinc-300 dark:bg-zinc-700 hover:bg-orange-400"
+                                ? "bg-orange-400 scale-110 shadow-sm"
+                                : "bg-white hover:scale-110 border-2",
                             )}
+                            style={{
+                              borderColor: isStepActive ? '#F59E0B' : barColor,
+                              borderWidth: isStepActive ? '1.5px' : '2px',
+                            }}
                             title={step}
                           />
                         )}
                       </div>
                     );
                   })}
-
                 </React.Fragment>
               );
             })}
