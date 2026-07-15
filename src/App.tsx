@@ -39,13 +39,13 @@ interface Conversation {
 const PHASES: { name: PhaseName; steps: string[] }[] = [
   {
     name: 'Recognition',
-    steps: ['Name Findings', 'Understand Concern', 'Assess Cognition', 'Assess Function'],
+    steps: ['Open the Conversation', 'Assess Function', 'Assess Cognition', 'Assess Safety'],
   },
   {
     name: 'Evaluation',
     steps: [
-      'Assess Cognition',
       'Assess Function',
+      'Assess Cognition',
       'Assess Safety',
       'Targeted Exam',
       'Labs and Imaging',
@@ -54,13 +54,13 @@ const PHASES: { name: PhaseName; steps: string[] }[] = [
     ],
   },
   {
-    name: 'Diagnosis',
+    name: 'Naming & Diagnosis',
     steps: [
       'Assess and Align Understanding',
-      'Address Risks and Concerns',
       'Apply Diagnosis',
-      'Plan Follow-up',
       'Stage Condition',
+      'Address Risks and Concerns',
+      'Plan Follow-up',
     ],
   },
 ];
@@ -298,12 +298,13 @@ export default function App() {
       if (!snapshot.exists()) return;
       const data = snapshot.data();
       const phase =
-        data.currentPhase === 'Recognition' || data.currentPhase === 'Evaluation' || data.currentPhase === 'Diagnosis'
+        data.currentPhase === 'Recognition' || data.currentPhase === 'Evaluation' || data.currentPhase === 'Naming & Diagnosis' || data.currentPhase === 'Diagnosis'
           ? (data.currentPhase as PhaseName)
           : null;
       const detectedPhase =
         data.lastDetectedPhase === 'Recognition' ||
         data.lastDetectedPhase === 'Evaluation' ||
+        data.lastDetectedPhase === 'Naming & Diagnosis' ||
         data.lastDetectedPhase === 'Diagnosis'
           ? (data.lastDetectedPhase as PhaseName)
           : phase;
