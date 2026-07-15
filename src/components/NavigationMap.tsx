@@ -125,11 +125,11 @@ export function NavigationMap({
           >
 
             {/* STEP HEADERS ROW */}
-            <div className="h-16" /> {/* Label column spacer */}
+            <div className="h-12" /> {/* Label column spacer */}
             {STEPS.map((step) => (
               <div
                 key={step}
-                className="flex items-end justify-center h-16 pb-1 overflow-visible"
+                className="flex items-end justify-center h-12 pb-3 overflow-visible"
               >
                 <div className="text-[10px] text-center text-zinc-800 dark:text-zinc-200 font-semibold leading-tight rotate-[-35deg] origin-bottom whitespacenowrap" style={{ maxWidth: '52px' }}>
                   {step}
