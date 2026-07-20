@@ -1,65 +1,7 @@
 import React from 'react';
 import { X, ExternalLink, FolderOpen } from 'lucide-react';
 import { cn } from '../lib/utils';
-
-interface Resource {
-  name: string;
-  url: string;
-  category: string;
-}
-
-const RESOURCES: Resource[] = [
-  // Cognitive Screening Tools
-  { name: 'Mini Cog', url: 'https://mini-cog.com/', category: 'Cognitive Screening' },
-  { name: 'AD-8', url: 'https://knightadrc.wustl.edu/professionals-clinicians/ad8-instrument/', category: 'Cognitive Screening' },
-  { name: 'MoCA', url: 'http://mocacognition.com', category: 'Cognitive Screening' },
-  { name: 'SLUMS', url: 'https://www.slu.edu/medicine/internal-medicine/geriatric-medicine/aging-successfully/mental-status-exam.php', category: 'Cognitive Screening' },
-  { name: 'RUDAS', url: 'https://www.dementia.org.au/professionals/assessment-and-diagnosis-dementia/rowland-universal-dementia-assessment-scale-rudas', category: 'Cognitive Screening' },
-  
-  // Mood & Mental Health
-  { name: 'PHQ-9', url: 'https://www.apa.org/depression-guideline/patient-health-questionnaire.pdf', category: 'Mood & Mental Health' },
-  { name: 'GDS', url: 'https://geriatrictoolkit.missouri.edu/cog/GDS_SHORT_FORM.PDF', category: 'Mood & Mental Health' },
-  { name: 'GAD-7', url: 'https://www.apaservices.org/practice/reimbursement/health-registry/anxiety-disorder-response.pdf', category: 'Mood & Mental Health' },
-  { name: 'ASRS v1.1', url: 'https://psychology-tools.com/test/adult-adhd-self-report-scale', category: 'Mood & Mental Health' },
-  
-  // Functional Assessment
-  { name: 'Katz Index', url: 'https://hign.org/sites/default/files/2020-06/Try_This_General_Assessment_2.pdf', category: 'Functional Assessment' },
-  { name: 'Barthel Index', url: 'https://www.sralab.org/sites/default/files/2017-07/barthel.pdf', category: 'Functional Assessment' },
-  { name: 'Lawton-Brody Scale', url: 'https://www.bgs.org.uk/sites/default/files/content/attachment/2018-07-05/lawton_brody.pdf', category: 'Functional Assessment' },
-  { name: 'CDR Scale', url: 'https://knightadrc.wustl.edu/professionals-clinicians/cdr-dementia-staging-instrument/', category: 'Functional Assessment' },
-  
-  // Dementia-Specific
-  { name: "Alzheimer's Association", url: 'https://www.alz.org/', category: 'Dementia Resources' },
-  { name: 'Lewy Body Dementia Association', url: 'https://lbda.org/', category: 'Dementia Resources' },
-  { name: 'Living Well With Dementia Toolkit', url: 'https://sites.google.com/ariadnelabs.org/living-with-dementia/', category: 'Dementia Resources' },
-  
-  // Medication & Safety
-  { name: 'ACB Calculator', url: 'https://www.acbcalc.com/', category: 'Medication & Safety' },
-  { name: 'STEADI Algorithm', url: 'https://www.cdc.gov/steadi/media/pdfs/STEADI-Algorithm-508.pdf', category: 'Medication & Safety' },
-  
-  // Psychiatric
-  { name: 'PsychDB', url: 'https://www.psychdb.com/home', category: 'Psychiatric Comorbidity' },
-  
-  // Communication
-  { name: 'Motivational Interviewing', url: 'https://motivationalinterviewing.org/', category: 'Communication' },
-  { name: 'Motivational Interviewing (PMC)', url: 'https://pmc.ncbi.nlm.nih.gov/articles/PMC8200683/', category: 'Communication' },
-  
-  // Public Health
-  { name: 'CDC BOLD Toolkit', url: 'https://www.cdc.gov/aging-programs/about/index.html', category: 'Public Health' },
-  { name: 'Cognition in Primary Care', url: 'https://familymedicine.uw.edu/cpc/', category: 'Public Health' },
-  
-  // Geriatric Framework
-  { name: '5Ms of Geriatric Care', url: 'https://www.aafp.org/afp/2024/0600/editorial-holistic-approach-geriatric-care', category: 'Geriatric Framework' },
-];
-
-// Group resources by category
-const groupedResources = RESOURCES.reduce((acc, resource) => {
-  if (!acc[resource.category]) {
-    acc[resource.category] = [];
-  }
-  acc[resource.category].push(resource);
-  return acc;
-}, {} as Record<string, Resource[]>);
+import { groupedResources } from '../lib/resources';
 
 interface ResourcesPanelProps {
   isOpen: boolean;

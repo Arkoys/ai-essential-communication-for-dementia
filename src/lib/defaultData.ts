@@ -295,48 +295,5 @@ Plan Follow Up
   }
 ];
 
-// Curated External Resources for AI Citation
-// Use markdown link format: [Resource Name](URL) for clickable links in responses
-export const CURATED_EXTERNAL_RESOURCES = `Curated External Resources - Use markdown link format [Name](URL) in responses:
-
-Cognitive Screening Tools:
-[Mini Cog](https://mini-cog.com/)
-[AD-8](https://knightadrc.wustl.edu/professionals-clinicians/ad8-instrument/)
-[MoCA](http://mocacognition.com)
-[SLUMS](https://www.slu.edu/medicine/internal-medicine/geriatric-medicine/aging-successfully/mental-status-exam.php)
-[RUDAS](https://www.dementia.org.au/professionals/assessment-and-diagnosis-dementia/rowland-universal-dementia-assessment-scale-rudas)
-
-Mood & Mental Health Assessments:
-[PHQ-9](https://www.apa.org/depression-guideline/patient-health-questionnaire.pdf)
-[GDS](https://geriatrictoolkit.missouri.edu/cog/GDS_SHORT_FORM.PDF)
-[GAD-7](https://www.apaservices.org/practice/reimbursement/health-registry/anxiety-disorder-response.pdf)
-[ASRS v1.1](https://psychology-tools.com/test/adult-adhd-self-report-scale)
-
-Functional Assessment Tools:
-[Katz Index](https://hign.org/sites/default/files/2020-06/Try_This_General_Assessment_2.pdf)
-[Barthel Index](https://www.sralab.org/sites/default/files/2017-07/barthel.pdf)
-[Lawton-Brody Scale](https://www.bgs.org.uk/sites/default/files/content/attachment/2018-07-05/lawton_brody.pdf)
-[CDR Scale](https://knightadrc.wustl.edu/professionals-clinicians/cdr-dementia-staging-instrument/)
-
-Dementia-Specific Resources:
-[Alzheimer's Association](https://www.alz.org/)
-[Lewy Body Dementia Association](https://lbda.org/)
-[Living Well With Dementia Toolkit](https://sites.google.com/ariadnelabs.org/living-with-dementia/)
-
-Medication & Safety Tools:
-[ACB Calculator](https://www.acbcalc.com/)
-[STEADI Algorithm](https://www.cdc.gov/steadi/media/pdfs/STEADI-Algorithm-508.pdf)
-
-Psychiatric Comorbidity:
-[PsychDB](https://www.psychdb.com/home)
-
-Communication & Interviewing:
-[Motivational Interviewing](https://motivationalinterviewing.org/)
-[Motivational Interviewing (PMC)](https://pmc.ncbi.nlm.nih.gov/articles/PMC8200683/)
-
-Public Health & Program Resources:
-[CDC BOLD Toolkit](https://www.cdc.gov/aging-programs/about/index.html)
-[Cognition in Primary Care](https://familymedicine.uw.edu/cpc/)
-
-Geriatric Care Framework:
-[5Ms of Geriatric Care](https://www.aafp.org/afp/2024/0600/editorial-holistic-approach-geriatric-care)`;
+// Re-export from shared resources file
+export { CURATED_EXTERNAL_RESOURCES } from './resources';

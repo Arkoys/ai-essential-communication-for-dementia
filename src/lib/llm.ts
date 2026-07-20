@@ -1,5 +1,5 @@
 import { GoogleGenAI } from '@google/genai';
-import { DEFAULT_KNOWLEDGE_CHUNKS, CURATED_EXTERNAL_RESOURCES } from './defaultData';
+import { DEFAULT_KNOWLEDGE_CHUNKS } from './defaultData';
 import { retrieveRelevantChunks } from './rag';
 import { 
   DEFAULT_SYSTEM_PROMPT, 
@@ -12,6 +12,10 @@ import {
   isHarvardConfigured,
   getHarvardClient 
 } from './providers/harvard';
+import { 
+  CURATED_EXTERNAL_RESOURCES,
+  generatePositiveCitationList 
+} from './resources';
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 const MINIMAX_API_BASE_URL = process.env.MINIMAX_API_BASE_URL || 'https://api.minimaxi.chat';
@@ -30,13 +34,33 @@ function buildToolkitReferenceForPrompt(): string {
     (chunk) => `### ${chunk.source}\n\n${chunk.content}`
   ).join('\n\n---\n\n');
   
-  // Append curated external resources
+  // Append curated external resources with STRICT positive-only citation rules
   return `${chunks}
 
 ---
 
 ## Curated External Resources
-${CURATED_EXTERNAL_RESOURCES}`;
+${CURATED_EXTERNAL_RESOURCES}
+
+---
+
+## CITATION RULES (MANDATORY - STRICT)
+### For Internal Sources (Ariadne Labs chunks):
+You MAY cite these exact internal sources:
+- "Ariadne Labs - Primer"
+- "Ariadne Labs - Stuck Points Framework"
+- "Ariadne Labs - Sample Language (Phase 1: Recognition)"
+- "Ariadne Labs - Sample Language (Phase 2: Evaluation)"
+- "Ariadne Labs - Sample Language (Phase 3: Diagnosis)"
+
+### For External Sources:
+${generatePositiveCitationList()}
+
+### FORBIDDEN:
+- DO NOT cite IQCODE (it is NOT in our resources)
+- DO NOT cite any assessment tool, article, or resource NOT in the ALLOWED list above
+- DO NOT invent or hallucinate any citation
+- If no resource from the allowed list is relevant, simply do not include a Resources section`;
 }
 
 // Build full MiniMax system prompt with knowledge embedded
@@ -68,7 +92,7 @@ function sanitizeModelOutput(text: string): string {
   }
   out = out.replace(/^\s*(?:thinking|reasoning|scratchpad)\s*:\s*[^\n]+\n*/gim, '');
 
-  // Model sometimes outputs a think block then the real§ answer — keep the tail after the last closing tag.
+  // Model sometimes outputs a think block then the real answer — keep the tail after the last closing tag.
   const afterThinkClose = /(?:<\/think>|<\/redacted_thinking>|<\/reasoning>)\s*/gi;
   let match: RegExpExecArray | null;
   let lastEnd = -1;
@@ -113,8 +137,6 @@ export function isInsufficientInfoResponse(text: string): boolean {
   const hasFullFormat = sectionCount >= 3;
   
   // If contains "insufficient" but NOT full framework format → flag as insufficient
-  // This catches any response like "Insufficient information to determine..."
-  // but allows proper formatted responses through
   if (hasInsufficient && !hasFullFormat) {
     return true;
   }
@@ -158,7 +180,6 @@ const VAGUE_KEYWORDS = [
 ];
 
 // Check if user input is insufficient/lacking context
-// This is a SEPARATE lightweight check that runs BEFORE the main LLM call
 export function isInsufficientUserInput(query: string): boolean {
   const trimmed = query.trim().toLowerCase();
   
@@ -217,7 +238,6 @@ export function isInsufficientUserInput(query: string): boolean {
   if (trimmed.match(/^(my|how|what|why|should)/)) specificityScore -= 1;
   
   // Final decision
-  // Input needs at least score of 2 OR length > 80 chars to be considered sufficient
   if (specificityScore < 2 && trimmed.length < 80) {
     return true;
   }
@@ -249,7 +269,6 @@ Your input needs more context for me to help you effectively.
 **Also:**
 
 💡 You can switch to Stuck Mode for a more open conversation.`;
-
 }
 
 async function generateWithMinimax(
@@ -261,7 +280,7 @@ async function generateWithMinimax(
     throw new Error('MINIMAX_API_KEY is missing. Add it to your local env file.');
   }
 
-  const minimaxModel = model || promptSettings?.selectedModel || MINIMAX_DEFAULT_MODEL;
+  const minimaxModel = model || MINIMAX_DEFAULT_MODEL;
   const url = `${MINIMAX_API_BASE_URL}${MINIMAX_API_PATH}`;
   const body: Record<string, unknown> = {
     model: minimaxModel,
@@ -306,6 +325,26 @@ ${knowledgeContent || buildToolkitReferenceForPrompt()}
 
 ## Curated External Resources
 ${CURATED_EXTERNAL_RESOURCES}
+
+---
+
+## CITATION RULES (MANDATORY - STRICT)
+### For Internal Sources (Ariadne Labs chunks):
+You MAY cite these exact internal sources:
+- "Ariadne Labs - Primer"
+- "Ariadne Labs - Stuck Points Framework"
+- "Ariadne Labs - Sample Language (Phase 1: Recognition)"
+- "Ariadne Labs - Sample Language (Phase 2: Evaluation)"
+- "Ariadne Labs - Sample Language (Phase 3: Diagnosis)"
+
+### For External Sources:
+${generatePositiveCitationList()}
+
+### FORBIDDEN:
+- DO NOT cite IQCODE (it is NOT in our resources)
+- DO NOT cite any assessment tool, article, or resource NOT in the ALLOWED list above
+- DO NOT invent or hallucinate any citation
+- If no resource from the allowed list is relevant, simply do not include a Resources section
 
 ---
 
@@ -391,7 +430,6 @@ export async function generateClinicalResponseWithHistory(
     if (provider === 'minimax') {
       const userContent = query + phaseContext;
       // Get the selected model from settings, fallback to default
-      // Use dualModeSelectedModel for MiniMax in dual mode, selectedModel as fallback
       const minimaxModel = promptSettings.dualModeSelectedModel || promptSettings.selectedModel || MINIMAX_DEFAULT_MODEL;
       
       const minimaxMessages = [
