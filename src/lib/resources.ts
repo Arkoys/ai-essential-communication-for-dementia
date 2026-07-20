@@ -8,7 +8,7 @@ export const RESOURCES: Resource[] = [
   // Cognitive Screening Tools
   { name: 'Mini Cog', url: 'https://mini-cog.com/', category: 'Cognitive Screening' },
   { name: 'AD-8', url: 'https://knightadrc.wustl.edu/professionals-clinicians/ad8-instrument/', category: 'Cognitive Screening' },
-  { name: 'MoCA', url: 'http://mocacognition.com', category: 'Cognitive Screening' },
+  { name: 'MoCA', url: 'https://mocacognition.com', category: 'Cognitive Screening' },
   { name: 'SLUMS', url: 'https://www.slu.edu/medicine/internal-medicine/geriatric-medicine/aging-successfully/mental-status-exam.php', category: 'Cognitive Screening' },
   { name: 'RUDAS', url: 'https://www.dementia.org.au/professionals/assessment-and-diagnosis-dementia/rowland-universal-dementia-assessment-scale-rudas', category: 'Cognitive Screening' },
   
@@ -28,6 +28,7 @@ export const RESOURCES: Resource[] = [
   { name: "Alzheimer's Association", url: 'https://www.alz.org/', category: 'Dementia Resources' },
   { name: 'Lewy Body Dementia Association', url: 'https://lbda.org/', category: 'Dementia Resources' },
   { name: 'Living Well With Dementia Toolkit', url: 'https://sites.google.com/ariadnelabs.org/living-with-dementia/', category: 'Dementia Resources' },
+  { name: 'Mayo Clinic', url: 'https://www.mayoclinic.org/diseases-conditions', category: 'Dementia Resources' },
   
   // Medication & Safety
   { name: 'ACB Calculator', url: 'https://www.acbcalc.com/', category: 'Medication & Safety' },
@@ -68,7 +69,7 @@ export const CURATED_EXTERNAL_RESOURCES = `Curated External Resources - Use mark
 Cognitive Screening Tools:
 [Mini Cog](https://mini-cog.com/)
 [AD-8](https://knightadrc.wustl.edu/professionals-clinicians/ad8-instrument/)
-[MoCA](http://mocacognition.com)
+[MoCA](https://mocacognition.com)
 [SLUMS](https://www.slu.edu/medicine/internal-medicine/geriatric-medicine/aging-successfully/mental-status-exam.php)
 [RUDAS](https://www.dementia.org.au/professionals/assessment-and-diagnosis-dementia/rowland-universal-dementia-assessment-scale-rudas)
 
@@ -88,6 +89,7 @@ Dementia-Specific Resources:
 [Alzheimer's Association](https://www.alz.org/)
 [Lewy Body Dementia Association](https://lbda.org/)
 [Living Well With Dementia Toolkit](https://sites.google.com/ariadnelabs.org/living-with-dementia/)
+[Mayo Clinic](https://www.mayoclinic.org/diseases-conditions)
 
 Medication & Safety Tools:
 [ACB Calculator](https://www.acbcalc.com/)
