@@ -243,13 +243,16 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
                   </p>
                 </div>
 
-                {/* Dual Mode Info */}
-                <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-xl border border-purple-200 dark:border-purple-800/50 p-4">
+                {/* Dual Mode Info - DISABLED */}
+                <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-xl border border-purple-200 dark:border-purple-800/50 p-4 opacity-60">
                   <div className="flex items-start gap-3">
                     <div className="text-2xl">🔄</div>
                     <div className="flex-1">
                       <h3 className="font-semibold text-zinc-800 dark:text-zinc-200 flex items-center gap-2">
                         Dual Mode (Compare Models)
+                        <span className="text-xs bg-zinc-200 dark:bg-zinc-700 text-zinc-500 dark:text-zinc-400 px-2 py-0.5 rounded-full">
+                          Disabled
+                        </span>
                       </h3>
                       <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1 mb-3">
                         Run two models simultaneously to compare their responses side-by-side
@@ -269,14 +272,14 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
                   
                   <div className="mt-3 pt-3 border-t border-purple-200 dark:border-purple-800/50 grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                      <label className="block text-sm font-medium text-zinc-400 dark:text-zinc-500 mb-2">
                         Default Secondary Provider (for dual mode)
                       </label>
                       <div className="relative">
                         <select
+                          disabled
                           value={settings.dualModeProvider || 'minimax'}
-                          onChange={(e) => updateField('dualModeProvider', e.target.value)}
-                          className="w-full p-3 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 appearance-none cursor-pointer pr-10"
+                          className="w-full p-3 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-500 appearance-none cursor-not-allowed pr-10"
                         >
                           {(['minimax', 'harvard'] as const).map((providerKey) => {
                             if (providerKey === settings.provider) return null;
@@ -293,14 +296,14 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
                       </div>
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+                      <label className="block text-sm font-medium text-zinc-400 dark:text-zinc-500 mb-2">
                         Secondary Model
                       </label>
                       <div className="relative">
                         <select
+                          disabled
                           value={settings.dualModeSelectedModel || PROVIDER_REGISTRY[settings.dualModeProvider as keyof typeof PROVIDER_REGISTRY]?.models[0]}
-                          onChange={(e) => updateField('dualModeSelectedModel', e.target.value)}
-                          className="w-full p-3 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 appearance-none cursor-pointer pr-10"
+                          className="w-full p-3 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-500 appearance-none cursor-not-allowed pr-10"
                         >
                           {PROVIDER_REGISTRY[settings.dualModeProvider as keyof typeof PROVIDER_REGISTRY]?.models.map((model) => (
                             <option key={model} value={model}>

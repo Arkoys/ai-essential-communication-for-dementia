@@ -87,12 +87,9 @@ export function SidebarHistory({
           </button>
           
           <button
-            onClick={() => {
-              console.log('Dual Mode button clicked');
-              onNewDual();
-              onClose?.();
-            }}
-            className="flex items-center justify-center gap-2 bg-purple-600 hover:bg-purple-700 text-white px-2 py-2 rounded-lg transition-colors font-medium"
+            disabled
+            className="flex items-center justify-center gap-2 bg-purple-300 dark:bg-purple-800 text-white px-2 py-2 rounded-lg font-medium cursor-not-allowed opacity-50"
+            title="Dual Mode is currently disabled"
           >
             <Columns2 size={18} />
             {isOpen && "Dual Mode"}
