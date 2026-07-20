@@ -1,5 +1,5 @@
 import { GoogleGenAI } from '@google/genai';
-import { DEFAULT_KNOWLEDGE_CHUNKS } from './defaultData';
+import { DEFAULT_KNOWLEDGE_CHUNKS, CURATED_EXTERNAL_RESOURCES } from './defaultData';
 import { retrieveRelevantChunks } from './rag';
 import { 
   DEFAULT_SYSTEM_PROMPT, 
@@ -26,9 +26,17 @@ const SYSTEM_PROMPT = DEFAULT_SYSTEM_PROMPT;
 
 // Build toolkit reference from default knowledge chunks
 function buildToolkitReferenceForPrompt(): string {
-  return DEFAULT_KNOWLEDGE_CHUNKS.map(
+  const chunks = DEFAULT_KNOWLEDGE_CHUNKS.map(
     (chunk) => `### ${chunk.source}\n\n${chunk.content}`
   ).join('\n\n---\n\n');
+  
+  // Append curated external resources
+  return `${chunks}
+
+---
+
+## Curated External Resources
+${CURATED_EXTERNAL_RESOURCES}`;
 }
 
 // Build full MiniMax system prompt with knowledge embedded
@@ -40,51 +48,7 @@ function buildMinimaxSystemPrompt(systemPrompt: string, knowledgeContent: string
 ## Toolkit reference (Ariadne Labs Essential Communications)
 The following excerpts are the authoritative in-app reference. Your answers must follow this material: same terminology, phases, and sample language. Do not drift into general advice that is not reflected here.
 
-${knowledgeContent || buildToolkitReferenceForPrompt()}
-
----
-
-## Output format (STRICT — mandatory)
-
-You MUST follow EXACTLY this structure and NOTHING else.
-
-Your response MUST contain ONLY the following 4 sections, in this exact order and with these exact titles:
-
-## 1. Where you are in the framework
-One bullet only (max 12 words). Name phase/transition only.
-
-## 2. What needs to happen next
-2 to 4 short action bullets.
-
-## 3. Communication tools you could use
-1 to 3 short toolkit phrase/question bullets.
-
-## 4. Relational considerations (Stuck Points framework)
-One bullet only. If not relevant, write exactly: "No relational stuck point identified."
-
-FORMATTING RULES (SPACING — MANDATORY):
-- Insert ONE blank line after each section title.
-- Insert ONE blank line between sections in your answer.
-- Do NOT write content on the same line as a section title.
-- Use short bullets only (no prose paragraphs).
-- Keep each bullet to one idea.
-
-BREVITY RULES (MANDATORY):
-- Entire response under 140 words.
-- Direct, actionable, point-of-care wording.
-- No introductions or conclusions.
-
-FINAL RULES:
-- Do NOT add any other sections.
-- Do NOT rename any section.
-- Do NOT reorder sections.
-- Do NOT merge sections.
-- Do NOT add introductions or conclusions outside these sections.
-- Output MUST start directly with "## 1. Where you are in the framework".
-Reply in Markdown only.
-
-
-`;
+${knowledgeContent || buildToolkitReferenceForPrompt()}`;
 }
 
 /** Strip chain-of-thought wrappers some models (e.g. MiniMax) emit. */
@@ -337,6 +301,11 @@ function buildStuckModeSystemPrompt(stuckModePrompt: string, knowledgeContent: s
 ## Toolkit reference (Ariadne Labs Essential Communications)
 
 ${knowledgeContent || buildToolkitReferenceForPrompt()}
+
+---
+
+## Curated External Resources
+${CURATED_EXTERNAL_RESOURCES}
 
 ---
 

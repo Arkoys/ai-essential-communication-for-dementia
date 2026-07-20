@@ -10,6 +10,104 @@ interface MessageBubbleProps {
   isInsufficientInfo?: boolean;
 }
 
+// Curated Resources keywords with their URLs for auto-linking
+const CURATED_KEYWORDS: { keywords: string[]; url: string }[] = [
+  { keywords: ["Mini Cog", "MiniCog"], url: "https://mini-cog.com/" },
+  { keywords: ["AD-8"], url: "https://knightadrc.wustl.edu/professionals-clinicians/ad8-instrument/" },
+  { keywords: ["MoCA", "MOCA"], url: "http://mocacognition.com" },
+  { keywords: ["SLUMS"], url: "https://www.slu.edu/medicine/internal-medicine/geriatric-medicine/aging-successfully/mental-status-exam.php" },
+  { keywords: ["RUDAS"], url: "https://www.dementia.org.au/professionals/assessment-and-diagnosis-dementia/rowland-universal-dementia-assessment-scale-rudas" },
+  { keywords: ["PHQ-9", "PHQ9"], url: "https://www.apa.org/depression-guideline/patient-health-questionnaire.pdf" },
+  { keywords: ["GDS", "Geriatric Depression Scale"], url: "https://geriatrictoolkit.missouri.edu/cog/GDS_SHORT_FORM.PDF" },
+  { keywords: ["GAD-7", "GAD7"], url: "https://www.apaservices.org/practice/reimbursement/health-registry/anxiety-disorder-response.pdf" },
+  { keywords: ["ASRS v1.1", "ASRS"], url: "https://psychology-tools.com/test/adult-adhd-self-report-scale" },
+  { keywords: ["Katz Index", "Katz index"], url: "https://hign.org/sites/default/files/2020-06/Try_This_General_Assessment_2.pdf" },
+  { keywords: ["Barthel Index", "Barthel index"], url: "https://www.sralab.org/sites/default/files/2017-07/barthel.pdf" },
+  { keywords: ["Lawton-Brody", "Lawton Brody", "Lawton-Brody Scale"], url: "https://www.bgs.org.uk/sites/default/files/content/attachment/2018-07-05/lawton_brody.pdf" },
+  { keywords: ["CDR Scale", "Clinical Dementia Rating Scale", "CDR"], url: "https://knightadrc.wustl.edu/professionals-clinicians/cdr-dementia-staging-instrument/" },
+  { keywords: ["Alzheimer's Association", "Alzheimer Association"], url: "https://www.alz.org/" },
+  { keywords: ["Lewy Body Dementia Association", "Lewy Body"], url: "https://lbda.org/" },
+  { keywords: ["Living Well With Dementia Toolkit", "Living Well With Dementia"], url: "https://sites.google.com/ariadnelabs.org/living-with-dementia/" },
+  { keywords: ["ACB Calculator", "ACB calc"], url: "https://www.acbcalc.com/" },
+  { keywords: ["STEADI Algorithm", "STEADI"], url: "https://www.cdc.gov/steadi/media/pdfs/STEADI-Algorithm-508.pdf" },
+  { keywords: ["PsychDB"], url: "https://www.psychdb.com/home" },
+  { keywords: ["Motivational Interviewing", "MINT"], url: "https://motivationalinterviewing.org/" },
+  { keywords: ["Motivational Interviewing Paper"], url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC8200683/" },
+  { keywords: ["CDC BOLD Toolkit", "BOLD Toolkit", "CDC BOLD"], url: "https://www.cdc.gov/aging-programs/about/index.html" },
+  { keywords: ["Cognition in Primary Care", "CPC"], url: "https://familymedicine.uw.edu/cpc/" },
+  { keywords: ["Mayo Clinic"], url: "https://www.mayoclinic.org/" },
+  { keywords: ["5Ms", "5 Ms", "5Ms of Geriatric Care", "5 Ms Framework"], url: "https://www.aafp.org/afp/2024/0600/editorial-holistic-approach-geriatric-care" },
+];
+
+// Sort keywords by length (longest first) to match longer phrases before shorter ones
+const sortedKeywords = CURATED_KEYWORDS.map(item => ({
+  ...item,
+  keywords: item.keywords.sort((a, b) => b.length - a.length)
+}));
+
+// Regex pattern to match any of the curated keywords
+const keywordPattern = new RegExp(
+  '(' + sortedKeywords.flatMap(item => item.keywords).map(k => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')(?!\\s*\\])',
+  'gi'
+);
+
+// Function to find URL for a matched keyword
+function findUrlForKeyword(match: string): string | null {
+  const normalizedMatch = match.trim();
+  for (const item of sortedKeywords) {
+    for (const keyword of item.keywords) {
+      if (normalizedMatch.toLowerCase() === keyword.toLowerCase()) {
+        return item.url;
+      }
+    }
+  }
+  return null;
+}
+
+// Parse text and wrap keywords in links
+function parseTextWithLinks(text: string): React.ReactNode[] {
+  const parts: React.ReactNode[] = [];
+  let lastIndex = 0;
+  let match;
+
+  keywordPattern.lastIndex = 0;
+  const textCopy = text;
+  
+  while ((match = keywordPattern.exec(textCopy)) !== null) {
+    // Add text before the match
+    if (match.index > lastIndex) {
+      parts.push(textCopy.slice(lastIndex, match.index));
+    }
+
+    const url = findUrlForKeyword(match[0]);
+    if (url) {
+      // Add the keyword as a link
+      parts.push(
+        <a
+          key={`link-${match.index}`}
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-600 dark:text-blue-400 hover:underline"
+        >
+          {match[0]}
+        </a>
+      );
+    } else {
+      parts.push(match[0]);
+    }
+
+    lastIndex = match.index + match[0].length;
+  }
+
+  // Add remaining text
+  if (lastIndex < textCopy.length) {
+    parts.push(textCopy.slice(lastIndex));
+  }
+
+  return parts.length > 0 ? parts : [text];
+}
+
 export function MessageBubble({ role, content, isStuck, isInsufficientInfo }: MessageBubbleProps) {
   const isUser = role === 'user';
 
@@ -81,9 +179,62 @@ export function MessageBubble({ role, content, isStuck, isInsufficientInfo }: Me
                           : "text-orange-800 border-orange-400"
                     )}
                   >
-                    {children}
+                    {typeof children === 'string' ? parseTextWithLinks(children) : children}
                   </h2>
                 ),
+                strong: ({ children }) => (
+                  <strong
+                    className={cn(
+                      "font-semibold block mt-4 mb-2 text-base",
+                      isStuck
+                        ? "text-green-800 dark:text-green-200"
+                        : isInsufficientInfo
+                          ? "text-amber-800 dark:text-amber-200"
+                          : "text-orange-800 dark:text-orange-200"
+                    )}
+                  >
+                    {typeof children === 'string' ? parseTextWithLinks(children) : children}
+                  </strong>
+                ),
+                ul: ({ children }) => (
+                  <ul className="my-2 space-y-1 list-none pl-5">
+                    {children}
+                  </ul>
+                ),
+                ol: ({ children }) => (
+                  <ol className="my-2 space-y-1 list-decimal pl-5">
+                    {children}
+                  </ol>
+                ),
+                li: ({ children }) => (
+                  <li className="text-zinc-700 dark:text-zinc-300 relative pl-4 before:absolute before:left-0 before:text-orange-500">
+                    <span className="before:content-['•'] before:absolute before:-left-4">
+                      {typeof children === 'string' ? parseTextWithLinks(children) : children}
+                    </span>
+                  </li>
+                ),
+                p: ({ children }) => (
+                  <p className="my-2 text-zinc-700 dark:text-zinc-300">
+                    {typeof children === 'string' ? parseTextWithLinks(children) : children}
+                  </p>
+                ),
+                a: ({ href, children }) => (
+                  <a 
+                    href={href} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-blue-600 dark:text-blue-400 hover:underline"
+                  >
+                    {children}
+                  </a>
+                ),
+                text: ({ node, children, ...props }) => {
+                  // Handle plain text nodes - check if it's a string before parsing
+                  if (typeof children === 'string') {
+                    return <span {...props}>{parseTextWithLinks(children)}</span>;
+                  }
+                  return <span {...props}>{children}</span>;
+                },
               }}
             >
               {content}

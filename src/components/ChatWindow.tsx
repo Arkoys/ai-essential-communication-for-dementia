@@ -84,7 +84,7 @@ export function ChatWindow({
             </div>
           </div>
         ) : (
-          <div className="pb-36 md:pb-32">
+          <div className="pb-36 md:pb-42 pb-2">
             {messages.map((msg) => (
               <MessageBubble key={msg.id} role={msg.role} content={msg.content} isStuck={msg.isStuck} isInsufficientInfo={msg.isInsufficientInfo} />
             ))}
