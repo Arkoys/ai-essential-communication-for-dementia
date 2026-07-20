@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { cn } from '../lib/utils';
-import { ChevronUp, ChevronDown } from 'lucide-react';
+import { ChevronUp, ChevronDown, FolderOpen } from 'lucide-react';
 
 export type PhaseName = 'Recognition' | 'Evaluation' | 'Naming & Diagnosis';
 
@@ -56,6 +56,7 @@ interface NavigationMapProps {
   detectedPhase: PhaseName | null;
   onSelectPhase: (phase: PhaseName) => void;
   onSelectStep: (step: string) => void;
+  onShowResources?: () => void;
 }
 
 const MOBILE_MEDIA_QUERY = '(max-width: 767px)';
@@ -71,6 +72,7 @@ export function NavigationMap({
   detectedPhase,
   onSelectPhase,
   onSelectStep,
+  onShowResources,
 }: NavigationMapProps) {
   const [isOpen, setIsOpen] = useState(() => !isMobileViewport());
 
@@ -96,13 +98,22 @@ export function NavigationMap({
     <div className="w-full bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800">
 
       {/* Header */}
-      <button
-        onClick={() => setIsOpen(v => !v)}
-        className="w-full flex items-center justify-between px-4 py-2 text-xs uppercase tracking-widest text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-800"
-      >
-        Clinical Workflow Map
-        {isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
-      </button>
+      <div className="flex items-center justify-between px-4 py-0">
+        <button
+          onClick={() => setIsOpen(v => !v)}
+          className="flex items-center gap-2 text-xs uppercase tracking-widest text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+        >
+          {isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+          Clinical Workflow Map
+        </button>
+        <button
+          onClick={onShowResources}
+          className="p-2 -mr-2 text-zinc-400 hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
+          title="Resources"
+        >
+          <FolderOpen size={20} />
+        </button>
+      </div>
 
       {!isOpen && visiblePhase && (
         <div className="mx-4 mb-2 rounded-lg border border-orange-200 dark:border-orange-800/60 bg-orange-50/80 dark:bg-orange-950/40 px-3 py-1.5 text-xs text-orange-800 dark:text-orange-200">

@@ -9,6 +9,7 @@ import { DualInputForm } from './components/DualInputForm';
 import { NavigationMap, PhaseName } from './components/NavigationMap';
 import { AdminPanel } from './components/AdminPanel';
 import { SettingsPanel } from './components/SettingsPanel';
+import { ResourcesPanel } from './components/ResourcesPanel';
 import { generateClinicalResponseWithHistory, isInsufficientInfoResponse, isInsufficientUserInput, getInsufficientInfoGuidance } from './lib/llm';
 import { getPromptSettings, PromptSettings, DEFAULT_SUGGESTED_PROMPTS } from './lib/promptSettings';
 import { Stethoscope, Menu } from 'lucide-react';
@@ -107,6 +108,7 @@ export default function App() {
   
   const [showAdminPanel, setShowAdminPanel] = useState(false);
   const [showSettingsPanel, setShowSettingsPanel] = useState(false);
+  const [showResourcesPanel, setShowResourcesPanel] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -749,6 +751,7 @@ export default function App() {
           detectedPhase={effectiveDetectedPhase}
           onSelectPhase={handleSelectPhase}
           onSelectStep={handleSelectStep}
+          onShowResources={() => setShowResourcesPanel(true)}
         />
         
         <div className="flex-1 relative min-h-0">
@@ -790,6 +793,11 @@ export default function App() {
       {showSettingsPanel && (
         <SettingsPanel onClose={() => setShowSettingsPanel(false)} />
       )}
+      
+      <ResourcesPanel 
+        isOpen={showResourcesPanel} 
+        onClose={() => setShowResourcesPanel(false)} 
+      />
     </div>
   );
 }
