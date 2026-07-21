@@ -61,26 +61,17 @@ export function ChatWindow({
     <div className="flex flex-col h-full bg-white dark:bg-zinc-950">
       <div className="flex-1 overflow-y-auto ">
         {messages.length === 0 ? (
-          <div className="h-full flex flex-col  items-center justify-center p-6 md:p-12 text-center space-y-6">
-            <div className="space-y-4  md:pb-12">
+          <div className="h-full flex flex-col items-center justify-center p-6 md:p-12 text-center">
+            <div className="max-w-lg mx-auto space-y-4">
               <h1 className="text-3xl md:text-4xl font-semibold text-zinc-800 dark:text-zinc-200">
                 Dementia Clinical Coach
               </h1>
-              <p className="text-zinc-500 dark:text-zinc-400 max-w-lg mx-auto text-sm md:text-base">
-                Evidence-based decision support for primary care providers.
+              <p className="text-zinc-500 dark:text-zinc-400 text-sm md:text-base leading-relaxed">
+                Grounded in the Ariadne Labs Essential Communications Toolkit, this coach helps you navigate conversations about cognitive health with confidence and compassion.
               </p>
-            </div>
-            
-            <div className="flex flex-wrap justify-center gap-2 md:gap-3 max-w-2xl py-0 -mt-10">
-              {suggestedPrompts.map((prompt) => (
-                <button
-                  key={prompt}
-                  onClick={() => handleSuggestedPrompt(prompt)}
-                  className="px-3 py-1.5 md:px-4 md:py-2 rounded-full border border-zinc-200 dark:border-zinc-800 bg-zinc-50 dark:bg-zinc-900 text-xs md:text-sm font-medium text-zinc-700 dark:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-colors"
-                >
-                  {prompt}
-                </button>
-              ))}
+              <p className="text-zinc-400 dark:text-zinc-500 text-sm">
+                Describe your patient's situation below to receive guidance aligned with the Navigation Map and Sample Language framework.
+              </p>
             </div>
           </div>
         ) : (

@@ -1,12 +1,30 @@
 import React from 'react';
-import { X, ExternalLink, FolderOpen } from 'lucide-react';
+import { X, ExternalLink, FolderOpen, FileText } from 'lucide-react';
 import { cn } from '../lib/utils';
-import { groupedResources } from '../lib/resources';
 
 interface ResourcesPanelProps {
   isOpen: boolean;
   onClose: () => void;
 }
+
+// Internal Ariadne Labs Resources - Core Toolkit PDFs
+const INTERNAL_RESOURCES = [
+  {
+    name: 'Navigation Map',
+    url: 'https://drive.google.com/file/d/1YBBHRlW78rzFDLydKyetFtWkwfWxIBlj/view',
+    description: 'Clear structure for the dementia journey'
+  },
+  {
+    name: 'Sample Language',
+    url: 'https://docs.google.com/document/d/1SpGFF38frlTqQTQUCf_YJcwxWC_75b8q9dyqsJyDVLU/edit?tab=t.0#heading=h.7h0z65bqluqh',
+    description: 'Ready-to-use language for sensitive conversations'
+  },
+  {
+    name: 'Stuck Points Framework',
+    url: 'https://drive.google.com/file/d/1TnAgt9ElwCax5-mUdHNLP317-B99TfkA/view',
+    description: 'Practical tools for communication obstacles'
+  },
+];
 
 export function ResourcesPanel({ isOpen, onClose }: ResourcesPanelProps) {
   const handleResourceClick = (url: string) => {
@@ -43,30 +61,50 @@ export function ResourcesPanel({ isOpen, onClose }: ResourcesPanelProps) {
         </div>
         
         {/* Content */}
-        <div className="overflow-y-auto h-[calc(100dvh-49px)] p-2 space-y-5">
-          {Object.entries(groupedResources).map(([category, resources]) => (
-            <div key={category}>
-              <h3 className="text-sm font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-2">
-                {category}
-              </h3>
-              <ul className="space-y-1">
-                {resources.map((resource) => (
-                  <li key={resource.url}>
-                    <button
-                      onClick={() => handleResourceClick(resource.url)}
-                      className="w-full flex items-center justify-between gap-2 px-3 py-2 text-left rounded-lg hover:bg-zinc-100 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-300 transition-colors group"
-                    >
-                      <span className="text-sm font-medium truncate">{resource.name}</span>
+        <div className="overflow-y-auto h-[calc(100dvh-49px)] p-4">
+          <div className="mb-4">
+            <h3 className="text-sm font-semibold text-zinc-500 dark:text-zinc-400 uppercase tracking-wider mb-1">
+              Core Toolkit
+            </h3>
+            <p className="text-xs text-zinc-400 dark:text-zinc-500">
+              Essential Communications Toolkit resources
+            </p>
+          </div>
+          
+          <ul className="space-y-3">
+            {INTERNAL_RESOURCES.map((resource) => (
+              <li key={resource.name}>
+                <button
+                  onClick={() => handleResourceClick(resource.url)}
+                  className="w-full flex items-start gap-3 px-3 py-3 text-left rounded-xl hover:bg-zinc-50 dark:hover:bg-zinc-800 bg-zinc-50 dark:bg-zinc-800/50 transition-colors group"
+                >
+                  <div className="shrink-0 mt-0.5">
+                    <FileText size={18} className="text-orange-600 dark:text-orange-400" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-sm font-medium text-zinc-800 dark:text-zinc-200 group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors">
+                        {resource.name}
+                      </span>
                       <ExternalLink 
                         size={14} 
-                        className="shrink-0 text-zinc-400 group-hover:text-orange-600 dark:group-hover:text-orange-400 transition-colors" 
+                        className="shrink-0 text-zinc-400 group-hover:text-orange-500 dark:group-hover:text-orange-400 transition-colors" 
                       />
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+                    </div>
+                    <p className="text-xs text-zinc-500 dark:text-zinc-400 mt-0.5">
+                      {resource.description}
+                    </p>
+                  </div>
+                </button>
+              </li>
+            ))}
+          </ul>
+          
+          <div className="mt-6 pt-4 border-t border-zinc-200 dark:border-zinc-700">
+            <p className="text-xs text-zinc-400 dark:text-zinc-500 text-center">
+              Additional clinical resources are referenced in AI responses when relevant to your query.
+            </p>
+          </div>
         </div>
       </div>
     </>
