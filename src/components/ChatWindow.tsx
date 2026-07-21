@@ -61,16 +61,18 @@ export function ChatWindow({
     <div className="flex flex-col h-full bg-white dark:bg-zinc-950">
       <div className="flex-1 overflow-y-auto ">
         {messages.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center p-6 md:p-12 text-center">
-            <div className="max-w-lg mx-auto space-y-4">
-              <h1 className="text-3xl md:text-4xl font-semibold text-zinc-800 dark:text-zinc-200">
-                Dementia Clinical Coach
-              </h1>
-              <p className="text-zinc-500 dark:text-zinc-400 text-sm md:text-base leading-relaxed">
-                Grounded in the Ariadne Labs Essential Communications Toolkit, this coach helps you navigate conversations about cognitive health with confidence and compassion.
+          <div className="h-full flex flex-col items-center justify-center px-8 md:px-16 lg:px-24 py-16 md:py-24 text-center">
+            <div className="max-w-2xl mx-auto space-y-8">
+              <div className="space-y-3">
+                <h1 className="text-2xl md:text-3xl font-semibold text-zinc-700 dark:text-zinc-200 leading-tight">
+                  Welcome to the Dementia Clinical Coach
+                </h1>
+              </div>
+              <p className="text-base md:text-lg text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                This tool is not a diagnostic engine; it's designed to help you quickly orient to where a patient is in the dementia care pathway, consider reasonable next steps, and find clear, empathetic language for patient and caregiver conversations—even those that may be difficult or uncertain.
               </p>
-              <p className="text-zinc-400 dark:text-zinc-500 text-sm">
-                Describe your patient's situation below to receive guidance aligned with the Navigation Map and Sample Language framework.
+              <p className="text-sm md:text-base text-zinc-600 dark:text-zinc-400 font-medium">
+                <span className="font-semibold">Enter a prompt below</span> to describe your concern, situation, questions, or upcoming conversation. Please do not input any patient data.
               </p>
             </div>
           </div>
