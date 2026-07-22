@@ -245,30 +245,18 @@ export function isInsufficientUserInput(query: string): boolean {
   return false;
 }
 
-// Generate a user guidance message for insufficient information scenarios
+// Generate a user guidance message for insufficient information scenarios (Template 1)
 export function getInsufficientInfoGuidance(): string {
-  return `⚠️ **Information not clear enough**
+  return `I'd like to help you navigate this conversation, but I need a bit more context to point you in the right direction.
 
-Your input needs more context for me to help you effectively.
+In order to best support you, I need to know:
 
-**Please provide:**
-• Patient's age and general situation
-• Specific symptoms or concerns
-• What you're trying to accomplish (assessment, communication, diagnosis)
+- Patient age
+- Symptoms presenting, if any
+- Duration and onset pattern of symptoms
+- What is driving your concern?
 
-**Examples of better prompts:**
-- ❌ "help" 
-- ✅ "My 78-year-old patient forgot their medication and seems confused about their appointments"
-
-- ❌ "dementia" 
-- ✅ "Patient showing memory lapses - what questions should I ask during evaluation?"
-
-- ❌ "confused patient"
-- ✅ "Wife of 80-year-old patient concerned he's repeating stories and getting lost"
-
-**Also:**
-
-💡 You can switch to Stuck Mode for a more open conversation.`;
+Once you provide this information, I can help you identify where you are in the dementia diagnosis journey and offer sample language to support your conversations.`;
 }
 
 async function generateWithMinimax(
