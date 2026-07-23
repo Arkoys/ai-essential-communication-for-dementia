@@ -20,6 +20,7 @@ const CLASSIFICATION_SCHEMA = {
     in_scope: { type: "boolean" },
     tier1: {
       type: "object",
+      additionalProperties: false,
       properties: {
         age_present: { type: "boolean" },
         symptom_present: { type: "boolean" },
