@@ -78,9 +78,9 @@ Return JSON only.`;
  * Call MiniMax API
  */
 async function callMinimaxAPI(userMessage: string): Promise<string> {
-  const apiKey = import.meta.env.VITE_MINIMAX_API_KEY;
-  const apiBase = import.meta.env.VITE_MINIMAX_API_BASE || 'https://api.minimaxi.chat';
-  const apiPath = import.meta.env.VITE_MINIMAX_API_PATH || '/v1/chat/completions';
+  const apiKey = process.env.MINIMAX_API_KEY;
+  const apiBase = process.env.MINIMAX_API_BASE_URL || 'https://api.minimaxi.chat';
+  const apiPath = process.env.MINIMAX_API_PATH || '/v1/chat/completions';
   
   if (!apiKey) {
     throw new Error('MiniMax API key not configured');

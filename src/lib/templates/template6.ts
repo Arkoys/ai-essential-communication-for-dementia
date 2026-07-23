@@ -15,27 +15,27 @@ export const TEMPLATE_6_CONFIG = {
   structure: [
     {
       step: 1,
-      title: 'URGENT Flag',
+      title: '**URGENT FLAG**',
       description: 'Signal the concern clearly but calmly'
     },
     {
       step: 2,
-      title: 'Context',
+      title: '**CONTEXT**',
       description: 'Frame as acute worsening in a patient with known/suspected dementia'
     },
     {
       step: 3,
-      title: 'Immediate Actions',
+      title: '**IMMEDIATE ACTIONS**',
       description: 'Clinical actions to consider right away'
     },
     {
       step: 4,
-      title: 'Targeted Assessment',
+      title: '**TARGETED ASSESSMENT**',
       description: 'Questions to guide delirium workup'
     },
     {
       step: 5,
-      title: 'Escalation',
+      title: '**ESCALATION**',
       description: 'When to escalate immediately'
     }
   ],

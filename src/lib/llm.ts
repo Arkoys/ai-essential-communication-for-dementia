@@ -16,6 +16,9 @@ import {
   CURATED_EXTERNAL_RESOURCES,
   generatePositiveCitationList 
 } from './resources';
+import { runClassificationPipeline, buildSystemPrompt } from './classifier/pipeline';
+import { TEMPLATE_SYSTEM_ADDONS } from './templates';
+import type { ResponsePath } from './classifier/types';
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 const MINIMAX_API_BASE_URL = process.env.MINIMAX_API_BASE_URL || 'https://api.minimaxi.chat';
@@ -343,13 +346,20 @@ Keep it under 100 words. Be direct and helpful.
 `;
 }
 
+export interface GenerationResult {
+  response: string;
+  template: ResponsePath;
+  tier1Complete: boolean;
+  safetyOverride: boolean;
+}
+
 export async function generateClinicalResponseWithHistory(
   query: string,
   history: { role: 'user' | 'assistant'; content: string }[],
   currentPhase: string | null,
   isStuck?: boolean,
   forceProvider?: string
-) {
+): Promise<GenerationResult> {
   try {
     // Load prompt settings from Firestore
     const promptSettings = await getPromptSettings();
@@ -363,16 +373,57 @@ export async function generateClinicalResponseWithHistory(
       ? `\n\n[System Note: The user is currently focusing on the "${currentPhase}" phase of the dementia care framework. Please tailor your response to this phase.]`
       : '';
 
-    // Use configurable prompts, fallback to defaults
-    const systemPrompt = isStuck 
-      ? buildStuckModeSystemPrompt(
-          promptSettings.stuckModePrompt || DEFAULT_STUCK_MODE_PROMPT,
-          promptSettings.knowledgeContent || DEFAULT_KNOWLEDGE_CONTENT
-        )
-      : promptSettings.systemPrompt || SYSTEM_PROMPT;
-
     // Determine provider: forceProvider (for dual mode) > Firestore settings > env var > default
     const provider = forceProvider || promptSettings.provider || (process.env.LLM_PROVIDER || 'harvard').toLowerCase();
+    
+    // ===== STEP 1: Run Classification Pipeline =====
+    let classificationResult;
+    let templateAddon = '';
+    let detectedTemplate: ResponsePath = 'assess_template_1_or_3';
+    let tier1Complete = false;
+    let safetyOverride = false;
+    
+    if (!isStuck) {
+      try {
+        const pipelineResult = await runClassificationPipeline(
+          query,
+          history,
+          provider === 'minimax' ? 'minimax' : 'openai'
+        );
+        
+        templateAddon = pipelineResult.systemPromptAddon;
+        detectedTemplate = pipelineResult.template;
+        tier1Complete = pipelineResult.tier1Complete;
+        safetyOverride = pipelineResult.safetyOverride;
+        classificationResult = pipelineResult;
+        
+        // Log for debugging
+        console.log('[Template Classification]', {
+          template: detectedTemplate,
+          tier1Complete,
+          safetyOverride,
+          fallback: pipelineResult.fallbackTriggered
+        });
+      } catch (classError) {
+        console.error('Classification pipeline failed:', classError);
+        // Fallback to template 1 if classification fails
+        templateAddon = TEMPLATE_SYSTEM_ADDONS.template_1;
+        detectedTemplate = 'assess_template_1_or_3';
+      }
+    }
+
+    // ===== STEP 2: Build System Prompt with Template Addon =====
+    const knowledgeContent = promptSettings.knowledgeContent || DEFAULT_KNOWLEDGE_CONTENT;
+    const baseSystemPrompt = promptSettings.systemPrompt || SYSTEM_PROMPT;
+    
+    const fullSystemPrompt = templateAddon 
+      ? buildSystemPrompt(
+          buildMinimaxSystemPrompt(baseSystemPrompt, knowledgeContent),
+          templateAddon
+        )
+      : buildMinimaxSystemPrompt(baseSystemPrompt, knowledgeContent);
+
+    // ===== STEP 3: Generate Response Based on Provider =====
     
     // Harvard: OpenAI-compatible gateway with api-key auth
     if (provider === 'harvard') {
@@ -381,22 +432,17 @@ export async function generateClinicalResponseWithHistory(
       }
 
       const userContent = query + phaseContext;
-      // Get the selected model from settings, fallback to default
       const harvardModel = promptSettings.selectedModel || HARVARD_DEFAULT_MODEL;
       
-      // Build messages with proper typing for Harvard
       const harvardMessages: { role: 'system' | 'user' | 'assistant'; content: string }[] = [
         { 
           role: 'system', 
           content: isStuck 
             ? buildStuckModeSystemPrompt(
                 promptSettings.stuckModePrompt || DEFAULT_STUCK_MODE_PROMPT,
-                promptSettings.knowledgeContent || DEFAULT_KNOWLEDGE_CONTENT
+                knowledgeContent
               )
-            : buildMinimaxSystemPrompt(
-                promptSettings.systemPrompt || SYSTEM_PROMPT,
-                promptSettings.knowledgeContent || DEFAULT_KNOWLEDGE_CONTENT
-              )
+            : fullSystemPrompt
         },
         ...history.map((msg) => ({
           role: msg.role as 'user' | 'assistant',
@@ -406,18 +452,20 @@ export async function generateClinicalResponseWithHistory(
       ];
 
       const response = await harvardChatCompletion(harvardMessages, harvardModel);
-      // Handle both streaming and non-streaming responses
       if ('choices' in response) {
-        return sanitizeModelOutput(response.choices[0]?.message?.content || 'No response returned.');
+        return {
+          response: sanitizeModelOutput(response.choices[0]?.message?.content || 'No response returned.'),
+          template: detectedTemplate,
+          tier1Complete,
+          safetyOverride
+        };
       }
-      // For streaming responses, return empty string (streaming handled separately)
-      return '';
+      return { response: '', template: detectedTemplate, tier1Complete, safetyOverride };
     }
 
     // MiniMax: no RAG — full toolkit text is embedded in the system prompt.
     if (provider === 'minimax') {
       const userContent = query + phaseContext;
-      // Get the selected model from settings, fallback to default
       const minimaxModel = promptSettings.dualModeSelectedModel || promptSettings.selectedModel || MINIMAX_DEFAULT_MODEL;
       
       const minimaxMessages = [
@@ -426,12 +474,9 @@ export async function generateClinicalResponseWithHistory(
           content: isStuck 
             ? buildStuckModeSystemPrompt(
                 promptSettings.stuckModePrompt || DEFAULT_STUCK_MODE_PROMPT,
-                promptSettings.knowledgeContent || DEFAULT_KNOWLEDGE_CONTENT
+                knowledgeContent
               )
-            : buildMinimaxSystemPrompt(
-                promptSettings.systemPrompt || SYSTEM_PROMPT,
-                promptSettings.knowledgeContent || DEFAULT_KNOWLEDGE_CONTENT
-              )
+            : fullSystemPrompt
         },
         ...history.map((msg) => ({
           role: msg.role,
@@ -440,7 +485,8 @@ export async function generateClinicalResponseWithHistory(
         { role: 'user', content: userContent },
       ];
 
-      return await generateWithMinimax(minimaxMessages, minimaxModel);
+      const response = await generateWithMinimax(minimaxMessages, minimaxModel);
+      return { response, template: detectedTemplate, tier1Complete, safetyOverride };
     }
 
     // Gemini fallback: RAG retrieval for relevant chunks only
@@ -453,10 +499,7 @@ export async function generateClinicalResponseWithHistory(
       });
     }
 
-    const userText =
-      query +
-      contextString +
-      phaseContext;
+    const userText = query + contextString + phaseContext;
 
     contents.push({
       role: 'user',
@@ -467,14 +510,31 @@ export async function generateClinicalResponseWithHistory(
       model: 'gemini-3.1-pro-preview',
       contents: contents,
       config: {
-        systemInstruction: systemPrompt,
+        systemInstruction: fullSystemPrompt,
         temperature: 0.2,
       },
     });
 
-    return sanitizeModelOutput(response.text || '');
+    return {
+      response: sanitizeModelOutput(response.text || ''),
+      template: detectedTemplate,
+      tier1Complete,
+      safetyOverride
+    };
   } catch (error) {
     console.error('Error generating response:', error);
     throw error;
   }
+}
+
+// Backward compatible function (returns just the response string)
+export async function generateClinicalResponseString(
+  query: string,
+  history: { role: 'user' | 'assistant'; content: string }[],
+  currentPhase: string | null,
+  isStuck?: boolean,
+  forceProvider?: string
+): Promise<string> {
+  const result = await generateClinicalResponseWithHistory(query, history, currentPhase, isStuck, forceProvider);
+  return result.response;
 }

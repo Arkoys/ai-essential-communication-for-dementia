@@ -15,27 +15,27 @@ export const TEMPLATE_3_CONFIG = {
   structure: [
     {
       step: 1,
-      title: 'Implicit Context Confirmation',
+      title: '**IMPLICIT CONTEXT CONFIRMATION**',
       description: 'Briefly reframe age/symptom/duration to anchor the response'
     },
     {
       step: 2,
-      title: 'Journey Position',
+      title: '**JOURNEY POSITION**',
       description: 'Identify where patient is (Recognition / Evaluation / Diagnosis)'
     },
     {
       step: 3,
-      title: 'Actionable Recommendations',
+      title: '**ACTIONABLE RECOMMENDATIONS**',
       description: 'Tests, scales, next steps, ready-to-use clinical language'
     },
     {
       step: 4,
-      title: 'Warning Signals',
+      title: '**WARNING SIGNALS**',
       description: 'Red flags that would change management (if applicable)'
     },
     {
       step: 5,
-      title: 'Suggested Next Step',
+      title: '**SUGGESTED NEXT STEP**',
       description: 'What the clinician should do or say next'
     }
   ],

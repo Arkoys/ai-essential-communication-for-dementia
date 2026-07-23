@@ -14,22 +14,22 @@ export const TEMPLATE_4_CONFIG = {
   structure: [
     {
       step: 1,
-      title: 'Frame the Limit',
+      title: '**FRAME THE LIMIT**',
       description: 'Remind that the final decision rests with the clinician\'s judgment'
     },
     {
       step: 2,
-      title: 'If/Then Reasoning',
+      title: '**IF/THEN REASONING**',
       description: 'Structured conditional guidance: "If [factor A], suggests X; if [factor B], suggests Y"'
     },
     {
       step: 3,
-      title: 'Key Decision Factors',
+      title: '**KEY DECISION FACTORS**',
       description: 'List factors that would tip the decision one way or another'
     },
     {
       step: 4,
-      title: 'Specialist Orientation',
+      title: '**SPECIALIST ORIENTATION**',
       description: 'Orient toward specialist/resource if relevant (without being prescriptive)'
     }
   ],

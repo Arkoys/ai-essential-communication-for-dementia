@@ -14,27 +14,27 @@ export const TEMPLATE_5_CONFIG = {
   structure: [
     {
       step: 1,
-      title: 'Validate the Difficulty',
+      title: '**VALIDATE THE DIFFICULTY**',
       description: 'Acknowledge the situation is genuinely hard to navigate'
     },
     {
       step: 2,
-      title: 'Name the Tension',
+      title: '**NAME THE TENSION**',
       description: 'Identify the underlying conflict: autonomy vs safety, truth vs protection, etc.'
     },
     {
       step: 3,
-      title: 'Ready-to-use Language',
+      title: '**READY-TO-USE LANGUAGE**',
       description: 'Exact phrases the clinician can use verbatim or adapt'
     },
     {
       step: 4,
-      title: 'Strategy Options',
+      title: '**STRATEGY OPTIONS**',
       description: '1-2 posture/strategy options with explicit tradeoffs'
     },
     {
       step: 5,
-      title: 'Explore Further',
+      title: '**EXPLORE FURTHER**',
       description: 'End with option to continue the conversation'
     }
   ],

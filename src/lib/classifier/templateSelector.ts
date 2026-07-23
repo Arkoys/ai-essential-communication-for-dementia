@@ -100,11 +100,11 @@ export function getTemplateSystemPrompt(template: ResponsePath | string): string
  */
 export function getTemplateDisplayName(template: ResponsePath | string): string {
   const names: Record<string, string> = {
-    'template_1': 'Template 1 - Clarification',
-    'template_2': 'Template 2 - Direct Éducatif',
+    'template_1': 'Template 1 - In-Scope Insufficient Information → Clarifying Response',
+    'template_2': 'Template 2 - Out of Scope Conceptual Query → Redirect',
     'template_3': 'Template 3 - Guidance Complète',
-    'template_4': 'Template 4 - Guidance Conditionnelle',
-    'template_5': 'Template 5 - Blocage Relationnel',
+    'template_4': 'Template 4 - Out of Scope → Redirect',
+    'template_5': 'Template 5 - Stuck Points Framework',
     'template_6': 'Template 6 - Delirium Flag',
     'delirium_flag': 'Delirium Flag',
     'out_of_scope': 'Out of Scope',

@@ -15,22 +15,22 @@ export const TEMPLATE_1_CONFIG = {
   structure: [
     {
       step: 1,
-      title: 'Brief Clinical Acknowledgment',
+      title: '**BRIEF CLINICAL ACKNOWLEDGMENT**',
       description: 'Reformulate the question in one sentence to show understanding'
     },
     {
       step: 2,
-      title: 'Name Missing Tier 1 Elements',
+      title: '**NAME MISSING TIER 1 ELEMENTS**',
       description: 'Explicitly identify what is missing: age, symptom, or duration/onset'
     },
     {
       step: 3,
-      title: 'Conditional General Response',
+      title: '**CONDITIONAL GENERAL RESPONSE**',
       description: 'Provide general guidance if possible while waiting for clarification'
     },
     {
       step: 4,
-      title: 'Clarification Questions',
+      title: '**CLARIFICATION QUESTIONS**',
       description: 'Ask 1-3 targeted questions, one at a time or in a short list'
     }
   ],

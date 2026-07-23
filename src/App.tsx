@@ -10,10 +10,12 @@ import { NavigationMap, PhaseName } from './components/NavigationMap';
 import { AdminPanel } from './components/AdminPanel';
 import { SettingsPanel } from './components/SettingsPanel';
 import { ResourcesPanel } from './components/ResourcesPanel';
-import { generateClinicalResponseWithHistory, isInsufficientInfoResponse, isInsufficientUserInput, getInsufficientInfoGuidance } from './lib/llm';
+import { generateClinicalResponseWithHistory, isInsufficientInfoResponse, isInsufficientUserInput, getInsufficientInfoGuidance, GenerationResult } from './lib/llm';
+import type { ResponsePath } from './lib/classifier/types';
 import { getPromptSettings, PromptSettings, DEFAULT_SUGGESTED_PROMPTS } from './lib/promptSettings';
 import { Stethoscope, Menu } from 'lucide-react';
 import { cn } from './lib/utils';
+import { TemplateDevBadge, useTemplateBadge } from './components/TemplateDevBadge';
 
 import { DEFAULT_KNOWLEDGE_CHUNKS } from './lib/defaultData';
 import { generateEmbedding } from './lib/rag';
@@ -123,6 +125,15 @@ export default function App() {
     primary: boolean;
     secondary: boolean;
   }>({ primary: false, secondary: false });
+  
+  // Dev template badge state
+  const { 
+    currentTemplate, 
+    tier1Complete, 
+    isVisible: isBadgeVisible, 
+    updateTemplate, 
+    hideBadge 
+  } = useTemplateBadge();
   
   // Load prompt settings on mount
   useEffect(() => {
@@ -448,13 +459,23 @@ export default function App() {
       // Get current messages for history
       const currentMessages = messages.map(m => ({ role: m.role, content: m.content }));
       
+      // Track detected template for debugging
+      let detectedTemplate: ResponsePath = 'assess_template_1_or_3';
+      
       try {
-        const responseText = await generateClinicalResponseWithHistory(
+        const result = await generateClinicalResponseWithHistory(
           content,
           currentMessages,
           effectivePhase,
           isStuck
         );
+
+        // Extract response and template from result
+        const responseText = result.response;
+        detectedTemplate = result.template;
+        
+        // Update dev badge with template info
+        updateTemplate(detectedTemplate, result.tier1Complete, primaryProvider);
 
         const responseIsInsufficient = isInsufficientInfoResponse(responseText);
         
@@ -591,7 +612,7 @@ export default function App() {
         const assistantMsgPrimary: Message = {
           id: `assistant-${Date.now()}-primary`,
           role: 'assistant',
-          content: primaryResponse.value,
+          content: primaryResponse.value.response,
           createdAt: new Date(),
         };
         setDualMessages(prev => ({ ...prev, primary: [...prev.primary, assistantMsgPrimary] }));
@@ -611,7 +632,7 @@ export default function App() {
         const assistantMsgSecondary: Message = {
           id: `assistant-${Date.now()}-secondary`,
           role: 'assistant',
-          content: secondaryResponse.value,
+          content: secondaryResponse.value.response,
           createdAt: new Date(),
         };
         setDualMessages(prev => ({ ...prev, secondary: [...prev.secondary, assistantMsgSecondary] }));
@@ -794,6 +815,15 @@ export default function App() {
         isOpen={showResourcesPanel} 
         onClose={() => setShowResourcesPanel(false)} 
       />
+      
+      {/* Dev Template Badge - shows which template is being used */}
+      {currentTemplate && isBadgeVisible && (
+        <TemplateDevBadge
+          template={currentTemplate}
+          tier1Complete={tier1Complete ?? undefined}
+          provider={primaryProvider}
+        />
+      )}
     </div>
   );
 }
