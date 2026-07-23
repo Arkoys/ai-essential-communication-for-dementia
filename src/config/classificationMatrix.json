@@ -1,0 +1,263 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": "2026-07-22",
+  "description": "Classification matrix for routing clinician prompts to appropriate response templates",
+  
+  "queryTypes": [
+    {
+      "id": "initial_assessment",
+      "label": "Initial Assessment Guidance",
+      "definition": "How to approach a new cognitive concern with no prior workup or diagnosis",
+      "in_scope": true,
+      "examplePrompts": [
+        "I have a patient I'm worried about — where do I start?",
+        "My patient's behavior has changed over the last 6 months",
+        "Patient with memory problems, what should I do?"
+      ],
+      "minTier": "tier1",
+      "responsePath": "assess_template_1_or_3",
+      "tier1Required": ["age", "symptom", "duration"]
+    },
+    {
+      "id": "diagnosis_process",
+      "label": "Diagnosis Process / Visit Structure",
+      "definition": "Questions about how to structure the diagnostic visit, what to cover, in what order",
+      "in_scope": true,
+      "examplePrompts": [
+        "What should I cover in the first visit for cognitive concerns?",
+        "How do I structure a dementia evaluation visit?",
+        "What's the diagnostic pathway for this patient?"
+      ],
+      "minTier": "tier1",
+      "responsePath": "assess_template_1_or_3",
+      "tier1Required": ["age", "symptom", "duration"]
+    },
+    {
+      "id": "workup_planning",
+      "label": "Workup Planning",
+      "definition": "Ordering tests, labs, imaging — what to include and when",
+      "in_scope": true,
+      "examplePrompts": [
+        "What labs should I order for suspected dementia?",
+        "When should I order brain imaging?",
+        "What is the standard workup for cognitive decline?"
+      ],
+      "minTier": "tier1",
+      "responsePath": "assess_template_1_or_3",
+      "tier1Required": ["age", "symptom", "duration"]
+    },
+    {
+      "id": "management",
+      "label": "Management",
+      "definition": "General disease management, monitoring, caregiver support, referrals",
+      "in_scope": true,
+      "examplePrompts": [
+        "How should I follow up with this patient?",
+        "What community resources can I recommend?",
+        "How do I involve caregivers in management?"
+      ],
+      "minTier": "tier1",
+      "responsePath": "assess_template_1_or_3",
+      "tier1Required": ["age", "symptom"]
+    },
+    {
+      "id": "safety_assessment",
+      "label": "Safety Assessment",
+      "definition": "Driving, living alone, medication management, fall risk, wandering",
+      "in_scope": true,
+      "examplePrompts": [
+        "Is it safe for this patient to drive?",
+        "How do I assess if this patient can live alone?",
+        "What safety concerns should I address?"
+      ],
+      "minTier": "tier1",
+      "responsePath": "assess_template_1_or_3",
+      "tier1Required": ["age", "symptom", "duration"]
+    },
+    {
+      "id": "language_recommendation",
+      "label": "Language Recommendation",
+      "definition": "Sample phrases, communication strategies, how to phrase difficult conversations",
+      "in_scope": true,
+      "examplePrompts": [
+        "How do I tell a patient they have dementia?",
+        "What can I say to the family?",
+        "How do I bring up cognitive testing with a reluctant patient?"
+      ],
+      "minTier": "none",
+      "responsePath": "assess_template_1_or_3",
+      "tier1Required": []
+    },
+    {
+      "id": "conceptual_educational",
+      "label": "Conceptual / Educational / Standard Protocols",
+      "definition": "General knowledge questions about dementia, syndromes, diagnostic criteria, staging, tools",
+      "in_scope": true,
+      "examplePrompts": [
+        "What is Lewy Body dementia?",
+        "How do I administer the MoCA?",
+        "What are the NIA-AA criteria for Alzheimer's?",
+        "What's the difference between MCI and dementia?"
+      ],
+      "minTier": "none",
+      "responsePath": "direct_template_2",
+      "tier1Required": []
+    },
+    {
+      "id": "differential_diagnosis",
+      "label": "Differential Diagnosis",
+      "definition": "Given specific findings, what conditions should be considered",
+      "in_scope": true,
+      "examplePrompts": [
+        "Could this be Parkinson's disease dementia?",
+        "Is this more likely Alzheimer's or vascular dementia?",
+        "What else could explain these symptoms?"
+      ],
+      "minTier": "none",
+      "responsePath": "direct_template_4",
+      "tier1Required": []
+    },
+    {
+      "id": "result_interpretation",
+      "label": "Result Interpretation",
+      "definition": "What a specific test score, lab value, or imaging finding means clinically",
+      "in_scope": true,
+      "examplePrompts": [
+        "What does a MoCA of 22 mean?",
+        "Is an MMSE of 24 concerning?",
+        "What do small vessel white matter changes indicate?"
+      ],
+      "minTier": "none",
+      "responsePath": "direct_template_4",
+      "tier1Required": []
+    },
+    {
+      "id": "referral_decision",
+      "label": "Referral Decision",
+      "definition": "When to refer to neurology, geriatrics, psychiatry, or other specialists",
+      "in_scope": true,
+      "examplePrompts": [
+        "Should I refer this patient to neurology?",
+        "When should I involve a geriatrician?",
+        "Does this patient need neuropsych testing?"
+      ],
+      "minTier": "tier1",
+      "responsePath": "direct_template_4",
+      "tier1Required": ["symptom"]
+    },
+    {
+      "id": "therapeutics",
+      "label": "Therapeutics",
+      "definition": "Medication decisions — starting, stopping, switching, dosing",
+      "in_scope": true,
+      "examplePrompts": [
+        "Should I start donepezil?",
+        "When should I discontinue cholinesterase inhibitors?",
+        "What are the contraindications for lecanemab?"
+      ],
+      "minTier": "none",
+      "responsePath": "direct_template_4",
+      "tier1Required": []
+    },
+    {
+      "id": "relational_challenges",
+      "label": "Relational Challenges / Emotional Stuck Point",
+      "definition": "Difficult family dynamics, patient denial, ethical dilemmas, caregiver burnout",
+      "in_scope": true,
+      "examplePrompts": [
+        "The family is in conflict about care decisions",
+        "My patient doesn't believe they have dementia",
+        "Is it okay to lie to protect my patient from the diagnosis?",
+        "The caregiver is exhausted and frustrated"
+      ],
+      "minTier": "none",
+      "responsePath": "assess_template_5",
+      "tier1Required": []
+    },
+    {
+      "id": "unrelated_to_dementia",
+      "label": "Unrelated to Dementia",
+      "definition": "Questions completely outside the scope of cognitive health and dementia care",
+      "in_scope": false,
+      "examplePrompts": [
+        "What's the best diet for diabetes?",
+        "How do I treat hypertension?",
+        "Can you help me with a dermatology question?"
+      ],
+      "minTier": "none",
+      "responsePath": "out_of_scope",
+      "tier1Required": []
+    }
+  ],
+  
+  "tier1Elements": [
+    {
+      "id": "age",
+      "label": "Patient age",
+      "description": "Exact age or reasonable range (e.g., '70s', 'elderly patient')",
+      "detectionPatterns": [
+        "\\d{1,3}\\s*(year|yr|yo|y\\\\/o|ans|ans|age)",
+        "\\d{1,3}\\s*ans",
+        "(elderly|older|geriatric|young|mid\\s*-?\\s*\\d+)\\s*(patient|man|woman|woman)",
+        "(man|woman|patient)\\s*(in\\s*)?(his|her|their)?\\s*\\d+"
+      ]
+    },
+    {
+      "id": "symptom",
+      "label": "Presenting symptom(s)",
+      "description": "Cognitive, behavioral, or functional change described",
+      "detectionPatterns": [
+        "(memory|mémoire|cognitive|cognition|forget|oubli|confus|behavior|behaviour|wandering|errance|agitat|repetit)",
+        "(lost|disorient|bathroom|kitchen|medication|appointments)",
+        "(changement|changé|problème|problem|concern|difficulty)"
+      ]
+    },
+    {
+      "id": "duration",
+      "label": "Duration and onset pattern",
+      "description": "How long symptoms have been present; gradual vs sudden; stable vs progressive",
+      "detectionPatterns": [
+        "\\d+\\s*(month|months|month|an|annee|annees|year|years|jour|day|week)",
+        "(since|for|pour|depuis)\\s*\\w+",
+        "(gradual|graduellement|progressive|progressivement|soudain|sudden|brutal|acute)",
+        "(stable|fluctuant|fluctuating|getting\\s*worse|empire|worsening)"
+      ]
+    }
+  ],
+  
+  "classificationPrompt": {
+    "systemInstruction": "You are a clinical query classifier for a dementia care support tool. Your task is to analyze clinician prompts and classify them according to the provided matrix. Output ONLY valid JSON matching the specified schema.",
+    "outputSchema": {
+      "query_type_id": "string (one of the defined query type IDs)",
+      "query_type_label": "string (human-readable label)",
+      "in_scope": "boolean",
+      "tier1": {
+        "age_present": "boolean",
+        "symptom_present": "boolean",
+        "duration_present": "boolean"
+      },
+      "tier1_complete": "boolean",
+      "response_path": "string (template routing key)",
+      "confidence": "string (high|medium|low)",
+      "reasoning": "string (optional, brief explanation)",
+      "missing_elements": "array of strings (optional, which tier1 elements are missing)",
+      "requires_clarification": "boolean"
+    },
+    "fallbackResponse": {
+      "query_type_id": "initial_assessment",
+      "query_type_label": "Initial Assessment Guidance",
+      "in_scope": true,
+      "tier1": {
+        "age_present": false,
+        "symptom_present": false,
+        "duration_present": false
+      },
+      "tier1_complete": false,
+      "response_path": "assess_template_1_or_3",
+      "confidence": "low",
+      "reasoning": "Fallback due to classification failure",
+      "missing_elements": ["age", "symptom", "duration"],
+      "requires_clarification": true
+    }
+  }
+}

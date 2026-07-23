@@ -1,0 +1,82 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": "2026-07-22",
+  "description": "Safety pre-filter rules for detecting potential delirium or acute cognitive deterioration in diagnosed dementia patients",
+  
+  "deliriumIndicators": {
+    "acuteKeywords": [
+      "soudain",
+      "subitement",
+      "brutal",
+      "en quelques jours",
+      "en quelques heures",
+      "rapidement",
+      "urgence",
+      "acute",
+      "sudden",
+      "rapid",
+      "worsening",
+      "much worse",
+      "getting worse",
+      "deteriorating"
+    ],
+    "confusionKeywords": [
+      "confus",
+      "confusion",
+      "désorienté",
+      "agité",
+      "agitation",
+      "onéreux",
+      "hallucinations",
+      "delirious",
+      "confused",
+      "agitated",
+      "hallucinating"
+    ],
+    "timelinePatterns": [
+      "\\d+\\s*(jour|jours|day|days|semaine|semaines|week|weeks|heure|heures|hour|hours)\\b",
+      "\\bhier\\b",
+      "\\baujourd'hui\\b",
+      "\\bthis\\s*(morning|afternoon|evening|week)\\b",
+      "\\byesterday\\b",
+      "\\btonight\\b"
+    ]
+  },
+  
+  "dementiaIndicators": {
+    "diagnosticKeywords": [
+      "alzheimer",
+      "dément",
+      "dementia",
+      "diagnostiqué",
+      "diagnosed",
+      "known cognitive",
+      "history of",
+      "mci",
+      "mild cognitive",
+      "cognitive impairment",
+      "memory loss",
+      "vascular dementia",
+      "lewy",
+      "frontotemporal",
+      "parkinson"
+    ],
+    "contextPatterns": [
+      "mon patient.*diagnostic",
+      "patient.*alzheimer",
+      "elle.*démence",
+      "il.*dément",
+      "her.*dementia",
+      "his.*alzheimers",
+      "diagnosed with"
+    ]
+  },
+  
+  "timeThresholdDays": 28,
+  
+  "responseTemplate": "delirium_flag",
+  
+  "warningMessage": "Potential acute cognitive deterioration detected. Consider delirium workup.",
+  
+  "notificationLevel": "urgent"
+}

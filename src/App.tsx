@@ -436,44 +436,40 @@ export default function App() {
         createdAt: serverTimestamp(),
       });
 
-      // Check if user input is insufficient
-      const inputIsInsufficient = isStuck ? false : isInsufficientUserInput(content);
+      // NOTE: isInsufficientUserInput check REMOVED
+      // The new template classification system handles this better
+      // All prompts now go through to the LLM for proper routing
       
       let finalContent: string;
-      let isInsufficientInfo: boolean;
+      let isInsufficientInfo: boolean = false;
       let detectedPhase: PhaseName | null = null;
       let detectedStep: string | null = null;
       
-      if (inputIsInsufficient) {
-        finalContent = getInsufficientInfoGuidance();
-        isInsufficientInfo = true;
-      } else {
-        // Get current messages for history
-        const currentMessages = messages.map(m => ({ role: m.role, content: m.content }));
+      // Get current messages for history
+      const currentMessages = messages.map(m => ({ role: m.role, content: m.content }));
+      
+      try {
+        const responseText = await generateClinicalResponseWithHistory(
+          content,
+          currentMessages,
+          effectivePhase,
+          isStuck
+        );
+
+        const responseIsInsufficient = isInsufficientInfoResponse(responseText);
         
-        try {
-          const responseText = await generateClinicalResponseWithHistory(
-            content,
-            currentMessages,
-            effectivePhase,
-            isStuck
-          );
+        finalContent = responseIsInsufficient ? getInsufficientInfoGuidance() : responseText;
+        isInsufficientInfo = responseIsInsufficient;
 
-          const responseIsInsufficient = isInsufficientInfoResponse(responseText);
-          
-          finalContent = responseIsInsufficient ? getInsufficientInfoGuidance() : responseText;
-          isInsufficientInfo = responseIsInsufficient;
-
-          const parsed = parseFrameworkPosition(responseText);
-          detectedPhase = parsed.phase;
-          detectedStep = parsed.step;
-        } catch (llmError) {
-          console.error('LLM Error:', llmError);
-          // Show error to user
-          const errorMessage = llmError instanceof Error ? llmError.message : 'Failed to generate response';
-          finalContent = `❌ **Error:** ${errorMessage}\n\nPlease check your API configuration and try again.`;
-          isInsufficientInfo = false;
-        }
+        const parsed = parseFrameworkPosition(responseText);
+        detectedPhase = parsed.phase;
+        detectedStep = parsed.step;
+      } catch (llmError) {
+        console.error('LLM Error:', llmError);
+        // Show error to user
+        const errorMessage = llmError instanceof Error ? llmError.message : 'Failed to generate response';
+        finalContent = `❌ **Error:** ${errorMessage}\n\nPlease check your API configuration and try again.`;
+        isInsufficientInfo = false;
       }
 
       let nextPhase = currentPhase;
