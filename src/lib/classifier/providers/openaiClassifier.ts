@@ -44,9 +44,11 @@ const CLASSIFICATION_SCHEMA = {
       type: "string",
       enum: ["high", "medium", "low"]
     },
-    reasoning: { type: "string" },
+    reasoning: { 
+      type: ["string", "null"]
+    },
     missing_elements: {
-      type: "array",
+      type: ["array", "null"],
       items: { type: "string" }
     },
     requires_clarification: { type: "boolean" }
@@ -59,6 +61,8 @@ const CLASSIFICATION_SCHEMA = {
     "tier1_complete",
     "response_path",
     "confidence",
+    "reasoning",
+    "missing_elements",
     "requires_clarification"
   ],
   additionalProperties: false
