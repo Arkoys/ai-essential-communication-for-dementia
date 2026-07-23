@@ -149,7 +149,11 @@ async function callHarvardStructuredOutput(
       ],
       response_format: {
         type: 'json_schema',
-        json_schema: CLASSIFICATION_SCHEMA
+        json_schema: {
+          name: 'classification_result',
+          strict: true,
+          schema: CLASSIFICATION_SCHEMA
+        }
       },
       temperature: 0.1, // Low temperature for consistent classification
     }),
