@@ -16,7 +16,7 @@ const INTERNAL_RESOURCES = [
   },
   {
     name: 'Sample Language',
-    url: 'https://docs.google.com/document/d/1SpGFF38frlTqQTQUCf_YJcwxWC_75b8q9dyqsJyDVLU/edit?tab=t.0#heading=h.7h0z65bqluqh',
+    url: 'https://drive.google.com/file/d/1SpGFF38frlTqQTQUCf_YJcwxWC_75b8q9dyqsJyDVLU/view',
     description: 'Ready-to-use language for sensitive conversations'
   },
   {

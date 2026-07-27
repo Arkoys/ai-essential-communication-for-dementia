@@ -62,7 +62,7 @@ export function ChatWindow({
       <div className="flex-1 overflow-y-auto ">
         {messages.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center px-8 md:px-16 lg:px-24 py-16 md:py-24 text-center">
-            <div className="max-w-2xl mx-auto space-y-8">
+            <div className="max-w-2xl mx-auto space-y-6">
               <div className="space-y-3">
                 <h1 className="text-2xl md:text-3xl font-semibold text-zinc-700 dark:text-zinc-200 leading-tight">
                   Welcome to the Dementia Clinical Coach
@@ -74,10 +74,15 @@ export function ChatWindow({
               <p className="text-sm md:text-base text-zinc-600 dark:text-zinc-400 font-medium">
                 <span className="font-semibold">Enter a prompt below</span> to describe your concern, situation, questions, or upcoming conversation. Please do not input any patient data.
               </p>
+              {/* PHI Warning - integrated into introductory content */}
+              <div className="inline-flex items-center gap-2 text-[10px] md:text-xs text-amber-600 dark:text-amber-500 bg-amber-50 dark:bg-amber-950/30 py-1.5 px-3 rounded-full border border-amber-200 dark:border-amber-900/50">
+                <AlertTriangle size={12} className="shrink-0" />
+                <span>Do not input identifiable patient data (PHI). Inputs are anonymized.</span>
+              </div>
             </div>
           </div>
         ) : (
-          <div className="pb-36 md:pb-42 pb-2">
+          <div className="pb-24 md:pb-28">
             {messages.map((msg) => (
               <MessageBubble key={msg.id} role={msg.role} content={msg.content} isStuck={msg.isStuck} isInsufficientInfo={msg.isInsufficientInfo} />
             ))}
@@ -105,12 +110,8 @@ export function ChatWindow({
         )}
       </div>
 
-      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-white via-white to-transparent dark:from-zinc-950 dark:via-zinc-950 p-2 md:p-4 pt-8 md:pt-12">
+      <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-white via-white to-transparent dark:from-zinc-950 dark:via-zinc-950 p-2 md:p-4 pt-6 md:pt-10">
         <div className="max-w-3xl mx-auto">
-          <div className="mb-2 flex items-center justify-center gap-2 text-[10px] md:text-xs text-amber-600 dark:text-amber-500 bg-amber-50 dark:bg-amber-950/30 py-1 md:py-1.5 px-2 md:px-3 rounded-full w-fit mx-auto border border-amber-200 dark:border-amber-900/50 text-center">
-            <AlertTriangle size={12} className="shrink-0" />
-            <span className="line-clamp-1 md:line-clamp-none">Do not input identifiable patient data (PHI). Inputs are anonymized.</span>
-          </div>
           <form
             onSubmit={handleSubmit}
             className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3"

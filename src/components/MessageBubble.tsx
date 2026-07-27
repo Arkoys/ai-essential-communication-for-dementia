@@ -162,21 +162,15 @@ export function MessageBubble({ role, content, isStuck, isInsufficientInfo }: Me
                   ? 'Coach (needs more info)'
                   : 'Clinical Coach'}
           </div>
-          <div className={cn(
-            "prose max-w-none text-sm leading-relaxed",
-            isStuck ? "prose-green dark:prose-invert" : isInsufficientInfo ? "prose-amber dark:prose-invert" : "prose-zinc dark:prose-invert"
-          )}>
+          <div className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed space-y-2">
             <ReactMarkdown
               components={{
                 h2: ({ children }) => (
                   <h2
                     className={cn(
-                      "font-semibold text-base mt-6 mb-2 border-l-4 pl-3",
-                      isStuck
-                        ? "text-green-800 dark:text-green-200 border-green-500"
-                        : isInsufficientInfo
-                          ? "text-amber-800 dark:text-amber-200 border-amber-500"
-                          : "text-orange-800 border-orange-400"
+                      "font-semibold text-sm mt-4 mb-1 text-orange-800 dark:text-orange-200",
+                      isStuck && "text-green-800 dark:text-green-200",
+                      isInsufficientInfo && "text-amber-800 dark:text-amber-200"
                     )}
                   >
                     {typeof children === 'string' ? parseTextWithLinks(children) : children}
@@ -185,36 +179,31 @@ export function MessageBubble({ role, content, isStuck, isInsufficientInfo }: Me
                 strong: ({ children }) => (
                   <strong
                     className={cn(
-                      "font-semibold block mt-4 mb-2 text-base",
-                      isStuck
-                        ? "text-green-800 dark:text-green-200"
-                        : isInsufficientInfo
-                          ? "text-amber-800 dark:text-amber-200"
-                          : "text-orange-800 dark:text-orange-200"
+                      "font-semibold text-orange-800 dark:text-orange-200",
+                      isStuck && "text-green-800 dark:text-green-200",
+                      isInsufficientInfo && "text-amber-800 dark:text-amber-200"
                     )}
                   >
                     {typeof children === 'string' ? parseTextWithLinks(children) : children}
                   </strong>
                 ),
                 ul: ({ children }) => (
-                  <ul className="my-2 space-y-1 list-none pl-5">
+                  <ul className="list-none space-y-0.5 pl-4">
                     {children}
                   </ul>
                 ),
                 ol: ({ children }) => (
-                  <ol className="my-2 space-y-1 list-decimal pl-5">
+                  <ol className="list-decimal pl-4 space-y-0.5">
                     {children}
                   </ol>
                 ),
                 li: ({ children }) => (
-                  <li className="text-zinc-700 dark:text-zinc-300 relative pl-4 before:absolute before:left-0 before:text-orange-500">
-                    <span className="before:content-['•'] before:absolute before:-left-4">
-                      {typeof children === 'string' ? parseTextWithLinks(children) : children}
-                    </span>
+                  <li className="pl-4 relative before:content-['•'] before:absolute before:left-0 text-zinc-700 dark:text-zinc-300">
+                    {typeof children === 'string' ? parseTextWithLinks(children) : children}
                   </li>
                 ),
                 p: ({ children }) => (
-                  <p className="my-2 text-zinc-700 dark:text-zinc-300">
+                  <p className="text-zinc-700 dark:text-zinc-300">
                     {typeof children === 'string' ? parseTextWithLinks(children) : children}
                   </p>
                 ),
@@ -228,13 +217,6 @@ export function MessageBubble({ role, content, isStuck, isInsufficientInfo }: Me
                     {children}
                   </a>
                 ),
-                text: ({ node, children, ...props }) => {
-                  // Handle plain text nodes - check if it's a string before parsing
-                  if (typeof children === 'string') {
-                    return <span {...props}>{parseTextWithLinks(children)}</span>;
-                  }
-                  return <span {...props}>{children}</span>;
-                },
               }}
             >
               {content}

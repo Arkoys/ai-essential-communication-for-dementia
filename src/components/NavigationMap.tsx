@@ -118,6 +118,25 @@ export function NavigationMap({
       {!isOpen && visiblePhase && (
         <div className="mx-4 mb-2 rounded-lg border border-orange-200 dark:border-orange-800/60 bg-orange-50/80 dark:bg-orange-950/40 px-3 py-1.5 text-xs text-orange-800 dark:text-orange-200">
           <span className="font-semibold">Current phase:</span> {visiblePhase}
+          {currentStep && <span className="ml-1 text-orange-600 dark:text-orange-400">• {currentStep}</span>}
+        </div>
+      )}
+
+      {/* Detected position indicator - shown when phase is detected */}
+      {isOpen && detectedPhase && (
+        <div className="mx-4 mb-1 px-3 py-1">
+          <div className="flex items-center gap-2">
+            <div className={cn(
+              "w-2 h-2 rounded-full",
+              detectedPhase === 'Recognition' && "bg-teal-500",
+              detectedPhase === 'Evaluation' && "bg-emerald-500",
+              detectedPhase === 'Naming & Diagnosis' && "bg-orange-500"
+            )} />
+            <span className="text-xs text-zinc-600 dark:text-zinc-400">
+              <span className="font-medium text-orange-700 dark:text-orange-300">{detectedPhase}</span>
+              {currentStep && <span className="text-orange-500 dark:text-orange-400"> • {currentStep}</span>}
+            </span>
+          </div>
         </div>
       )}
 
