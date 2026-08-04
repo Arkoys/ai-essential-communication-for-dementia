@@ -61,13 +61,14 @@ export function DualInputForm({
         <button
           type="button"
           onClick={() => setIsStuck(!isStuck)}
+          disabled
           className={[
-            "shrink-0 px-3 py-2 md:px-4 md:py-3 rounded-xl font-medium text-sm transition-all flex items-center gap-2",
+            "shrink-0 px-3 py-2 md:px-4 md:py-3 rounded-xl font-medium text-sm transition-all flex items-center gap-2 opacity-50 cursor-not-allowed",
             isStuck
-              ? "bg-green-500 text-white hover:bg-green-600 shadow-md"
-              : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:bg-zinc-200 dark:hover:bg-zinc-700"
+              ? "bg-green-500 text-white"
+              : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
           ].join(" ")}
-          title="Focus on stuck point - skip framework structure"
+          title="Stuck mode temporarily disabled"
         >
           ⚡ Stuck
         </button>
