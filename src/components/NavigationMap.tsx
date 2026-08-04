@@ -161,9 +161,14 @@ export function NavigationMap({
                 key={step}
                 className="flex items-end justify-center h-12 pb-3 overflow-visible"
               >
-                <div className="text-[10px] text-center text-zinc-800 dark:text-zinc-200 font-semibold leading-tight rotate-[-35deg] origin-bottom whitespacenowrap" style={{ maxWidth: '52px' }}>
+                <button
+                  onClick={() => onSelectStep(step)}
+                  className="text-[10px] text-center text-zinc-800 dark:text-zinc-200 font-semibold leading-tight rotate-[-35deg] origin-bottom whitespacenowrap hover:text-orange-500 dark:hover:text-orange-400 transition-colors cursor-pointer"
+                  style={{ maxWidth: '52px' }}
+                  title={`Select: ${step}`}
+                >
                   {step}
-                </div>
+                </button>
               </div>
             ))}
 
