@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { X, FolderOpen, FileText, ChevronLeft, ChevronRight, Download } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { X, FolderOpen, FileText, ChevronLeft, ChevronRight, Download, ExternalLink, Maximize2 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 interface ResourcesPanelProps {
@@ -67,9 +68,17 @@ export function ResourcesPanel({ isOpen, onClose }: ResourcesPanelProps) {
       )}>
         {/* Header */}
         <div className="flex items-center justify-between px-4 py-1 border-b border-zinc-200 dark:border-zinc-700">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <FolderOpen size={18} className="text-orange-600 dark:text-orange-400" />
             <h2 className="font-medium text-sm text-zinc-900 dark:text-zinc-100">Internal Documents</h2>
+            <Link
+              to="/documents"
+              target="_blank"
+              className="flex items-center gap-1.5 px-2.5 py-1 text-xs bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 rounded-md hover:bg-orange-200 dark:hover:bg-orange-900/50 transition-colors"
+            >
+              <Maximize2 size={12} />
+              Open full page
+            </Link>
           </div>
           <button 
             onClick={onClose}
@@ -156,19 +165,30 @@ export function ResourcesPanel({ isOpen, onClose }: ResourcesPanelProps) {
                       <p className="text-xs text-zinc-500 dark:text-zinc-400">{activeDocument.description}</p>
                     )}
                   </div>
-                  <button
-                    onClick={() => handleDownload(activeDocument)}
-                    className="flex items-center gap-2 px-3 py-1.5 text-sm bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 rounded-lg hover:bg-orange-200 dark:hover:bg-orange-900/50 transition-colors"
-                  >
-                    <Download size={16} />
-                    Download
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <a
+                      href={`/documents/${activeDocument.filename}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 px-3 py-1.5 text-sm bg-orange-600 hover:bg-orange-700 text-white rounded-lg transition-colors"
+                    >
+                      <ExternalLink size={16} />
+                      Open full page
+                    </a>
+                    <button
+                      onClick={() => handleDownload(activeDocument)}
+                      className="flex items-center gap-2 px-3 py-1.5 text-sm bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 rounded-lg hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors"
+                    >
+                      <Download size={16} />
+                      Download
+                    </button>
+                  </div>
                 </div>
                 
                 {/* PDF iframe */}
                 <div className="flex-1 bg-zinc-200 dark:bg-zinc-700">
                   <iframe
-                    src={`/documents/${activeDocument.filename}#toolbar=0&navpanes=0`}
+                    src={`/documents/${activeDocument.filename}`}
                     className="w-full h-full"
                     title={activeDocument.name}
                   />
