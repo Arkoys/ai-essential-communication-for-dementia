@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: development
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - VITE_PORT=3000
+      # Firebase
+      - VITE_FIREBASE_API_KEY=${VITE_FIREBASE_API_KEY}
+      - VITE_FIREBASE_AUTH_DOMAIN=${VITE_FIREBASE_AUTH_DOMAIN}
+      - VITE_FIREBASE_PROJECT_ID=${VITE_FIREBASE_PROJECT_ID}
+      - VITE_FIREBASE_STORAGE_BUCKET=${VITE_FIREBASE_STORAGE_BUCKET}
+      - VITE_FIREBASE_MESSAGING_SENDER_ID=${VITE_FIREBASE_MESSAGING_SENDER_ID}
+      - VITE_FIREBASE_APP_ID=${VITE_FIREBASE_APP_ID}
+      - VITE_FIREBASE_MEASUREMENT_ID=${VITE_FIREBASE_MEASUREMENT_ID}
+      # LLM Providers
+      - VITE_LLM_PROVIDER=${VITE_LLM_PROVIDER:-openai}
+      - VITE_GEMINI_API_KEY=${VITE_GEMINI_API_KEY}
+      - VITE_OPENAI_API_KEY=${VITE_OPENAI_API_KEY}
+      - VITE_OPENAI_BASE_URL=${VITE_OPENAI_BASE_URL}
+      - VITE_MINIMAX_API_KEY=${VITE_MINIMAX_API_KEY}
+      - VITE_MINIMAX_MODEL=${VITE_MINIMAX_MODEL}
+      - VITE_MINIMAX_API_BASE_URL=${VITE_MINIMAX_API_BASE_URL}
+      # Harvard HUIT OpenAI Direct v2
+      - VITE_HARVARD_OPENAI_KEY=${VITE_HARVARD_OPENAI_KEY}
+      - VITE_HARVARD_OPENAI_BASE_URL=${VITE_HARVARD_OPENAI_BASE_URL}
+      - VITE_HARVARD_MODEL=${VITE_HARVARD_MODEL}
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/dist
+    restart: unless-stopped
+
+  # Optional: Firebase Emulator for local development
+  # Uncomment to use Firebase Emulator Suite
+  # firebase-emulator:
+  #   image: if再来/emulator:latest
+  #   ports:
+  #     - "4000:4000"
+  #     - "9099:9099"
+  #     - "8080:8080"
+  #     - "5001:5001"
+  #     - "5002:5002"
+  #   environment:
+  #     - FIREBASE_TOKEN=${FIREBASE_TOKEN}
+  #   volumes:
+  #     - ./firebase-export:/opt/firebase-exports

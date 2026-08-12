@@ -264,6 +264,120 @@ erDiagram
 
 *At least one LLM provider API key is required.
 
+## 🐳 Deployment with Docker
+
+This application can be containerized using Docker and Docker Compose for local development or self-hosting.
+
+### Prerequisites
+
+- [Docker](https://docs.docker.com/get-docker/) installed
+- [Docker Compose](https://docs.docker.com/compose/install/) installed
+- Firebase project credentials
+- At least one LLM provider API key (Gemini, OpenAI, MiniMax, or Harvard)
+
+### Quick Start
+
+1. **Clone and configure:**
+   ```bash
+   git clone https://github.com/Arkoys/ai-essential-communication-for-dementia.git
+   cd ai-essential-communication-for-dementia
+   ```
+
+2. **Create environment file:**
+   ```bash
+   cp .env.docker .env.docker.local
+   ```
+
+3. **Edit `.env.docker.local`** with your credentials:
+   ```env
+   # Firebase Configuration
+   VITE_FIREBASE_API_KEY=your_firebase_api_key
+   VITE_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
+   VITE_FIREBASE_PROJECT_ID=your-project-id
+   VITE_FIREBASE_STORAGE_BUCKET=your-project.appspot.com
+   VITE_FIREBASE_MESSAGING_SENDER_ID=123456789
+   VITE_FIREBASE_APP_ID=1:123456789:web:abc123
+   
+   # LLM Provider (gemini, openai, minimax, or harvard)
+   VITE_LLM_PROVIDER=gemini
+   VITE_GEMINI_API_KEY=your_gemini_api_key
+   ```
+
+4. **Start the application:**
+   ```bash
+   docker compose --env-file .env.docker.local up
+   ```
+
+5. **Access the app:**
+   Open [http://localhost:3000](http://localhost:3000) in your browser.
+
+### Development Mode
+
+The Docker setup uses **hot reload** - changes to source files will automatically refresh the browser.
+
+```bash
+docker compose --env-file .env.docker.local up
+```
+
+### Production Build
+
+To build and run a production-optimized container:
+
+```bash
+# Build the production image
+docker compose -f docker-compose.yml build --target production
+
+# Run the production container
+docker compose -f docker-compose.yml up --profile production
+```
+
+The production build serves optimized static files and is suitable for deployment on any container hosting service (AWS ECS, Google Cloud Run, Azure Container Apps, etc.).
+
+### Docker Commands
+
+| Command | Description |
+|---------|-------------|
+| `docker compose up` | Start in development mode |
+| `docker compose up -d` | Start in background (detached) |
+| `docker compose down` | Stop and remove containers |
+| `docker compose build --no-cache` | Rebuild without cache |
+| `docker compose logs -f` | View live logs |
+| `docker compose exec app sh` | Shell into the container |
+
+### Environment Variables
+
+All environment variables from the [Environment Variables section](#-environment-variables) are supported. In Docker, they must be prefixed with `VITE_` since Vite bundles them at build time.
+
+### Firebase Emulator (Optional)
+
+For local Firebase development without affecting production data, uncomment the `firebase-emulator` service in `docker-compose.yml` and add your Firebase token:
+
+```env
+FIREBASE_TOKEN=your_firebase_auth_token
+```
+
+### Troubleshooting
+
+**Port already in use:**
+```bash
+# Change the host port in docker-compose.yml
+ports:
+  - "3001:3000"  # Map to port 3001 instead
+```
+
+**Container won't start:**
+```bash
+# Check logs for errors
+docker compose logs app
+
+# Rebuild from scratch
+docker compose build --no-cache
+docker compose up
+```
+
+**Firebase connection issues:**
+Ensure your Firebase configuration in `.env.docker.local` matches your Firebase project settings from the Firebase Console.
+
 ## 🚀 Deployment (Netlify)
 
 This application uses Netlify Functions to proxy API calls and avoid CORS issues.
