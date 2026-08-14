@@ -11,3 +11,18 @@ body {
   overflow: hidden;
   overscroll-behavior: none;
 }
+
+@keyframes pulse-border {
+  0%, 100% { 
+    border-color: rgb(249 115 22 / 0.3);
+    box-shadow: 0 0 0 0 rgb(249 115 22 / 0);
+  }
+  50% { 
+    border-color: rgb(249 115 22 / 1);
+    box-shadow: 0 0 16px 4px rgb(249 115 22 / 0.5);
+  }
+}
+
+.animate-pulse-border {
+  animation: pulse-border 2s ease-in-out infinite;
+}

@@ -30,7 +30,11 @@ export function ChatWindow({
 }: ChatWindowProps) {
   const [input, setInput] = useState('');
   const [isStuck, setIsStuck] = useState(false);
+  const [isInputFocused, setIsInputFocused] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  
+  // Check if this is a new session (no messages yet)
+  const isNewSession = messages.length === 0;
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -135,12 +139,18 @@ export function ChatWindow({
               "relative flex flex-1 items-center min-w-0 bg-white dark:bg-zinc-900 rounded-2xl shadow-sm transition-all",
               isStuck 
                 ? "border-2 border-green-500 ring-4 ring-green-200 dark:ring-green-800/30" 
-                : "border border-zinc-300 dark:border-zinc-700 focus-within:ring-2 focus-within:ring-orange-500/20 focus-within:border-orange-500"
+                : isNewSession && !isInputFocused
+                  ? "border-2 border-orange-500 animate-pulse-border"
+                  : isNewSession && isInputFocused
+                    ? "border-2 border-orange-500"
+                    : "border border-zinc-300 dark:border-zinc-700 focus-within:ring-2 focus-within:ring-orange-500/20 focus-within:border-orange-500"
             ].join(" ")}>
               <input
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
+                onFocus={() => setIsInputFocused(true)}
+                onBlur={() => setIsInputFocused(false)}
                 placeholder={isStuck ? "Describe your stuck point..." : "Ask the coach…"}
                 className="w-full bg-transparent py-3 md:py-4 pl-4 md:pl-6 pr-12 md:pr-14 outline-none text-sm md:text-base text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400"
                 disabled={isLoading}
