@@ -108,10 +108,11 @@ export function NavigationMap({
         </button>
         <button
           onClick={onShowResources}
-          className="p-2 -mr-2 text-zinc-400 hover:text-orange-600 dark:hover:text-orange-400 transition-colors"
+          className="flex items-center gap-1.5 px-2 py-1.5 -mr-1.5 text-zinc-500 hover:text-orange-600 dark:hover:text-orange-400 bg-zinc-100 dark:bg-zinc-800 hover:bg-orange-50 dark:hover:bg-orange-950/30 rounded-md transition-colors"
           title="Resources"
         >
-          <FolderOpen size={20} />
+          <FolderOpen size={16} />
+          <span className="text-xs font-medium">Internal Documents</span>
         </button>
       </div>
 
