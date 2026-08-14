@@ -71,9 +71,10 @@ Keep it under 100 words. Be direct, not structured.`;
 
 // Default suggested prompts
 export const DEFAULT_SUGGESTED_PROMPTS = [
-  "My 72 year old patient has memory problems",
-  "How to handle a patient not remembering his family",
-  "My patient is not remembering his medications"
+  "Explain what this tool does.",
+  "Find where we are on the cognitive health journey and what comes next.",
+  "Give me language to talk with my patient, family, or care partner.",
+  "I'm stuck. Help me work through a difficult moment."
 ];
 
 // Default knowledge content (embedded in prompts for MiniMax)

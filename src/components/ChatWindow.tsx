@@ -62,24 +62,37 @@ export function ChatWindow({
       <div className="flex-1 overflow-y-auto ">
         {messages.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center px-8 md:px-16 lg:px-24 py-16 md:py-24 text-center">
-            <div className="max-w-2xl mx-auto space-y-6">
-              <div className="space-y-3">
-                <h1 className="text-2xl md:text-3xl font-semibold text-zinc-700 dark:text-zinc-200 leading-tight">
-                  Welcome to the Dementia Clinical Coach
-                </h1>
+              <div className="max-w-2xl mx-auto space-y-6">
+                <div className="space-y-3">
+                  <h1 className="text-2xl md:text-3xl font-semibold text-zinc-700 dark:text-zinc-200 leading-tight">
+                    Welcome to the Cognitive Care Coach
+                  </h1>
+                </div>
+                <p className="text-base md:text-lg text-zinc-500 dark:text-zinc-400 leading-relaxed">
+                  Practical communication support for primary care conversations about cognitive health, memory concerns, and dementia.
+                </p>
+                <p className="text-sm md:text-base text-zinc-600 dark:text-zinc-400 font-medium">
+                  What would help today?
+                </p>
+                {/* Example prompt buttons */}
+                <div className="flex flex-col gap-3 pt-2">
+                  {suggestedPrompts.map((prompt, index) => (
+                    <button
+                      key={index}
+                      onClick={() => handleSuggestedPrompt(prompt)}
+                      className="text-left px-4 py-3 rounded-xl bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 text-sm md:text-base hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors border border-zinc-200 dark:border-zinc-700"
+                      disabled={isLoading}
+                    >
+                      {prompt}
+                    </button>
+                  ))}
+                </div>
+                {/* PHI Warning - integrated into introductory content */}
+                <div className="inline-flex items-center gap-2 text-[10px] md:text-xs text-amber-600 dark:text-amber-500 bg-amber-50 dark:bg-amber-950/30 py-1.5 px-3 rounded-full border border-amber-200 dark:border-amber-900/50">
+                  <AlertTriangle size={12} className="shrink-0" />
+                  <span>Do not input identifiable patient data (PHI). Inputs are anonymized.</span>
+                </div>
               </div>
-              <p className="text-base md:text-lg text-zinc-500 dark:text-zinc-400 leading-relaxed">
-                This tool is not a diagnostic engine; it's designed to help you quickly orient to where a patient is in the dementia care pathway, consider reasonable next steps, and find clear, empathetic language for patient and caregiver conversations—even those that may be difficult or uncertain.
-              </p>
-              <p className="text-sm md:text-base text-zinc-600 dark:text-zinc-400 font-medium">
-                <span className="font-semibold">Enter a prompt below</span> to describe your concern, situation, questions, or upcoming conversation. Please do not input any patient data.
-              </p>
-              {/* PHI Warning - integrated into introductory content */}
-              <div className="inline-flex items-center gap-2 text-[10px] md:text-xs text-amber-600 dark:text-amber-500 bg-amber-50 dark:bg-amber-950/30 py-1.5 px-3 rounded-full border border-amber-200 dark:border-amber-900/50">
-                <AlertTriangle size={12} className="shrink-0" />
-                <span>Do not input identifiable patient data (PHI). Inputs are anonymized.</span>
-              </div>
-            </div>
           </div>
         ) : (
           <div className="pb-24 md:pb-28">
@@ -126,7 +139,7 @@ export function ChatWindow({
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder={isStuck ? "Describe your stuck point..." : "Explain the patient's situation..."}
+                placeholder={isStuck ? "Describe your stuck point..." : "Ask the coach…"}
                 className="w-full bg-transparent py-3 md:py-4 pl-4 md:pl-6 pr-12 md:pr-14 outline-none text-sm md:text-base text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400"
                 disabled={isLoading}
               />
