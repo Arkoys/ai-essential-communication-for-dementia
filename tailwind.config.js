@@ -15,7 +15,7 @@ export default {
           },
         },
         animation: {
-          'pulse-border': 'pulse-border 2s ease-in-out infinite',
+          'pulse-border': 'pulse-border 3s ease-in-out infinite',
         },
       },
     },
