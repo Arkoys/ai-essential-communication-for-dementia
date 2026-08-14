@@ -80,10 +80,25 @@ export function SidebarHistory({
               onNew();
               onClose?.();
             }}
-            className="flex items-center justify-center gap-2 bg-orange-600 hover:bg-orange-700 text-white px-2 py-2 rounded-lg transition-colors font-medium"
+            className={cn(
+              "flex items-center justify-center gap-2 px-2 py-2 rounded-lg transition-all duration-300 font-medium",
+              activeId
+                ? "bg-orange-600 hover:bg-orange-700 text-white shadow-sm"
+                : "bg-zinc-200 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-400 hover:bg-zinc-300 dark:hover:bg-zinc-700"
+            )}
           >
-            <Plus size={18} />
-            {isOpen && "New Consultation"}
+            <Plus size={18} className={cn(
+              "transition-colors duration-300",
+              activeId ? "text-white" : "text-zinc-400 dark:text-zinc-500"
+            )} />
+            {isOpen && (
+              <span className={cn(
+                "transition-colors duration-300",
+                activeId ? "text-white" : "text-zinc-500 dark:text-zinc-400"
+              )}>
+                New Consultation
+              </span>
+            )}
           </button>
           
           <button
