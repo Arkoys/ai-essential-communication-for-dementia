@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Loader2, AlertTriangle, Zap } from 'lucide-react';
+import { Send, Loader2, AlertTriangle } from 'lucide-react';
 import { MessageBubble } from './MessageBubble';
 import { anonymize } from '../lib/anonymizer';
 
@@ -153,21 +153,6 @@ export function ChatWindow({
                 <Send size={16} className="md:w-[18px] md:h-[18px]" />
               </button>
             </div>
-            <button
-              type="button"
-              onClick={() => setIsStuck(!isStuck)}
-              disabled
-              className={[
-                "shrink-0 px-3 py-2 md:px-4 md:py-3 rounded-xl font-medium text-sm transition-all flex items-center gap-2 opacity-50 cursor-not-allowed",
-                isStuck
-                  ? "bg-green-500 text-white"
-                  : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
-              ].join(" ")}
-              title="Stuck mode temporarily disabled"
-            >
-              <Zap size={16} className={isStuck ? "fill-current" : ""} />
-              <span className="hidden sm:inline">Stuck</span>
-            </button>
           </form>
           <div className="flex items-center justify-between mt-1.5 md:mt-2 px-1">
             <span className="text-[10px] text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">

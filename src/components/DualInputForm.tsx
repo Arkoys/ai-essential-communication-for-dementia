@@ -58,20 +58,6 @@ export function DualInputForm({
             {isLoading ? <Loader2 size={16} className="animate-spin" /> : <Send size={16} className="md:w-[18px] md:h-[18px]" />}
           </button>
         </div>
-        <button
-          type="button"
-          onClick={() => setIsStuck(!isStuck)}
-          disabled
-          className={[
-            "shrink-0 px-3 py-2 md:px-4 md:py-3 rounded-xl font-medium text-sm transition-all flex items-center gap-2 opacity-50 cursor-not-allowed",
-            isStuck
-              ? "bg-green-500 text-white"
-              : "bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400"
-          ].join(" ")}
-          title="Stuck mode temporarily disabled"
-        >
-          ⚡ Stuck
-        </button>
       </form>
       <div className="text-center mt-1.5 md:mt-2 text-[10px] md:text-xs text-zinc-400 dark:text-zinc-500">
         AI-generated clinical guidance. Always verify with primary literature.
