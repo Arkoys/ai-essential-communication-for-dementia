@@ -61,21 +61,21 @@ export function ChatWindow({
     <div className="flex flex-col h-full bg-white dark:bg-zinc-950">
       <div className="flex-1 overflow-y-auto ">
         {messages.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center px-8 md:px-16 lg:px-24 py-16 md:py-24 text-center">
+          <div className="h-full overflow-y-auto px-8 md:px-16 lg:px-24 py-12 md:py-16 pb-32 md:pb-36">
               <div className="max-w-2xl mx-auto space-y-6">
-                <div className="space-y-3">
+                <div className="text-center">
                   <h1 className="text-2xl md:text-3xl font-semibold text-zinc-700 dark:text-zinc-200 leading-tight">
                     Welcome to the Cognitive Care Coach
                   </h1>
+                  <p className="text-base md:text-lg text-zinc-500 dark:text-zinc-400 leading-relaxed mt-3">
+                    Practical communication support for primary care conversations about cognitive health, memory concerns, and dementia.
+                  </p>
+                  <p className="text-sm md:text-base text-zinc-600 dark:text-zinc-400 font-medium mt-3">
+                    What would help today?
+                  </p>
                 </div>
-                <p className="text-base md:text-lg text-zinc-500 dark:text-zinc-400 leading-relaxed">
-                  Practical communication support for primary care conversations about cognitive health, memory concerns, and dementia.
-                </p>
-                <p className="text-sm md:text-base text-zinc-600 dark:text-zinc-400 font-medium">
-                  What would help today?
-                </p>
                 {/* Example prompt buttons */}
-                <div className="flex flex-col gap-3 pt-2">
+                <div className="flex flex-col gap-3">
                   {suggestedPrompts.map((prompt, index) => (
                     <button
                       key={index}
@@ -87,10 +87,12 @@ export function ChatWindow({
                     </button>
                   ))}
                 </div>
-                {/* PHI Warning - integrated into introductory content */}
-                <div className="inline-flex items-center gap-2 text-[10px] md:text-xs text-amber-600 dark:text-amber-500 bg-amber-50 dark:bg-amber-950/30 py-1.5 px-3 rounded-full border border-amber-200 dark:border-amber-900/50">
-                  <AlertTriangle size={12} className="shrink-0" />
-                  <span>Do not input identifiable patient data (PHI). Inputs are anonymized.</span>
+                {/* PHI Warning */}
+                <div className="flex justify-center pt-4">
+                  <div className="inline-flex items-center gap-2 text-[10px] md:text-xs text-amber-600 dark:text-amber-500 bg-amber-50 dark:bg-amber-950/30 py-1.5 px-3 rounded-full border border-amber-200 dark:border-amber-900/50">
+                    <AlertTriangle size={12} className="shrink-0" />
+                    <span>Do not input identifiable patient data (PHI). Inputs are anonymized.</span>
+                  </div>
                 </div>
               </div>
           </div>
