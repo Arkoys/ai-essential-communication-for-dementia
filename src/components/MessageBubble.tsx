@@ -27,7 +27,7 @@ const CURATED_KEYWORDS: { keywords: string[]; url: string }[] = [
   { keywords: ["CDR Scale", "Clinical Dementia Rating Scale", "CDR"], url: "https://knightadrc.wustl.edu/professionals-clinicians/cdr-dementia-staging-instrument/" },
   { keywords: ["Alzheimer's Association", "Alzheimer Association"], url: "https://www.alz.org/" },
   { keywords: ["Lewy Body Dementia Association", "Lewy Body"], url: "https://lbda.org/" },
-  { keywords: ["Living Well With Dementia Toolkit", "Living Well With Dementia"], url: "https://sites.google.com/ariadnelabs.org/living-with-dementia/" },
+  { keywords: ["Living Well With Dementia Toolkit", "Living Well With Dementia"], url: "/documents" },
   { keywords: ["ACB Calculator", "ACB calc"], url: "https://www.acbcalc.com/" },
   { keywords: ["STEADI Algorithm", "STEADI"], url: "https://www.cdc.gov/steadi/media/pdfs/STEADI-Algorithm-508.pdf" },
   { keywords: ["PsychDB"], url: "https://www.psychdb.com/home" },

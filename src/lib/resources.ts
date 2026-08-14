@@ -27,7 +27,7 @@ export const RESOURCES: Resource[] = [
   // Dementia-Specific
   { name: "Alzheimer's Association", url: 'https://www.alz.org/', category: 'Dementia Resources' },
   { name: 'Lewy Body Dementia Association', url: 'https://lbda.org/', category: 'Dementia Resources' },
-  { name: 'Living Well With Dementia Toolkit', url: 'https://sites.google.com/ariadnelabs.org/living-with-dementia/', category: 'Dementia Resources' },
+  { name: 'Living Well With Dementia Toolkit', url: '/documents', category: 'Dementia Resources' },
   { name: 'Mayo Clinic', url: 'https://www.mayoclinic.org/diseases-conditions', category: 'Dementia Resources' },
   
   // Medication & Safety
@@ -88,7 +88,7 @@ Functional Assessment Tools:
 Dementia-Specific Resources:
 [Alzheimer's Association](https://www.alz.org/)
 [Lewy Body Dementia Association](https://lbda.org/)
-[Living Well With Dementia Toolkit](https://sites.google.com/ariadnelabs.org/living-with-dementia/)
+[Living Well With Dementia Toolkit](/documents)
 [Mayo Clinic](https://www.mayoclinic.org/diseases-conditions)
 
 Medication & Safety Tools:
