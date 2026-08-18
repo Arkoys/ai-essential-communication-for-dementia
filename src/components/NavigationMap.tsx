@@ -57,6 +57,7 @@ interface NavigationMapProps {
   onSelectPhase: (phase: PhaseName) => void;
   onSelectStep: (step: string) => void;
   onShowResources?: () => void;
+  onToggleOpen?: (isOpen: boolean) => void;
 }
 
 const MOBILE_MEDIA_QUERY = '(max-width: 767px)';
@@ -73,6 +74,7 @@ export function NavigationMap({
   onSelectPhase,
   onSelectStep,
   onShowResources,
+  onToggleOpen,
 }: NavigationMapProps) {
   const [isOpen, setIsOpen] = useState(() => !isMobileViewport());
 
@@ -92,15 +94,24 @@ export function NavigationMap({
     return () => media.removeListener(handler);
   }, []);
 
+  useEffect(() => {
+    onToggleOpen?.(isOpen);
+  }, [isOpen, onToggleOpen]);
+
+  const handleToggle = () => {
+    const newValue = !isOpen;
+    setIsOpen(newValue);
+  };
+
   const COLS = STEPS.length;
 
   return (
-    <div className="w-full bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800">
+    <div className="absolute inset-x-0 top-0 z-10 bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-800 shadow-lg">
 
       {/* Header */}
       <div className="flex items-center justify-between px-4 py-0">
         <button
-          onClick={() => setIsOpen(v => !v)}
+          onClick={handleToggle}
           className="flex items-center gap-2 text-xs uppercase tracking-widest text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
         >
           {isOpen ? <ChevronUp size={16} /> : <ChevronDown size={16} />}

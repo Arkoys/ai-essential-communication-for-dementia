@@ -115,6 +115,7 @@ export default function App() {
   const [loginError, setLoginError] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [promptSettings, setPromptSettings] = useState<PromptSettings | null>(null);
+  const [isNavMapOpen, setIsNavMapOpen] = useState(false);
   
   // Dual mode state
   const [dualMessages, setDualMessages] = useState<{
@@ -762,14 +763,17 @@ export default function App() {
           </button>
         </div>
 
-        <NavigationMap
-          currentPhase={effectivePhase}
-          currentStep={effectiveStep}
-          detectedPhase={effectiveDetectedPhase}
-          onSelectPhase={handleSelectPhase}
-          onSelectStep={handleSelectStep}
-          onShowResources={() => setShowResourcesPanel(true)}
-        />
+        <div className="relative">
+          <NavigationMap
+            currentPhase={effectivePhase}
+            currentStep={effectiveStep}
+            detectedPhase={effectiveDetectedPhase}
+            onSelectPhase={handleSelectPhase}
+            onSelectStep={handleSelectStep}
+            onShowResources={() => setShowResourcesPanel(true)}
+            onToggleOpen={(open) => setIsNavMapOpen(open)}
+          />
+        </div>
         
         <div className="flex-1 relative min-h-0">
           {isDualMode ? (

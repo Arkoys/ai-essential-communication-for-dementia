@@ -26,3 +26,16 @@ body {
 .animate-pulse-border {
   animation: pulse-border 3s ease-in-out infinite;
 }
+
+@keyframes pulse-text {
+  0%, 100% { 
+    opacity: 0.4;
+  }
+  50% { 
+    opacity: 1;
+  }
+}
+
+.animate-pulse-text {
+  animation: pulse-text 3s ease-in-out infinite;
+}
