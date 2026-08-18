@@ -59,9 +59,6 @@ export function DualInputForm({
           </button>
         </div>
       </form>
-      <div className="text-center mt-1.5 md:mt-2 text-[10px] md:text-xs text-zinc-400 dark:text-zinc-500">
-        AI-generated clinical guidance. Always verify with primary literature.
-      </div>
     </div>
   );
 }

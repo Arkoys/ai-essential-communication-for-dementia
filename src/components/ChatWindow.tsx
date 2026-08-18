@@ -168,9 +168,6 @@ export function ChatWindow({
             <span className="text-[10px] text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">
               {providerDisplayName}
             </span>
-            <span className="text-[10px] md:text-xs text-zinc-400 dark:text-zinc-500">
-              AI-generated clinical guidance. Always verify with primary literature.
-            </span>
           </div>
         </div>
       </div>
