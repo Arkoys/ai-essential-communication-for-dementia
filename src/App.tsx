@@ -9,10 +9,13 @@ import { DualInputForm } from './components/DualInputForm';
 import { NavigationMap, PhaseName } from './components/NavigationMap';
 import { AdminPanel } from './components/AdminPanel';
 import { SettingsPanel } from './components/SettingsPanel';
-import { generateClinicalResponseWithHistory, isInsufficientInfoResponse, isInsufficientUserInput, getInsufficientInfoGuidance } from './lib/llm';
+import { ResourcesPanel } from './components/ResourcesPanel';
+import { generateClinicalResponseWithHistory, isInsufficientInfoResponse, isInsufficientUserInput, getInsufficientInfoGuidance, GenerationResult } from './lib/llm';
+import type { ResponsePath } from './lib/classifier/types';
 import { getPromptSettings, PromptSettings, DEFAULT_SUGGESTED_PROMPTS } from './lib/promptSettings';
 import { Stethoscope, Menu } from 'lucide-react';
 import { cn } from './lib/utils';
+import { TemplateDevBadge, useTemplateBadge } from './components/TemplateDevBadge';
 
 import { DEFAULT_KNOWLEDGE_CHUNKS } from './lib/defaultData';
 import { generateEmbedding } from './lib/rag';
@@ -39,13 +42,13 @@ interface Conversation {
 const PHASES: { name: PhaseName; steps: string[] }[] = [
   {
     name: 'Recognition',
-    steps: ['Name Findings', 'Understand Concern', 'Assess Cognition', 'Assess Function'],
+    steps: ['Open the Conversation', 'Assess Function', 'Assess Cognition', 'Assess Safety'],
   },
   {
     name: 'Evaluation',
     steps: [
-      'Assess Cognition',
       'Assess Function',
+      'Assess Cognition',
       'Assess Safety',
       'Targeted Exam',
       'Labs and Imaging',
@@ -54,13 +57,13 @@ const PHASES: { name: PhaseName; steps: string[] }[] = [
     ],
   },
   {
-    name: 'Diagnosis',
+    name: 'Naming & Diagnosis',
     steps: [
       'Assess and Align Understanding',
-      'Address Risks and Concerns',
       'Apply Diagnosis',
-      'Plan Follow-up',
       'Stage Condition',
+      'Address Risks and Concerns',
+      'Plan Follow-up',
     ],
   },
 ];
@@ -107,6 +110,7 @@ export default function App() {
   
   const [showAdminPanel, setShowAdminPanel] = useState(false);
   const [showSettingsPanel, setShowSettingsPanel] = useState(false);
+  const [showResourcesPanel, setShowResourcesPanel] = useState(false);
   const [isLoggingIn, setIsLoggingIn] = useState(false);
   const [loginError, setLoginError] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
@@ -121,6 +125,15 @@ export default function App() {
     primary: boolean;
     secondary: boolean;
   }>({ primary: false, secondary: false });
+  
+  // Dev template badge state
+  const { 
+    currentTemplate, 
+    tier1Complete, 
+    isVisible: isBadgeVisible, 
+    updateTemplate, 
+    hideBadge 
+  } = useTemplateBadge();
   
   // Load prompt settings on mount
   useEffect(() => {
@@ -298,12 +311,13 @@ export default function App() {
       if (!snapshot.exists()) return;
       const data = snapshot.data();
       const phase =
-        data.currentPhase === 'Recognition' || data.currentPhase === 'Evaluation' || data.currentPhase === 'Diagnosis'
+        data.currentPhase === 'Recognition' || data.currentPhase === 'Evaluation' || data.currentPhase === 'Naming & Diagnosis' || data.currentPhase === 'Diagnosis'
           ? (data.currentPhase as PhaseName)
           : null;
       const detectedPhase =
         data.lastDetectedPhase === 'Recognition' ||
         data.lastDetectedPhase === 'Evaluation' ||
+        data.lastDetectedPhase === 'Naming & Diagnosis' ||
         data.lastDetectedPhase === 'Diagnosis'
           ? (data.lastDetectedPhase as PhaseName)
           : phase;
@@ -433,44 +447,50 @@ export default function App() {
         createdAt: serverTimestamp(),
       });
 
-      // Check if user input is insufficient
-      const inputIsInsufficient = isStuck ? false : isInsufficientUserInput(content);
+      // NOTE: isInsufficientUserInput check REMOVED
+      // The new template classification system handles this better
+      // All prompts now go through to the LLM for proper routing
       
       let finalContent: string;
-      let isInsufficientInfo: boolean;
+      let isInsufficientInfo: boolean = false;
       let detectedPhase: PhaseName | null = null;
       let detectedStep: string | null = null;
       
-      if (inputIsInsufficient) {
-        finalContent = getInsufficientInfoGuidance();
-        isInsufficientInfo = true;
-      } else {
-        // Get current messages for history
-        const currentMessages = messages.map(m => ({ role: m.role, content: m.content }));
+      // Get current messages for history
+      const currentMessages = messages.map(m => ({ role: m.role, content: m.content }));
+      
+      // Track detected template for debugging
+      let detectedTemplate: ResponsePath = 'assess_template_1_or_3';
+      
+      try {
+        const result = await generateClinicalResponseWithHistory(
+          content,
+          currentMessages,
+          effectivePhase,
+          isStuck
+        );
+
+        // Extract response and template from result
+        const responseText = result.response;
+        detectedTemplate = result.template;
         
-        try {
-          const responseText = await generateClinicalResponseWithHistory(
-            content,
-            currentMessages,
-            effectivePhase,
-            isStuck
-          );
+        // Update dev badge with template info
+        updateTemplate(detectedTemplate, result.tier1Complete, primaryProvider);
 
-          const responseIsInsufficient = isInsufficientInfoResponse(responseText);
-          
-          finalContent = responseIsInsufficient ? getInsufficientInfoGuidance() : responseText;
-          isInsufficientInfo = responseIsInsufficient;
+        const responseIsInsufficient = isInsufficientInfoResponse(responseText);
+        
+        finalContent = responseIsInsufficient ? getInsufficientInfoGuidance() : responseText;
+        isInsufficientInfo = responseIsInsufficient;
 
-          const parsed = parseFrameworkPosition(responseText);
-          detectedPhase = parsed.phase;
-          detectedStep = parsed.step;
-        } catch (llmError) {
-          console.error('LLM Error:', llmError);
-          // Show error to user
-          const errorMessage = llmError instanceof Error ? llmError.message : 'Failed to generate response';
-          finalContent = `❌ **Error:** ${errorMessage}\n\nPlease check your API configuration and try again.`;
-          isInsufficientInfo = false;
-        }
+        const parsed = parseFrameworkPosition(responseText);
+        detectedPhase = parsed.phase;
+        detectedStep = parsed.step;
+      } catch (llmError) {
+        console.error('LLM Error:', llmError);
+        // Show error to user
+        const errorMessage = llmError instanceof Error ? llmError.message : 'Failed to generate response';
+        finalContent = `❌ **Error:** ${errorMessage}\n\nPlease check your API configuration and try again.`;
+        isInsufficientInfo = false;
       }
 
       let nextPhase = currentPhase;
@@ -592,7 +612,7 @@ export default function App() {
         const assistantMsgPrimary: Message = {
           id: `assistant-${Date.now()}-primary`,
           role: 'assistant',
-          content: primaryResponse.value,
+          content: primaryResponse.value.response,
           createdAt: new Date(),
         };
         setDualMessages(prev => ({ ...prev, primary: [...prev.primary, assistantMsgPrimary] }));
@@ -612,7 +632,7 @@ export default function App() {
         const assistantMsgSecondary: Message = {
           id: `assistant-${Date.now()}-secondary`,
           role: 'assistant',
-          content: secondaryResponse.value,
+          content: secondaryResponse.value.response,
           createdAt: new Date(),
         };
         setDualMessages(prev => ({ ...prev, secondary: [...prev.secondary, assistantMsgSecondary] }));
@@ -748,6 +768,7 @@ export default function App() {
           detectedPhase={effectiveDetectedPhase}
           onSelectPhase={handleSelectPhase}
           onSelectStep={handleSelectStep}
+          onShowResources={() => setShowResourcesPanel(true)}
         />
         
         <div className="flex-1 relative min-h-0">
@@ -788,6 +809,20 @@ export default function App() {
       
       {showSettingsPanel && (
         <SettingsPanel onClose={() => setShowSettingsPanel(false)} />
+      )}
+      
+      <ResourcesPanel 
+        isOpen={showResourcesPanel} 
+        onClose={() => setShowResourcesPanel(false)} 
+      />
+      
+      {/* Dev Template Badge - shows which template is being used */}
+      {currentTemplate && isBadgeVisible && (
+        <TemplateDevBadge
+          template={currentTemplate}
+          tier1Complete={tier1Complete ?? undefined}
+          provider={primaryProvider}
+        />
       )}
     </div>
   );

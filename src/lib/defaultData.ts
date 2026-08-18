@@ -294,3 +294,6 @@ Plan Follow Up
 - We will continue to talk about treatments and supports at our future visits together. Our team is here to help you and your family live well, meaningfully and rewardingly with dementia.`
   }
 ];
+
+// Re-export from shared resources file
+export { CURATED_EXTERNAL_RESOURCES } from './resources';

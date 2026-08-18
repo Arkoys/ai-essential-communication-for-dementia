@@ -15,7 +15,7 @@ const HARVARD_BASE_URL = process.env.HARVARD_OPENAI_BASE_URL || 'https://go.apis
 const API_BASE_URL = import.meta.env.VITE_API_PROXY_URL || '/api';
 
 // Models that don't support temperature parameter (or only support default value 1)
-const NO_TEMP_MODELS = ['gpt-5.5', 'gpt-5.4-mini', 'gpt-5.4-nano'];
+const NO_TEMP_MODELS = ['gpt-5.5', 'gpt-5.4', 'gpt-5.4-mini', 'gpt-5.4-nano'];
 
 /**
  * Check if a model supports the temperature parameter.

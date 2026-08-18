@@ -1,7 +1,7 @@
 {
   "firestore": {
     "rules": "firestore.rules",
-    "database": "ai-studio-f5f7406d-d6d3-4332-ba1c-11adda42380a"
+    "database": "${FIREBASE_DATABASE_ID}"
   },
   "emulators": {
     "firestore": {

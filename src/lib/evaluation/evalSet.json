@@ -1,0 +1,400 @@
+{
+  "version": "1.0.0",
+  "lastUpdated": "2026-07-22",
+  "description": "Evaluation set for testing the classification pipeline",
+  "totalItems": 45,
+  
+  "testCases": [
+    {
+      "id": "eval_001",
+      "category": "initial_assessment",
+      "prompt": "My patient has memory problems",
+      "expected_path": "assess_template_1_or_3",
+      "expected_tier1_complete": false,
+      "expected_missing": ["age", "duration"],
+      "notes": "Missing age and duration - classic template 1 trigger"
+    },
+    {
+      "id": "eval_002",
+      "category": "initial_assessment",
+      "prompt": "My 75-year-old patient has been forgetting names for 6 months",
+      "expected_path": "assess_template_1_or_3",
+      "expected_tier1_complete": true,
+      "notes": "All tier1 elements present - template 3"
+    },
+    {
+      "id": "eval_003",
+      "category": "initial_assessment",
+      "prompt": "Where do I start with a patient I'm worried about?",
+      "expected_path": "assess_template_1_or_3",
+      "expected_tier1_complete": false,
+      "expected_missing": ["age", "symptom", "duration"],
+      "notes": "No patient context at all"
+    },
+    {
+      "id": "eval_004",
+      "category": "diagnosis_process",
+      "prompt": "How do I structure a dementia evaluation visit?",
+      "expected_path": "assess_template_1_or_3",
+      "expected_tier1_complete": false,
+      "notes": "Educational question about process"
+    },
+    {
+      "id": "eval_005",
+      "category": "diagnosis_process",
+      "prompt": "What should I cover in the first visit for a 70-year-old with cognitive concerns?",
+      "expected_path": "assess_template_1_or_3",
+      "expected_tier1_complete": true,
+      "notes": "Has age, symptom implied, no duration"
+    },
+    {
+      "id": "eval_006",
+      "category": "workup_planning",
+      "prompt": "What labs should I order?",
+      "expected_path": "assess_template_1_or_3",
+      "expected_tier1_complete": false,
+      "notes": "Missing all tier1"
+    },
+    {
+      "id": "eval_007",
+      "category": "workup_planning",
+      "prompt": "My 80-year-old patient with progressive memory loss - what imaging should I order?",
+      "expected_path": "assess_template_1_or_3",
+      "expected_tier1_complete": true,
+      "notes": "Has age, symptom, duration implied"
+    },
+    {
+      "id": "eval_008",
+      "category": "management",
+      "prompt": "How should I follow up with this patient?",
+      "expected_path": "assess_template_1_or_3",
+      "expected_tier1_complete": false,
+      "notes": "Missing all context"
+    },
+    {
+      "id": "eval_009",
+      "category": "safety_assessment",
+      "prompt": "Is it safe for this patient to drive?",
+      "expected_path": "assess_template_1_or_3",
+      "expected_tier1_complete": false,
+      "notes": "Missing context for safety assessment"
+    },
+    {
+      "id": "eval_010",
+      "category": "safety_assessment",
+      "prompt": "My 72-year-old with moderate dementia - can she still drive?",
+      "expected_path": "assess_template_1_or_3",
+      "expected_tier1_complete": true,
+      "notes": "Has age, symptom (moderate dementia implies cognition), no explicit duration"
+    },
+    {
+      "id": "eval_011",
+      "category": "language_recommendation",
+      "prompt": "How do I tell a patient they have dementia?",
+      "expected_path": "assess_template_1_or_3",
+      "expected_tier1_complete": false,
+      "notes": "Language question - no tier1 needed"
+    },
+    {
+      "id": "eval_012",
+      "category": "language_recommendation",
+      "prompt": "What can I say to the family about the diagnosis?",
+      "expected_path": "assess_template_1_or_3",
+      "expected_tier1_complete": false,
+      "notes": "Language question - no tier1 needed"
+    },
+    {
+      "id": "eval_013",
+      "category": "conceptual_educational",
+      "prompt": "What is Lewy Body dementia?",
+      "expected_path": "direct_template_2",
+      "expected_tier1_complete": false,
+      "notes": "Pure educational question - template 2"
+    },
+    {
+      "id": "eval_014",
+      "category": "conceptual_educational",
+      "prompt": "How do I administer the MoCA?",
+      "expected_path": "direct_template_2",
+      "expected_tier1_complete": false,
+      "notes": "Tool protocol question - template 2"
+    },
+    {
+      "id": "eval_015",
+      "category": "conceptual_educational",
+      "prompt": "What are the NIA-AA criteria for Alzheimer's disease?",
+      "expected_path": "direct_template_2",
+      "expected_tier1_complete": false,
+      "notes": "Diagnostic criteria question - template 2"
+    },
+    {
+      "id": "eval_016",
+      "category": "conceptual_educational",
+      "prompt": "What's the difference between MCI and dementia?",
+      "expected_path": "direct_template_2",
+      "expected_tier1_complete": false,
+      "notes": "Conceptual question - template 2"
+    },
+    {
+      "id": "eval_017",
+      "category": "conceptual_educational",
+      "prompt": "Explain the staging systems for dementia",
+      "expected_path": "direct_template_2",
+      "expected_tier1_complete": false,
+      "notes": "Educational - template 2"
+    },
+    {
+      "id": "eval_018",
+      "category": "differential_diagnosis",
+      "prompt": "Could this be Parkinson's disease dementia?",
+      "expected_path": "direct_template_4",
+      "expected_tier1_complete": false,
+      "notes": "Differential diagnosis - template 4"
+    },
+    {
+      "id": "eval_019",
+      "category": "differential_diagnosis",
+      "prompt": "Is this more likely Alzheimer's or vascular dementia?",
+      "expected_path": "direct_template_4",
+      "expected_tier1_complete": false,
+      "notes": "Differential - template 4"
+    },
+    {
+      "id": "eval_020",
+      "category": "result_interpretation",
+      "prompt": "What does a MoCA of 22 mean?",
+      "expected_path": "direct_template_4",
+      "expected_tier1_complete": false,
+      "notes": "Score interpretation - template 4"
+    },
+    {
+      "id": "eval_021",
+      "category": "result_interpretation",
+      "prompt": "Is an MMSE of 24 concerning?",
+      "expected_path": "direct_template_4",
+      "expected_tier1_complete": false,
+      "notes": "Score interpretation - template 4"
+    },
+    {
+      "id": "eval_022",
+      "category": "result_interpretation",
+      "prompt": "What do small vessel white matter changes indicate?",
+      "expected_path": "direct_template_4",
+      "expected_tier1_complete": false,
+      "notes": "Imaging interpretation - template 4"
+    },
+    {
+      "id": "eval_023",
+      "category": "referral_decision",
+      "prompt": "Should I refer this patient to neurology?",
+      "expected_path": "direct_template_4",
+      "expected_tier1_complete": false,
+      "notes": "Referral decision - template 4"
+    },
+    {
+      "id": "eval_024",
+      "category": "referral_decision",
+      "prompt": "When should I involve a geriatrician?",
+      "expected_path": "direct_template_4",
+      "expected_tier1_complete": false,
+      "notes": "Referral guidance - template 4"
+    },
+    {
+      "id": "eval_025",
+      "category": "referral_decision",
+      "prompt": "Does this patient need neuropsych testing?",
+      "expected_path": "direct_template_4",
+      "expected_tier1_complete": false,
+      "notes": "Referral decision - template 4"
+    },
+    {
+      "id": "eval_026",
+      "category": "therapeutics",
+      "prompt": "Should I start donepezil?",
+      "expected_path": "direct_template_4",
+      "expected_tier1_complete": false,
+      "notes": "Therapeutic decision - template 4"
+    },
+    {
+      "id": "eval_027",
+      "category": "therapeutics",
+      "prompt": "When should I discontinue cholinesterase inhibitors?",
+      "expected_path": "direct_template_4",
+      "expected_tier1_complete": false,
+      "notes": "Therapeutic decision - template 4"
+    },
+    {
+      "id": "eval_028",
+      "category": "therapeutics",
+      "prompt": "What are the contraindications for lecanemab?",
+      "expected_path": "direct_template_4",
+      "expected_tier1_complete": false,
+      "notes": "Therapeutic guidance - template 4"
+    },
+    {
+      "id": "eval_029",
+      "category": "relational_challenges",
+      "prompt": "My patient doesn't believe they have dementia",
+      "expected_path": "assess_template_5",
+      "expected_tier1_complete": true,
+      "notes": "Patient denial - template 5"
+    },
+    {
+      "id": "eval_030",
+      "category": "relational_challenges",
+      "prompt": "The family is in conflict about care decisions",
+      "expected_path": "assess_template_5",
+      "expected_tier1_complete": true,
+      "notes": "Family conflict - template 5"
+    },
+    {
+      "id": "eval_031",
+      "category": "relational_challenges",
+      "prompt": "Is it okay to lie to protect my patient from the diagnosis?",
+      "expected_path": "assess_template_5",
+      "expected_tier1_complete": true,
+      "notes": "Ethical dilemma - template 5"
+    },
+    {
+      "id": "eval_032",
+      "category": "relational_challenges",
+      "prompt": "The caregiver is exhausted and frustrated",
+      "expected_path": "assess_template_5",
+      "expected_tier1_complete": true,
+      "notes": "Caregiver burnout - template 5"
+    },
+    {
+      "id": "eval_033",
+      "category": "relational_challenges",
+      "prompt": "My patient came alone but I think family should be involved",
+      "expected_path": "assess_template_5",
+      "expected_tier1_complete": true,
+      "notes": "Family involvement - template 5"
+    },
+    {
+      "id": "eval_034",
+      "category": "unrelated_to_dementia",
+      "prompt": "What's the best diet for diabetes?",
+      "expected_path": "out_of_scope",
+      "expected_tier1_complete": false,
+      "notes": "Completely unrelated - out of scope"
+    },
+    {
+      "id": "eval_035",
+      "category": "unrelated_to_dementia",
+      "prompt": "How do I treat hypertension?",
+      "expected_path": "out_of_scope",
+      "expected_tier1_complete": false,
+      "notes": "Unrelated medical question"
+    },
+    {
+      "id": "eval_036",
+      "category": "unrelated_to_dementia",
+      "prompt": "Can you help me with a dermatology question?",
+      "expected_path": "out_of_scope",
+      "expected_tier1_complete": false,
+      "notes": "Unrelated specialty"
+    },
+    {
+      "id": "eval_037",
+      "category": "delirium_flag",
+      "prompt": "My patient with Alzheimer's suddenly got much worse - she's confused and agitated, started 2 days ago",
+      "expected_path": "delirium_flag",
+      "expected_tier1_complete": false,
+      "safety_override": true,
+      "notes": "Acute deterioration in diagnosed dementia - delirium risk"
+    },
+    {
+      "id": "eval_038",
+      "category": "delirium_flag",
+      "prompt": "He's been deteriorating rapidly over the past week, much more confused",
+      "expected_path": "delirium_flag",
+      "expected_tier1_complete": false,
+      "safety_override": true,
+      "notes": "Rapid worsening - delirium flag"
+    },
+    {
+      "id": "eval_039",
+      "category": "delirium_flag",
+      "prompt": "My dementia patient is suddenly disoriented and hallucinating since yesterday",
+      "expected_path": "delirium_flag",
+      "expected_tier1_complete": false,
+      "safety_override": true,
+      "notes": "Acute confusion + hallucinations in dementia"
+    },
+    {
+      "id": "eval_040",
+      "category": "initial_assessment",
+      "prompt": "I have an elderly patient with memory issues",
+      "expected_path": "assess_template_1_or_3",
+      "expected_tier1_complete": false,
+      "expected_missing": ["symptom_detail", "duration"],
+      "notes": "Has age implied, missing symptom detail and duration"
+    },
+    {
+      "id": "eval_041",
+      "category": "conceptual_educational",
+      "prompt": "Explain the pathophysiology of Alzheimer's",
+      "expected_path": "direct_template_2",
+      "expected_tier1_complete": false,
+      "notes": "Educational - template 2"
+    },
+    {
+      "id": "eval_042",
+      "category": "workup_planning",
+      "prompt": "When should I order brain imaging?",
+      "expected_path": "assess_template_1_or_3",
+      "expected_tier1_complete": false,
+      "notes": "Workup question - could be general or patient-specific"
+    },
+    {
+      "id": "eval_043",
+      "category": "relational_challenges",
+      "prompt": "How do I handle a difficult family?",
+      "expected_path": "assess_template_5",
+      "expected_tier1_complete": true,
+      "notes": "Relational challenge - template 5"
+    },
+    {
+      "id": "eval_044",
+      "category": "initial_assessment",
+      "prompt": "Homme de 72 ans, 14 mois de perte de mémoire progressive",
+      "expected_path": "assess_template_1_or_3",
+      "expected_tier1_complete": true,
+      "notes": "French input - complete tier1"
+    },
+    {
+      "id": "eval_045",
+      "category": "initial_assessment",
+      "prompt": "Patient presents with cognitive decline",
+      "expected_path": "assess_template_1_or_3",
+      "expected_tier1_complete": false,
+      "expected_missing": ["age", "duration"],
+      "notes": "Has symptom, missing age and duration"
+    }
+  ],
+  
+  "testScenarios": {
+    "tier1Complete": [
+      "eval_002", "eval_005", "eval_007", "eval_010", "eval_044"
+    ],
+    "tier1Incomplete": [
+      "eval_001", "eval_003", "eval_006", "eval_008", "eval_009"
+    ],
+    "template2": [
+      "eval_013", "eval_014", "eval_015", "eval_016", "eval_017", "eval_041"
+    ],
+    "template4": [
+      "eval_018", "eval_019", "eval_020", "eval_021", "eval_022", "eval_023", "eval_024", "eval_025", "eval_026", "eval_027", "eval_028"
+    ],
+    "template5": [
+      "eval_029", "eval_030", "eval_031", "eval_032", "eval_033", "eval_043"
+    ],
+    "deliriumFlag": [
+      "eval_037", "eval_038", "eval_039"
+    ],
+    "outOfScope": [
+      "eval_034", "eval_035", "eval_036"
+    ]
+  }
+}
