@@ -12,6 +12,13 @@ import {
   isHarvardConfigured,
   getHarvardClient 
 } from './providers/harvard';
+import { 
+  CURATED_EXTERNAL_RESOURCES,
+  generatePositiveCitationList 
+} from './resources';
+import { runClassificationPipeline, buildSystemPrompt } from './classifier/pipeline';
+import { TEMPLATE_SYSTEM_ADDONS } from './templates';
+import type { ResponsePath } from './classifier/types';
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 const MINIMAX_API_BASE_URL = process.env.MINIMAX_API_BASE_URL || 'https://api.minimaxi.chat';
@@ -26,9 +33,37 @@ const SYSTEM_PROMPT = DEFAULT_SYSTEM_PROMPT;
 
 // Build toolkit reference from default knowledge chunks
 function buildToolkitReferenceForPrompt(): string {
-  return DEFAULT_KNOWLEDGE_CHUNKS.map(
+  const chunks = DEFAULT_KNOWLEDGE_CHUNKS.map(
     (chunk) => `### ${chunk.source}\n\n${chunk.content}`
   ).join('\n\n---\n\n');
+  
+  // Append curated external resources with STRICT positive-only citation rules
+  return `${chunks}
+
+---
+
+## Curated External Resources
+${CURATED_EXTERNAL_RESOURCES}
+
+---
+
+## CITATION RULES (MANDATORY - STRICT)
+### For Internal Sources (Ariadne Labs chunks):
+You MAY cite these exact internal sources:
+- "Ariadne Labs - Primer"
+- "Ariadne Labs - Stuck Points Framework"
+- "Ariadne Labs - Sample Language (Phase 1: Recognition)"
+- "Ariadne Labs - Sample Language (Phase 2: Evaluation)"
+- "Ariadne Labs - Sample Language (Phase 3: Diagnosis)"
+
+### For External Sources:
+${generatePositiveCitationList()}
+
+### FORBIDDEN:
+- DO NOT cite IQCODE (it is NOT in our resources)
+- DO NOT cite any assessment tool, article, or resource NOT in the ALLOWED list above
+- DO NOT invent or hallucinate any citation
+- If no resource from the allowed list is relevant, simply do not include a Resources section`;
 }
 
 // Build full MiniMax system prompt with knowledge embedded
@@ -40,51 +75,7 @@ function buildMinimaxSystemPrompt(systemPrompt: string, knowledgeContent: string
 ## Toolkit reference (Ariadne Labs Essential Communications)
 The following excerpts are the authoritative in-app reference. Your answers must follow this material: same terminology, phases, and sample language. Do not drift into general advice that is not reflected here.
 
-${knowledgeContent || buildToolkitReferenceForPrompt()}
-
----
-
-## Output format (STRICT — mandatory)
-
-You MUST follow EXACTLY this structure and NOTHING else.
-
-Your response MUST contain ONLY the following 4 sections, in this exact order and with these exact titles:
-
-## 1. Where you are in the framework
-One bullet only (max 12 words). Name phase/transition only.
-
-## 2. What needs to happen next
-2 to 4 short action bullets.
-
-## 3. Communication tools you could use
-1 to 3 short toolkit phrase/question bullets.
-
-## 4. Relational considerations (Stuck Points framework)
-One bullet only. If not relevant, write exactly: "No relational stuck point identified."
-
-FORMATTING RULES (SPACING — MANDATORY):
-- Insert ONE blank line after each section title.
-- Insert ONE blank line between sections in your answer.
-- Do NOT write content on the same line as a section title.
-- Use short bullets only (no prose paragraphs).
-- Keep each bullet to one idea.
-
-BREVITY RULES (MANDATORY):
-- Entire response under 140 words.
-- Direct, actionable, point-of-care wording.
-- No introductions or conclusions.
-
-FINAL RULES:
-- Do NOT add any other sections.
-- Do NOT rename any section.
-- Do NOT reorder sections.
-- Do NOT merge sections.
-- Do NOT add introductions or conclusions outside these sections.
-- Output MUST start directly with "## 1. Where you are in the framework".
-Reply in Markdown only.
-
-
-`;
+${knowledgeContent || buildToolkitReferenceForPrompt()}`;
 }
 
 /** Strip chain-of-thought wrappers some models (e.g. MiniMax) emit. */
@@ -104,7 +95,7 @@ function sanitizeModelOutput(text: string): string {
   }
   out = out.replace(/^\s*(?:thinking|reasoning|scratchpad)\s*:\s*[^\n]+\n*/gim, '');
 
-  // Model sometimes outputs a think block then the real§ answer — keep the tail after the last closing tag.
+  // Model sometimes outputs a think block then the real answer — keep the tail after the last closing tag.
   const afterThinkClose = /(?:<\/think>|<\/redacted_thinking>|<\/reasoning>)\s*/gi;
   let match: RegExpExecArray | null;
   let lastEnd = -1;
@@ -149,8 +140,6 @@ export function isInsufficientInfoResponse(text: string): boolean {
   const hasFullFormat = sectionCount >= 3;
   
   // If contains "insufficient" but NOT full framework format → flag as insufficient
-  // This catches any response like "Insufficient information to determine..."
-  // but allows proper formatted responses through
   if (hasInsufficient && !hasFullFormat) {
     return true;
   }
@@ -194,7 +183,6 @@ const VAGUE_KEYWORDS = [
 ];
 
 // Check if user input is insufficient/lacking context
-// This is a SEPARATE lightweight check that runs BEFORE the main LLM call
 export function isInsufficientUserInput(query: string): boolean {
   const trimmed = query.trim().toLowerCase();
   
@@ -253,7 +241,6 @@ export function isInsufficientUserInput(query: string): boolean {
   if (trimmed.match(/^(my|how|what|why|should)/)) specificityScore -= 1;
   
   // Final decision
-  // Input needs at least score of 2 OR length > 80 chars to be considered sufficient
   if (specificityScore < 2 && trimmed.length < 80) {
     return true;
   }
@@ -261,31 +248,18 @@ export function isInsufficientUserInput(query: string): boolean {
   return false;
 }
 
-// Generate a user guidance message for insufficient information scenarios
+// Generate a user guidance message for insufficient information scenarios (Template 1)
 export function getInsufficientInfoGuidance(): string {
-  return `⚠️ **Information not clear enough**
+  return `I'd like to help you navigate this conversation, but I need a bit more context to point you in the right direction.
 
-Your input needs more context for me to help you effectively.
+In order to best support you, I need to know:
 
-**Please provide:**
-• Patient's age and general situation
-• Specific symptoms or concerns
-• What you're trying to accomplish (assessment, communication, diagnosis)
+- Patient age
+- Symptoms presenting, if any
+- Duration and onset pattern of symptoms
+- What is driving your concern?
 
-**Examples of better prompts:**
-- ❌ "help" 
-- ✅ "My 78-year-old patient forgot their medication and seems confused about their appointments"
-
-- ❌ "dementia" 
-- ✅ "Patient showing memory lapses - what questions should I ask during evaluation?"
-
-- ❌ "confused patient"
-- ✅ "Wife of 80-year-old patient concerned he's repeating stories and getting lost"
-
-**Also:**
-
-💡 You can switch to Stuck Mode for a more open conversation.`;
-
+Once you provide this information, I can help you identify where you are in the dementia diagnosis journey and offer sample language to support your conversations.`;
 }
 
 async function generateWithMinimax(
@@ -297,7 +271,7 @@ async function generateWithMinimax(
     throw new Error('MINIMAX_API_KEY is missing. Add it to your local env file.');
   }
 
-  const minimaxModel = model || promptSettings?.selectedModel || MINIMAX_DEFAULT_MODEL;
+  const minimaxModel = model || MINIMAX_DEFAULT_MODEL;
   const url = `${MINIMAX_API_BASE_URL}${MINIMAX_API_PATH}`;
   const body: Record<string, unknown> = {
     model: minimaxModel,
@@ -340,11 +314,43 @@ ${knowledgeContent || buildToolkitReferenceForPrompt()}
 
 ---
 
+## Curated External Resources
+${CURATED_EXTERNAL_RESOURCES}
+
+---
+
+## CITATION RULES (MANDATORY - STRICT)
+### For Internal Sources (Ariadne Labs chunks):
+You MAY cite these exact internal sources:
+- "Ariadne Labs - Primer"
+- "Ariadne Labs - Stuck Points Framework"
+- "Ariadne Labs - Sample Language (Phase 1: Recognition)"
+- "Ariadne Labs - Sample Language (Phase 2: Evaluation)"
+- "Ariadne Labs - Sample Language (Phase 3: Diagnosis)"
+
+### For External Sources:
+${generatePositiveCitationList()}
+
+### FORBIDDEN:
+- DO NOT cite IQCODE (it is NOT in our resources)
+- DO NOT cite any assessment tool, article, or resource NOT in the ALLOWED list above
+- DO NOT invent or hallucinate any citation
+- If no resource from the allowed list is relevant, simply do not include a Resources section
+
+---
+
 ## Output format (STRICT — mandatory for Stuck Mode)
 
 Write directly and conversationally. Structure your response naturally without headers or bullet lists.
 Keep it under 100 words. Be direct and helpful.
 `;
+}
+
+export interface GenerationResult {
+  response: string;
+  template: ResponsePath;
+  tier1Complete: boolean;
+  safetyOverride: boolean;
 }
 
 export async function generateClinicalResponseWithHistory(
@@ -353,7 +359,7 @@ export async function generateClinicalResponseWithHistory(
   currentPhase: string | null,
   isStuck?: boolean,
   forceProvider?: string
-) {
+): Promise<GenerationResult> {
   try {
     // Load prompt settings from Firestore
     const promptSettings = await getPromptSettings();
@@ -367,16 +373,57 @@ export async function generateClinicalResponseWithHistory(
       ? `\n\n[System Note: The user is currently focusing on the "${currentPhase}" phase of the dementia care framework. Please tailor your response to this phase.]`
       : '';
 
-    // Use configurable prompts, fallback to defaults
-    const systemPrompt = isStuck 
-      ? buildStuckModeSystemPrompt(
-          promptSettings.stuckModePrompt || DEFAULT_STUCK_MODE_PROMPT,
-          promptSettings.knowledgeContent || DEFAULT_KNOWLEDGE_CONTENT
-        )
-      : promptSettings.systemPrompt || SYSTEM_PROMPT;
-
     // Determine provider: forceProvider (for dual mode) > Firestore settings > env var > default
     const provider = forceProvider || promptSettings.provider || (process.env.LLM_PROVIDER || 'harvard').toLowerCase();
+    
+    // ===== STEP 1: Run Classification Pipeline =====
+    let classificationResult;
+    let templateAddon = '';
+    let detectedTemplate: ResponsePath = 'assess_template_1_or_3';
+    let tier1Complete = false;
+    let safetyOverride = false;
+    
+    if (!isStuck) {
+      try {
+        const pipelineResult = await runClassificationPipeline(
+          query,
+          history,
+          provider === 'minimax' ? 'minimax' : 'openai'
+        );
+        
+        templateAddon = pipelineResult.systemPromptAddon;
+        detectedTemplate = pipelineResult.template;
+        tier1Complete = pipelineResult.tier1Complete;
+        safetyOverride = pipelineResult.safetyOverride;
+        classificationResult = pipelineResult;
+        
+        // Log for debugging
+        console.log('[Template Classification]', {
+          template: detectedTemplate,
+          tier1Complete,
+          safetyOverride,
+          fallback: pipelineResult.fallbackTriggered
+        });
+      } catch (classError) {
+        console.error('Classification pipeline failed:', classError);
+        // Fallback to template 1 if classification fails
+        templateAddon = TEMPLATE_SYSTEM_ADDONS.template_1;
+        detectedTemplate = 'assess_template_1_or_3';
+      }
+    }
+
+    // ===== STEP 2: Build System Prompt with Template Addon =====
+    const knowledgeContent = promptSettings.knowledgeContent || DEFAULT_KNOWLEDGE_CONTENT;
+    const baseSystemPrompt = promptSettings.systemPrompt || SYSTEM_PROMPT;
+    
+    const fullSystemPrompt = templateAddon 
+      ? buildSystemPrompt(
+          buildMinimaxSystemPrompt(baseSystemPrompt, knowledgeContent),
+          templateAddon
+        )
+      : buildMinimaxSystemPrompt(baseSystemPrompt, knowledgeContent);
+
+    // ===== STEP 3: Generate Response Based on Provider =====
     
     // Harvard: OpenAI-compatible gateway with api-key auth
     if (provider === 'harvard') {
@@ -385,22 +432,17 @@ export async function generateClinicalResponseWithHistory(
       }
 
       const userContent = query + phaseContext;
-      // Get the selected model from settings, fallback to default
       const harvardModel = promptSettings.selectedModel || HARVARD_DEFAULT_MODEL;
       
-      // Build messages with proper typing for Harvard
       const harvardMessages: { role: 'system' | 'user' | 'assistant'; content: string }[] = [
         { 
           role: 'system', 
           content: isStuck 
             ? buildStuckModeSystemPrompt(
                 promptSettings.stuckModePrompt || DEFAULT_STUCK_MODE_PROMPT,
-                promptSettings.knowledgeContent || DEFAULT_KNOWLEDGE_CONTENT
+                knowledgeContent
               )
-            : buildMinimaxSystemPrompt(
-                promptSettings.systemPrompt || SYSTEM_PROMPT,
-                promptSettings.knowledgeContent || DEFAULT_KNOWLEDGE_CONTENT
-              )
+            : fullSystemPrompt
         },
         ...history.map((msg) => ({
           role: msg.role as 'user' | 'assistant',
@@ -410,19 +452,20 @@ export async function generateClinicalResponseWithHistory(
       ];
 
       const response = await harvardChatCompletion(harvardMessages, harvardModel);
-      // Handle both streaming and non-streaming responses
       if ('choices' in response) {
-        return sanitizeModelOutput(response.choices[0]?.message?.content || 'No response returned.');
+        return {
+          response: sanitizeModelOutput(response.choices[0]?.message?.content || 'No response returned.'),
+          template: detectedTemplate,
+          tier1Complete,
+          safetyOverride
+        };
       }
-      // For streaming responses, return empty string (streaming handled separately)
-      return '';
+      return { response: '', template: detectedTemplate, tier1Complete, safetyOverride };
     }
 
     // MiniMax: no RAG — full toolkit text is embedded in the system prompt.
     if (provider === 'minimax') {
       const userContent = query + phaseContext;
-      // Get the selected model from settings, fallback to default
-      // Use dualModeSelectedModel for MiniMax in dual mode, selectedModel as fallback
       const minimaxModel = promptSettings.dualModeSelectedModel || promptSettings.selectedModel || MINIMAX_DEFAULT_MODEL;
       
       const minimaxMessages = [
@@ -431,12 +474,9 @@ export async function generateClinicalResponseWithHistory(
           content: isStuck 
             ? buildStuckModeSystemPrompt(
                 promptSettings.stuckModePrompt || DEFAULT_STUCK_MODE_PROMPT,
-                promptSettings.knowledgeContent || DEFAULT_KNOWLEDGE_CONTENT
+                knowledgeContent
               )
-            : buildMinimaxSystemPrompt(
-                promptSettings.systemPrompt || SYSTEM_PROMPT,
-                promptSettings.knowledgeContent || DEFAULT_KNOWLEDGE_CONTENT
-              )
+            : fullSystemPrompt
         },
         ...history.map((msg) => ({
           role: msg.role,
@@ -445,7 +485,8 @@ export async function generateClinicalResponseWithHistory(
         { role: 'user', content: userContent },
       ];
 
-      return await generateWithMinimax(minimaxMessages, minimaxModel);
+      const response = await generateWithMinimax(minimaxMessages, minimaxModel);
+      return { response, template: detectedTemplate, tier1Complete, safetyOverride };
     }
 
     // Gemini fallback: RAG retrieval for relevant chunks only
@@ -458,10 +499,7 @@ export async function generateClinicalResponseWithHistory(
       });
     }
 
-    const userText =
-      query +
-      contextString +
-      phaseContext;
+    const userText = query + contextString + phaseContext;
 
     contents.push({
       role: 'user',
@@ -472,14 +510,31 @@ export async function generateClinicalResponseWithHistory(
       model: 'gemini-3.1-pro-preview',
       contents: contents,
       config: {
-        systemInstruction: systemPrompt,
+        systemInstruction: fullSystemPrompt,
         temperature: 0.2,
       },
     });
 
-    return sanitizeModelOutput(response.text || '');
+    return {
+      response: sanitizeModelOutput(response.text || ''),
+      template: detectedTemplate,
+      tier1Complete,
+      safetyOverride
+    };
   } catch (error) {
     console.error('Error generating response:', error);
     throw error;
   }
+}
+
+// Backward compatible function (returns just the response string)
+export async function generateClinicalResponseString(
+  query: string,
+  history: { role: 'user' | 'assistant'; content: string }[],
+  currentPhase: string | null,
+  isStuck?: boolean,
+  forceProvider?: string
+): Promise<string> {
+  const result = await generateClinicalResponseWithHistory(query, history, currentPhase, isStuck, forceProvider);
+  return result.response;
 }

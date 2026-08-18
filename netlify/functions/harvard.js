@@ -44,7 +44,7 @@ exports.handler = async function(event, context) {
   try {
     // Parse the request body
     const requestBody = JSON.parse(event.body || '{}');
-    const { messages, model, temperature, max_tokens, stream } = requestBody;
+    const { messages, model, temperature, max_tokens, stream, response_format } = requestBody;
 
     if (!messages || !Array.isArray(messages)) {
       return {
@@ -63,6 +63,11 @@ exports.handler = async function(event, context) {
       messages: messages,
       stream: stream ?? false,
     };
+    
+    // Forward response_format for structured outputs support
+    if (response_format !== undefined) {
+      harvardRequest.response_format = response_format;
+    }
 
     // Only include temperature for models that support it
     if (!NO_TEMP_MODELS.includes(harvardRequest.model)) {
