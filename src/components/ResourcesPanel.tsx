@@ -8,15 +8,15 @@ interface ResourcesPanelProps {
   onClose: () => void;
 }
 
-// Internal Documents - PDFs stored in /public/documents
-interface InternalDocument {
+// Internal Resources - PDFs stored in /public/documents
+interface InternalResource {
   id: string;
   name: string;
   filename: string;
   description?: string;
 }
 
-const INTERNAL_DOCUMENTS: InternalDocument[] = [
+const INTERNAL_RESOURCES: InternalResource[] = [
   {
     id: 'navigation-map',
     name: 'Navigation Map',
@@ -40,14 +40,14 @@ const INTERNAL_DOCUMENTS: InternalDocument[] = [
 export function ResourcesPanel({ isOpen, onClose }: ResourcesPanelProps) {
   const [activeDocId, setActiveDocId] = useState<string | null>(null);
 
-  const handleDownload = (doc: InternalDocument) => {
+  const handleDownload = (doc: InternalResource) => {
     const link = document.createElement('a');
     link.href = `/documents/${doc.filename}`;
     link.download = doc.filename;
     link.click();
   };
 
-  const activeDocument = INTERNAL_DOCUMENTS.find(d => d.id === activeDocId);
+  const activeDocument = INTERNAL_RESOURCES.find(d => d.id === activeDocId);
 
   if (!isOpen) return null;
 
@@ -70,7 +70,7 @@ export function ResourcesPanel({ isOpen, onClose }: ResourcesPanelProps) {
         <div className="flex items-center justify-between px-4 py-1 border-b border-zinc-200 dark:border-zinc-700">
           <div className="flex items-center gap-3">
             <FolderOpen size={18} className="text-orange-600 dark:text-orange-400" />
-            <h2 className="font-medium text-sm text-zinc-900 dark:text-zinc-100">Internal Documents</h2>
+            <h2 className="font-medium text-sm text-zinc-900 dark:text-zinc-100">Internal Resources</h2>
             <Link
               to="/documents"
               target="_blank"
@@ -97,7 +97,7 @@ export function ResourcesPanel({ isOpen, onClose }: ResourcesPanelProps) {
                 Available Documents
               </h3>
               <ul className="space-y-1">
-                {INTERNAL_DOCUMENTS.map((doc) => (
+                {INTERNAL_RESOURCES.map((doc) => (
                   <li key={doc.id}>
                     <button
                       onClick={() => setActiveDocId(doc.id)}
@@ -126,13 +126,13 @@ export function ResourcesPanel({ isOpen, onClose }: ResourcesPanelProps) {
             {/* Document Navigation */}
             <div className="mt-auto p-4 border-t border-zinc-200 dark:border-zinc-700">
               <div className="flex items-center justify-between text-xs text-zinc-500 dark:text-zinc-400">
-                <span>Document {activeDocId ? INTERNAL_DOCUMENTS.findIndex(d => d.id === activeDocId) + 1 : 0} of {INTERNAL_DOCUMENTS.length}</span>
+                <span>Document {activeDocId ? INTERNAL_RESOURCES.findIndex(d => d.id === activeDocId) + 1 : 0} of {INTERNAL_RESOURCES.length}</span>
                 <div className="flex gap-2">
                   <button
                     onClick={() => {
-                      const currentIndex = INTERNAL_DOCUMENTS.findIndex(d => d.id === activeDocId);
-                      const prevIndex = currentIndex > 0 ? currentIndex - 1 : INTERNAL_DOCUMENTS.length - 1;
-                      setActiveDocId(INTERNAL_DOCUMENTS[prevIndex].id);
+                      const currentIndex = INTERNAL_RESOURCES.findIndex(d => d.id === activeDocId);
+                      const prevIndex = currentIndex > 0 ? currentIndex - 1 : INTERNAL_RESOURCES.length - 1;
+                      setActiveDocId(INTERNAL_RESOURCES[prevIndex].id);
                     }}
                     className="p-1.5 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded"
                   >
@@ -140,9 +140,9 @@ export function ResourcesPanel({ isOpen, onClose }: ResourcesPanelProps) {
                   </button>
                   <button
                     onClick={() => {
-                      const currentIndex = INTERNAL_DOCUMENTS.findIndex(d => d.id === activeDocId);
-                      const nextIndex = currentIndex < INTERNAL_DOCUMENTS.length - 1 ? currentIndex + 1 : 0;
-                      setActiveDocId(INTERNAL_DOCUMENTS[nextIndex].id);
+                      const currentIndex = INTERNAL_RESOURCES.findIndex(d => d.id === activeDocId);
+                      const nextIndex = currentIndex < INTERNAL_RESOURCES.length - 1 ? currentIndex + 1 : 0;
+                      setActiveDocId(INTERNAL_RESOURCES[nextIndex].id);
                     }}
                     className="p-1.5 hover:bg-zinc-200 dark:hover:bg-zinc-700 rounded"
                   >

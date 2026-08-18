@@ -123,7 +123,7 @@ export function NavigationMap({
           title="Resources"
         >
           <FolderOpen size={16} />
-          <span className="text-xs font-medium">Internal Documents</span>
+          <span className="text-xs font-medium">Internal Resources</span>
         </button>
       </div>
 

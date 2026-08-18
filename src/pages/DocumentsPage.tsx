@@ -3,15 +3,15 @@ import { Link } from 'react-router-dom';
 import { FileText, ChevronLeft, ChevronRight, Download, ExternalLink, ArrowLeft } from 'lucide-react';
 import { cn } from '../lib/utils';
 
-// Internal Documents - PDFs stored in /public/documents
-interface InternalDocument {
+// Internal Resources - PDFs stored in /public/documents
+interface InternalResource {
   id: string;
   name: string;
   filename: string;
   description?: string;
 }
 
-const INTERNAL_DOCUMENTS: InternalDocument[] = [
+const INTERNAL_RESOURCES: InternalResource[] = [
   {
     id: 'navigation-map',
     name: 'Navigation Map',
@@ -33,28 +33,28 @@ const INTERNAL_DOCUMENTS: InternalDocument[] = [
 ];
 
 export default function DocumentsPage() {
-  const [activeDocId, setActiveDocId] = useState<string>(INTERNAL_DOCUMENTS[0].id);
+  const [activeDocId, setActiveDocId] = useState<string>(INTERNAL_RESOURCES[0].id);
   const [showSidebar, setShowSidebar] = useState(true);
 
-  const handleDownload = (doc: InternalDocument) => {
+  const handleDownload = (doc: InternalResource) => {
     const link = document.createElement('a');
     link.href = `/documents/${doc.filename}`;
     link.download = doc.filename;
     link.click();
   };
 
-  const activeDocument = INTERNAL_DOCUMENTS.find(d => d.id === activeDocId);
+  const activeDocument = INTERNAL_RESOURCES.find(d => d.id === activeDocId);
 
   const navigatePrev = () => {
-    const currentIndex = INTERNAL_DOCUMENTS.findIndex(d => d.id === activeDocId);
-    const prevIndex = currentIndex > 0 ? currentIndex - 1 : INTERNAL_DOCUMENTS.length - 1;
-    setActiveDocId(INTERNAL_DOCUMENTS[prevIndex].id);
+    const currentIndex = INTERNAL_RESOURCES.findIndex(d => d.id === activeDocId);
+    const prevIndex = currentIndex > 0 ? currentIndex - 1 : INTERNAL_RESOURCES.length - 1;
+    setActiveDocId(INTERNAL_RESOURCES[prevIndex].id);
   };
 
   const navigateNext = () => {
-    const currentIndex = INTERNAL_DOCUMENTS.findIndex(d => d.id === activeDocId);
-    const nextIndex = currentIndex < INTERNAL_DOCUMENTS.length - 1 ? currentIndex + 1 : 0;
-    setActiveDocId(INTERNAL_DOCUMENTS[nextIndex].id);
+    const currentIndex = INTERNAL_RESOURCES.findIndex(d => d.id === activeDocId);
+    const nextIndex = currentIndex < INTERNAL_RESOURCES.length - 1 ? currentIndex + 1 : 0;
+    setActiveDocId(INTERNAL_RESOURCES[nextIndex].id);
   };
 
   return (
@@ -69,7 +69,7 @@ export default function DocumentsPage() {
             <ArrowLeft size={18} />
             Back to app
           </Link>
-          <h1 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Internal Documents</h1>
+          <h1 className="text-lg font-semibold text-zinc-900 dark:text-zinc-100">Internal Resources</h1>
           <button
             onClick={() => setShowSidebar(!showSidebar)}
             className="text-sm text-zinc-500 hover:text-zinc-700 dark:text-zinc-400 dark:hover:text-zinc-200"
@@ -86,7 +86,7 @@ export default function DocumentsPage() {
             <ChevronLeft size={20} />
           </button>
           <span className="text-sm text-zinc-500 dark:text-zinc-400 min-w-[80px] text-center">
-            {INTERNAL_DOCUMENTS.findIndex(d => d.id === activeDocId) + 1} / {INTERNAL_DOCUMENTS.length}
+            {INTERNAL_RESOURCES.findIndex(d => d.id === activeDocId) + 1} / {INTERNAL_RESOURCES.length}
           </span>
           <button
             onClick={navigateNext}
@@ -107,7 +107,7 @@ export default function DocumentsPage() {
                 Available Documents
               </h2>
               <ul className="space-y-1">
-                {INTERNAL_DOCUMENTS.map((doc) => (
+                {INTERNAL_RESOURCES.map((doc) => (
                   <li key={doc.id}>
                     <button
                       onClick={() => setActiveDocId(doc.id)}
