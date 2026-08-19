@@ -1,6 +1,24 @@
-version: '3.8'
-
 services:
+  # Backend proxy service for Harvard API
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    ports:
+      - "3001:3001"
+    environment:
+      # Harvard HUIT OpenAI Direct v2 - API key kept server-side only
+      - HARVARD_OPENAI_KEY=${HARVARD_OPENAI_KEY}
+      - HARVARD_OPENAI_BASE_URL=${HARVARD_OPENAI_BASE_URL:-https://go.apis.huit.harvard.edu/ais-openai-direct/v2/}
+      - PORT=3001
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Frontend Vite development server
   app:
     build:
       context: .
@@ -11,6 +29,9 @@ services:
     environment:
       - NODE_ENV=development
       - VITE_PORT=3000
+      # Use backend proxy for Harvard API (server-side key)
+      # In Docker Compose, use the backend service name
+      - VITE_API_PROXY_URL=http://backend:3001
       # Firebase
       - VITE_FIREBASE_API_KEY=${VITE_FIREBASE_API_KEY}
       - VITE_FIREBASE_AUTH_DOMAIN=${VITE_FIREBASE_AUTH_DOMAIN}
@@ -27,15 +48,13 @@ services:
       - VITE_MINIMAX_API_KEY=${VITE_MINIMAX_API_KEY}
       - VITE_MINIMAX_MODEL=${VITE_MINIMAX_MODEL}
       - VITE_MINIMAX_API_BASE_URL=${VITE_MINIMAX_API_BASE_URL}
-      # Harvard HUIT OpenAI Direct v2
-      - VITE_HARVARD_OPENAI_KEY=${VITE_HARVARD_OPENAI_KEY}
-      - VITE_HARVARD_OPENAI_BASE_URL=${VITE_HARVARD_OPENAI_BASE_URL}
-      - VITE_HARVARD_MODEL=${VITE_HARVARD_MODEL}
     volumes:
       - .:/app
       - /app/node_modules
       - /app/dist
     restart: unless-stopped
+    depends_on:
+      - backend
 
   # Optional: Firebase Emulator for local development
   # Uncomment to use Firebase Emulator Suite

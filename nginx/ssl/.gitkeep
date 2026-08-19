@@ -1,0 +1,7 @@
+# SSL certificates placeholder
+# Place your SSL certificates here:
+# - fullchain.pem (or cert.pem)
+# - privkey.pem
+# 
+# For Let's Encrypt:
+# certbot --nginx -d yourdomain.com
