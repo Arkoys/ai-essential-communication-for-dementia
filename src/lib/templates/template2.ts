@@ -5,6 +5,9 @@
  * 
  * Purpose: Handle conceptual questions that fall outside our knowledge documents
  * by providing evidence-based external information and redirecting to the LLM's scope.
+ * 
+ * Note: trustedSources are now dynamically loaded from resources.ts
+ * Use the CURATED_EXTERNAL_RESOURCES for citation purposes.
  */
 
 export const TEMPLATE_2_CONFIG = {
@@ -15,11 +18,11 @@ export const TEMPLATE_2_CONFIG = {
     {
       step: 1,
       title: '**PART 1: RESPOND TO THE QUESTION**',
-      description: 'Briefly reflect their question back in your own words to confirm understanding. Provide a 1-3 sentence direct response drawing on trusted, evidence-based external sources. Cite the source(s).',
+      description: 'Briefly reflect their question back in your own words to confirm understanding. Provide a 1-3 sentence direct response drawing on trusted, evidence-based external sources. Cite the source(s) using markdown links.',
       instruction: `The response to these questions are not provided in our knowledge documents.
 Briefly reflect their question back in your own words to confirm understanding.
 Provide a 1-3 sentence summary of information from trusted external sources.
-Cite the source(s).
+Cite the source(s) using markdown link format: [Source Name](URL).
 Recommend that the user goes to them for more information.`
     },
     {
@@ -40,32 +43,15 @@ Ask questions to see if they are interested in exploring guidance available.`
     'Do not pretend to have information not in our knowledge documents',
     'Briefly reflect the question back to confirm understanding',
     'Pull 1-3 sentence summary from trusted external sources',
-    'Always cite the source(s)',
-    'Include links to trusted sources (Alzheimer\'s Association, Lewy Body Dementia Association, Open Evidence, etc.)',
+    'Always cite the source(s) using markdown link format: [Name](URL)',
+    'Include links to trusted sources from the available resources list',
     'After providing external info, shift to reorientation',
     'Clearly state the LLM\'s scope: navigation map, sample language, stuck points framework',
     'End with coaching questions to re-engage the user',
     'No header needed at the start of the response'
   ],
   
-  trustedSources: [
-    {
-      name: 'Alzheimer\'s Association',
-      url: 'https://www.alz.org'
-    },
-    {
-      name: 'Lewy Body Dementia Association',
-      url: 'https://www.lbda.org'
-    },
-    {
-      name: 'Open Evidence',
-      url: 'https://openevidence.com'
-    },
-    {
-      name: 'National Institute on Aging (NIA-AA)',
-      url: 'https://www.nia.nih.gov/health/alzheimers-and-dementia'
-    }
-  ],
+  // trustedSources removed - now dynamically sourced from resources.ts
   
   llmScope: {
     description: 'As your dementia communication coach, I can support you with:',
