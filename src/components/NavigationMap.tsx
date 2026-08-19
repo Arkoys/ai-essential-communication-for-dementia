@@ -76,7 +76,7 @@ export function NavigationMap({
   onShowResources,
   onToggleOpen,
 }: NavigationMapProps) {
-  const [isOpen, setIsOpen] = useState(() => !isMobileViewport());
+  const [isOpen, setIsOpen] = useState(false);
 
   const activePhase = currentPhase || detectedPhase;
   const visiblePhase = detectedPhase || currentPhase;
