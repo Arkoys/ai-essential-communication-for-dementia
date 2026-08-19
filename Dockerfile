@@ -3,11 +3,11 @@ FROM node:20-alpine AS development
 
 WORKDIR /app
 
-# Copy package files
-COPY package.json pnpm-lock.yaml* ./
+# Copy npm package files (package-lock.json is used when present)
+COPY package*.json ./
 
-# Install dependencies (using npm as fallback if pnpm not available)
-RUN npm install || npm install pnpm && pnpm install
+# Install dependencies with the package manager used by this repository
+RUN npm install
 
 # Copy source code
 COPY . .

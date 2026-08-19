@@ -298,9 +298,9 @@ This application can be containerized using Docker and Docker Compose for local 
    VITE_FIREBASE_MESSAGING_SENDER_ID=123456789
    VITE_FIREBASE_APP_ID=1:123456789:web:abc123
    
-   # LLM Provider (gemini, openai, minimax, or harvard)
-   VITE_LLM_PROVIDER=gemini
-   VITE_GEMINI_API_KEY=your_gemini_api_key
+   # LLM Provider (gemini, minimax, or harvard)
+   LLM_PROVIDER=gemini
+   GEMINI_API_KEY=your_gemini_api_key
    ```
 
 4. **Start the application:**
@@ -346,7 +346,7 @@ The production build serves optimized static files and is suitable for deploymen
 
 ### Environment Variables
 
-All environment variables from the [Environment Variables section](#-environment-variables) are supported. In Docker, they must be prefixed with `VITE_` since Vite bundles them at build time.
+All environment variables from the [Environment Variables section](#-environment-variables) are supported. Firebase browser configuration uses the `VITE_` prefix; LLM configuration uses the unprefixed names shown above.
 
 ### Firebase Emulator (Optional)
 
