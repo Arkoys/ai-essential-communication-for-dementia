@@ -46,12 +46,15 @@ function preprocessContent(content: string): string {
   
   for (const item of CURATED_KEYWORDS) {
     for (const keyword of item.keywords) {
-      // Only match if NOT already part of a markdown link [text](url)
-      // Use word boundary to avoid partial matches
+      // Skip if keyword already appears to be in a markdown link (preceded by [)
+      // This is a simple heuristic - if the line has [keyword] it's likely already linked
       const escapedKeyword = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      // Match keyword that is NOT preceded by [ (to avoid matching existing markdown links)
-      // and NOT followed immediately by ] (already a link)
-      const pattern = new RegExp(`(?<!\\[)\\b${escapedKeyword}\\b(?!\\])`, 'gi');
+      
+      // Match keyword that is NOT already inside square brackets
+      // Use a flexible pattern that allows for colons after the keyword
+      // Negative lookbehind for [ ensures we're not inside an existing link
+      // Only consume trailing spaces and colons, NOT newlines (to preserve line breaks)
+      const pattern = new RegExp(`(?<!\\[)\\b${escapedKeyword}\\b[ ]*(?::[ ]*)?`, 'gi');
       result = result.replace(pattern, `[${keyword}](${item.url})`);
     }
   }
