@@ -13,31 +13,55 @@ interface MessageBubbleProps {
 
 // Curated Resources keywords with their URLs for auto-linking
 const CURATED_KEYWORDS: { keywords: string[]; url: string }[] = [
+  // Cognitive Screening Tools
   { keywords: ["Mini Cog", "MiniCog"], url: "https://mini-cog.com/" },
   { keywords: ["AD-8"], url: "https://knightadrc.wustl.edu/professionals-clinicians/ad8-instrument/" },
   { keywords: ["MoCA", "MOCA"], url: "https://mocacognition.com" },
   { keywords: ["SLUMS"], url: "https://www.slu.edu/medicine/internal-medicine/geriatric-medicine/aging-successfully/mental-status-exam.php" },
   { keywords: ["RUDAS"], url: "https://www.dementia.org.au/professionals/assessment-and-diagnosis-dementia/rowland-universal-dementia-assessment-scale-rudas" },
+  
+  // Mood & Mental Health
   { keywords: ["PHQ-9", "PHQ9"], url: "https://www.apa.org/depression-guideline/patient-health-questionnaire.pdf" },
   { keywords: ["GDS", "Geriatric Depression Scale"], url: "https://geriatrictoolkit.missouri.edu/cog/GDS_SHORT_FORM.PDF" },
   { keywords: ["GAD-7", "GAD7"], url: "https://www.apaservices.org/practice/reimbursement/health-registry/anxiety-disorder-response.pdf" },
   { keywords: ["ASRS v1.1", "ASRS"], url: "https://psychology-tools.com/test/adult-adhd-self-report-scale" },
+  
+  // Functional Assessment
   { keywords: ["Katz Index", "Katz index"], url: "https://hign.org/sites/default/files/2020-06/Try_This_General_Assessment_2.pdf" },
   { keywords: ["Barthel Index", "Barthel index"], url: "https://www.sralab.org/sites/default/files/2017-07/barthel.pdf" },
   { keywords: ["Lawton-Brody", "Lawton Brody", "Lawton-Brody Scale"], url: "https://www.bgs.org.uk/sites/default/files/content/attachment/2018-07-05/lawton_brody.pdf" },
   { keywords: ["CDR Scale", "Clinical Dementia Rating Scale", "CDR"], url: "https://knightadrc.wustl.edu/professionals-clinicians/cdr-dementia-staging-instrument/" },
+  
+  // Dementia Resources
   { keywords: ["Alzheimer's Association", "Alzheimer Association"], url: "https://www.alz.org/" },
   { keywords: ["Lewy Body Dementia Association", "Lewy Body"], url: "https://lbda.org/" },
   { keywords: ["Living Well With Dementia Toolkit", "Living Well With Dementia"], url: "/documents" },
+  { keywords: ["Mayo Clinic"], url: "https://www.mayoclinic.org/diseases-conditions" },
+  
+  // Medication & Safety
   { keywords: ["ACB Calculator", "ACB calc"], url: "https://www.acbcalc.com/" },
   { keywords: ["STEADI Algorithm", "STEADI"], url: "https://www.cdc.gov/steadi/media/pdfs/STEADI-Algorithm-508.pdf" },
+  
+  // Psychiatric
   { keywords: ["PsychDB"], url: "https://www.psychdb.com/home" },
+  
+  // Communication
   { keywords: ["Motivational Interviewing", "MINT"], url: "https://motivationalinterviewing.org/" },
   { keywords: ["Motivational Interviewing Paper"], url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC8200683/" },
+  
+  // Public Health
   { keywords: ["CDC BOLD Toolkit", "BOLD Toolkit", "CDC BOLD"], url: "https://www.cdc.gov/aging-programs/about/index.html" },
   { keywords: ["Cognition in Primary Care", "CPC"], url: "https://familymedicine.uw.edu/cpc/" },
-  { keywords: ["Mayo Clinic"], url: "https://www.mayoclinic.org/diseases-conditions" },
+  
+  // Geriatric Framework
   { keywords: ["5Ms", "5 Ms", "5Ms of Geriatric Care", "5 Ms Framework"], url: "https://www.aafp.org/afp/2024/0600/editorial-holistic-approach-geriatric-care" },
+  
+  // Ariadne Labs Toolkit Resources (internal documents)
+  { keywords: ["Navigation Map"], url: "/documents" },
+  { keywords: ["Conversation Guides", "Sample Language"], url: "/documents" },
+  { keywords: ["Stuck Points Framework"], url: "/documents" },
+  { keywords: ["Primer principles", "Primer"], url: "/documents" },
+  { keywords: ["Ariadne Labs toolkit resources", "Ariadne Labs toolkit", "Ariadne Labs"], url: "/documents" },
 ];
 
 // Pre-processor: Convert keyword mentions to markdown links BEFORE ReactMarkdown parsing
@@ -174,13 +198,20 @@ export function MessageBubble({ role, content, isStuck, isInsufficientInfo }: Me
                   </p>
                 ),
                 a: ({ href, children }) => {
-                  // Check if this URL exactly matches any curated keyword URL
-                  const isAllowedUrl = CURATED_KEYWORDS.some(
-                    item => item.url === href
+                  // Check if this link text matches any curated keyword
+                  const linkText = typeof children === 'string' ? children.trim() : '';
+                  const isCuratedKeyword = CURATED_KEYWORDS.some(item => 
+                    item.keywords.some(kw => 
+                      linkText.toLowerCase().includes(kw.toLowerCase())
+                    )
                   );
                   
-                  // If URL is not from our curated list, render as plain text
-                  if (!isAllowedUrl) {
+                  // Check if this URL exactly matches any curated keyword URL
+                  const isAllowedUrl = CURATED_KEYWORDS.some(item => item.url === href);
+                  
+                  // Allow link if: keyword text matches OR URL is in curated list
+                  // This handles cases where LLM uses variations
+                  if (!isCuratedKeyword && !isAllowedUrl) {
                     return <span>{children}</span>;
                   }
                   
