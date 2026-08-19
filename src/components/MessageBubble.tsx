@@ -150,11 +150,19 @@ export function MessageBubble({ role, content, isStuck, isInsufficientInfo }: Me
                     {children}
                   </ol>
                 ),
-                li: ({ children }) => (
-                  <li className="pl-4 relative before:content-['•'] before:absolute before:left-0 text-zinc-700 dark:text-zinc-300">
-                    {children}
-                  </li>
-                ),
+                li: ({ children, node }) => {
+                  // Check if this is a paragraph-style list item (has nested paragraphs)
+                  // This allows ReactMarkdown to properly parse URLs within list items
+                  const hasParagraphChildren = node?.children?.some(
+                    (child: any) => child.type === 'paragraph'
+                  );
+                  
+                  return (
+                    <li className="pl-4 relative before:content-['•'] before:absolute before:left-0 text-zinc-700 dark:text-zinc-300">
+                      {hasParagraphChildren ? children : <p className="text-zinc-700 dark:text-zinc-300">{children}</p>}
+                    </li>
+                  );
+                },
                 p: ({ children }) => (
                   <p className="text-zinc-700 dark:text-zinc-300">
                     {children}
