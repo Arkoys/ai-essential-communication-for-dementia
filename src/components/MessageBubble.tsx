@@ -174,19 +174,9 @@ export function MessageBubble({ role, content, isStuck, isInsufficientInfo }: Me
                   </p>
                 ),
                 a: ({ href, children }) => {
-                  // Extract origin (protocol + domain) from URL
-                  const getOrigin = (url: string) => {
-                    try {
-                      return new URL(url).origin;
-                    } catch {
-                      return url;
-                    }
-                  };
-                  
-                  // Check if this URL's origin matches any curated keyword origin
-                  const hrefOrigin = getOrigin(href || '');
+                  // Check if this URL exactly matches any curated keyword URL
                   const isAllowedUrl = CURATED_KEYWORDS.some(
-                    item => getOrigin(item.url) === hrefOrigin
+                    item => item.url === href
                   );
                   
                   // If URL is not from our curated list, render as plain text

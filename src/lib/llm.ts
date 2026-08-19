@@ -63,7 +63,11 @@ ${generatePositiveCitationList()}
 - DO NOT cite IQCODE (it is NOT in our resources)
 - DO NOT cite any assessment tool, article, or resource NOT in the ALLOWED list above
 - DO NOT invent or hallucinate any citation
-- If no resource from the allowed list is relevant, simply do not include a Resources section`;
+- DO NOT include any external URLs or links except those from the ALLOWED list above
+- If you mention any external resource, you MUST use ONLY the exact URLs provided in the ALLOWED list
+- DO NOT add subpages, specific article URLs, or any URL variations not explicitly listed
+- If no resource from the allowed list is relevant, simply do not include a Resources section
+- NEVER write out URLs in full (e.g., write "[National Institute on Aging](https://www.nia.nih.gov/health/alzheimers-and-dementia)" not "https://www.nia.nih.gov/health/...")`;
 }
 
 // Build full MiniMax system prompt with knowledge embedded
@@ -335,7 +339,11 @@ ${generatePositiveCitationList()}
 - DO NOT cite IQCODE (it is NOT in our resources)
 - DO NOT cite any assessment tool, article, or resource NOT in the ALLOWED list above
 - DO NOT invent or hallucinate any citation
+- DO NOT include any external URLs or links except those from the ALLOWED list above
+- If you mention any external resource, you MUST use ONLY the exact URLs provided in the ALLOWED list
+- DO NOT add subpages, specific article URLs, or any URL variations not explicitly listed
 - If no resource from the allowed list is relevant, simply do not include a Resources section
+- NEVER write out URLs in full (e.g., write "[National Institute on Aging](https://www.nia.nih.gov/health/alzheimers-and-dementia)" not "https://www.nia.nih.gov/health/...")
 
 ---
 

@@ -162,7 +162,9 @@ Write conversationally without internal headers.
 RULES:
 - DO NOT use headers like "PART 1", "PART 2", "RESPOND TO QUESTION"
 - ALWAYS use markdown link format [Name](URL) for citations
-- Never write raw URLs in text (e.g., write "[National Institute on Aging](https://www.nia.nih.gov/...)" not "National Institute on Aging: https://www.nia.nih.gov/...")`,
+- NEVER include any external URLs except those from the curated resources list
+- DO NOT add subpages or URL variations not explicitly provided
+- If no resource from the allowed list is relevant, do not include a Resources section`,
 
   template_3: `
 
@@ -187,7 +189,10 @@ Write conversationally without internal headers.
 - Link to relevant external resources
 - Redirect to dementia communication help
 
-RULES: DO NOT use headers like "PART 1", "PART 2", "OUT OF SCOPE".`,
+RULES:
+- DO NOT use headers like "PART 1", "PART 2", "OUT OF SCOPE"
+- NEVER include any external URLs except those from the curated resources list
+- DO NOT add subpages or URL variations not explicitly provided`,
 
   template_5: `
 
