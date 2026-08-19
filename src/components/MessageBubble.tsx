@@ -173,16 +173,38 @@ export function MessageBubble({ role, content, isStuck, isInsufficientInfo }: Me
                     {children}
                   </p>
                 ),
-                a: ({ href, children }) => (
-                  <a 
-                    href={href} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-blue-600 dark:text-blue-400 hover:underline"
-                  >
-                    {children}
-                  </a>
-                ),
+                a: ({ href, children }) => {
+                  // Extract origin (protocol + domain) from URL
+                  const getOrigin = (url: string) => {
+                    try {
+                      return new URL(url).origin;
+                    } catch {
+                      return url;
+                    }
+                  };
+                  
+                  // Check if this URL's origin matches any curated keyword origin
+                  const hrefOrigin = getOrigin(href || '');
+                  const isAllowedUrl = CURATED_KEYWORDS.some(
+                    item => getOrigin(item.url) === hrefOrigin
+                  );
+                  
+                  // If URL is not from our curated list, render as plain text
+                  if (!isAllowedUrl) {
+                    return <span>{children}</span>;
+                  }
+                  
+                  return (
+                    <a 
+                      href={href} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-blue-600 dark:text-blue-400 hover:underline"
+                    >
+                      {children}
+                    </a>
+                  );
+                },
               }}
             >
               {processedContent}
