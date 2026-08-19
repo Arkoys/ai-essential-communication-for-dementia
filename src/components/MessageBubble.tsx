@@ -1,5 +1,6 @@
 import React from 'react';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { cn } from '../lib/utils';
 import { User, Stethoscope, Zap, AlertCircle } from 'lucide-react';
 
@@ -117,6 +118,7 @@ export function MessageBubble({ role, content, isStuck, isInsufficientInfo }: Me
           </div>
           <div className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed space-y-2">
             <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
               components={{
                 h2: ({ children }) => (
                   <h2
