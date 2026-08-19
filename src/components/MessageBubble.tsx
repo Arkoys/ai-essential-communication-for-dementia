@@ -15,7 +15,7 @@ interface MessageBubbleProps {
 const CURATED_KEYWORDS: { keywords: string[]; url: string }[] = [
   { keywords: ["Mini Cog", "MiniCog"], url: "https://mini-cog.com/" },
   { keywords: ["AD-8"], url: "https://knightadrc.wustl.edu/professionals-clinicians/ad8-instrument/" },
-  { keywords: ["MoCA", "MOCA"], url: "http://mocacognition.com" },
+  { keywords: ["MoCA", "MOCA"], url: "https://mocacognition.com" },
   { keywords: ["SLUMS"], url: "https://www.slu.edu/medicine/internal-medicine/geriatric-medicine/aging-successfully/mental-status-exam.php" },
   { keywords: ["RUDAS"], url: "https://www.dementia.org.au/professionals/assessment-and-diagnosis-dementia/rowland-universal-dementia-assessment-scale-rudas" },
   { keywords: ["PHQ-9", "PHQ9"], url: "https://www.apa.org/depression-guideline/patient-health-questionnaire.pdf" },
@@ -36,7 +36,7 @@ const CURATED_KEYWORDS: { keywords: string[]; url: string }[] = [
   { keywords: ["Motivational Interviewing Paper"], url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC8200683/" },
   { keywords: ["CDC BOLD Toolkit", "BOLD Toolkit", "CDC BOLD"], url: "https://www.cdc.gov/aging-programs/about/index.html" },
   { keywords: ["Cognition in Primary Care", "CPC"], url: "https://familymedicine.uw.edu/cpc/" },
-  { keywords: ["Mayo Clinic"], url: "https://www.mayoclinic.org/" },
+  { keywords: ["Mayo Clinic"], url: "https://www.mayoclinic.org/diseases-conditions" },
   { keywords: ["5Ms", "5 Ms", "5Ms of Geriatric Care", "5 Ms Framework"], url: "https://www.aafp.org/afp/2024/0600/editorial-holistic-approach-geriatric-care" },
 ];
 
