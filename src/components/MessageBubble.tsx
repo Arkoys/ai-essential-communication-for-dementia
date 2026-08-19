@@ -39,77 +39,30 @@ const CURATED_KEYWORDS: { keywords: string[]; url: string }[] = [
   { keywords: ["5Ms", "5 Ms", "5Ms of Geriatric Care", "5 Ms Framework"], url: "https://www.aafp.org/afp/2024/0600/editorial-holistic-approach-geriatric-care" },
 ];
 
-// Sort keywords by length (longest first) to match longer phrases before shorter ones
-const sortedKeywords = CURATED_KEYWORDS.map(item => ({
-  ...item,
-  keywords: item.keywords.sort((a, b) => b.length - a.length)
-}));
-
-// Regex pattern to match any of the curated keywords
-const keywordPattern = new RegExp(
-  '(' + sortedKeywords.flatMap(item => item.keywords).map(k => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')(?!\\s*\\])',
-  'gi'
-);
-
-// Function to find URL for a matched keyword
-function findUrlForKeyword(match: string): string | null {
-  const normalizedMatch = match.trim();
-  for (const item of sortedKeywords) {
-    for (const keyword of item.keywords) {
-      if (normalizedMatch.toLowerCase() === keyword.toLowerCase()) {
-        return item.url;
-      }
-    }
-  }
-  return null;
-}
-
-// Parse text and wrap keywords in links
-function parseTextWithLinks(text: string): React.ReactNode[] {
-  const parts: React.ReactNode[] = [];
-  let lastIndex = 0;
-  let match;
-
-  keywordPattern.lastIndex = 0;
-  const textCopy = text;
+// Pre-processor: Convert keyword mentions to markdown links BEFORE ReactMarkdown parsing
+function preprocessContent(content: string): string {
+  let result = content;
   
-  while ((match = keywordPattern.exec(textCopy)) !== null) {
-    // Add text before the match
-    if (match.index > lastIndex) {
-      parts.push(textCopy.slice(lastIndex, match.index));
+  for (const item of CURATED_KEYWORDS) {
+    for (const keyword of item.keywords) {
+      // Only match if NOT already part of a markdown link [text](url)
+      // Use word boundary to avoid partial matches
+      const escapedKeyword = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      // Match keyword that is NOT preceded by [ (to avoid matching existing markdown links)
+      // and NOT followed immediately by ] (already a link)
+      const pattern = new RegExp(`(?<!\\[)\\b${escapedKeyword}\\b(?!\\])`, 'gi');
+      result = result.replace(pattern, `[${keyword}](${item.url})`);
     }
-
-    const url = findUrlForKeyword(match[0]);
-    if (url) {
-      // Add the keyword as a link
-      parts.push(
-        <a
-          key={`link-${match.index}`}
-          href={url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-blue-600 dark:text-blue-400 hover:underline"
-        >
-          {match[0]}
-        </a>
-      );
-    } else {
-      parts.push(match[0]);
-    }
-
-    lastIndex = match.index + match[0].length;
   }
-
-  // Add remaining text
-  if (lastIndex < textCopy.length) {
-    parts.push(textCopy.slice(lastIndex));
-  }
-
-  return parts.length > 0 ? parts : [text];
+  
+  return result;
 }
 
 export function MessageBubble({ role, content, isStuck, isInsufficientInfo }: MessageBubbleProps) {
   const isUser = role === 'user';
+  
+  // Preprocess content to convert keywords to markdown links
+  const processedContent = preprocessContent(content);
 
   return (
     <div
@@ -173,7 +126,7 @@ export function MessageBubble({ role, content, isStuck, isInsufficientInfo }: Me
                       isInsufficientInfo && "text-amber-800 dark:text-amber-200"
                     )}
                   >
-                    {typeof children === 'string' ? parseTextWithLinks(children) : children}
+                    {children}
                   </h2>
                 ),
                 strong: ({ children }) => (
@@ -184,7 +137,7 @@ export function MessageBubble({ role, content, isStuck, isInsufficientInfo }: Me
                       isInsufficientInfo && "text-amber-800 dark:text-amber-200"
                     )}
                   >
-                    {typeof children === 'string' ? parseTextWithLinks(children) : children}
+                    {children}
                   </strong>
                 ),
                 ul: ({ children }) => (
@@ -199,12 +152,12 @@ export function MessageBubble({ role, content, isStuck, isInsufficientInfo }: Me
                 ),
                 li: ({ children }) => (
                   <li className="pl-4 relative before:content-['•'] before:absolute before:left-0 text-zinc-700 dark:text-zinc-300">
-                    {typeof children === 'string' ? parseTextWithLinks(children) : children}
+                    {children}
                   </li>
                 ),
                 p: ({ children }) => (
                   <p className="text-zinc-700 dark:text-zinc-300">
-                    {typeof children === 'string' ? parseTextWithLinks(children) : children}
+                    {children}
                   </p>
                 ),
                 a: ({ href, children }) => (
@@ -219,7 +172,7 @@ export function MessageBubble({ role, content, isStuck, isInsufficientInfo }: Me
                 ),
               }}
             >
-              {content}
+              {processedContent}
             </ReactMarkdown>
           </div>
         </div>
