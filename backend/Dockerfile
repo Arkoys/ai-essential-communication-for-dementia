@@ -1,7 +1,5 @@
-/**
- * Backend Dockerfile - Express proxy server for Harvard API
- * Production-ready with proper logging and security
- */
+# Backend Dockerfile - Express proxy server for Harvard API
+# Production-ready with proper logging and security
 
 FROM node:20-alpine
 
