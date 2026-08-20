@@ -268,12 +268,37 @@ erDiagram
 
 This application can be containerized using Docker and Docker Compose for local development or self-hosting.
 
+### Architecture Overview
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  Docker Compose                                             │
+│                                                             │
+│  Development:           Production:                           │
+│  ┌─────────────┐       ┌─────────────────────────────────┐  │
+│  │  Frontend   │       │         Nginx Reverse Proxy     │  │
+│  │  Vite :3000 │       │  Port 80/443                    │  │
+│  └──────┬──────┘       │  ┌───────────┐  ┌───────────┐   │  │
+│         │              │  │ /        │  │ /api/*   │   │  │
+│         │              │  │    ↓     │  │    ↓     │   │  │
+│         ▼              │  └───────────┘  └───────────┘   │  │
+│  ┌─────────────┐       │       ↓              ↓          │  │
+│  │  Backend    │       │  ┌─────────┐    ┌─────────┐    │  │
+│  │  Express    │       │  │Frontend │    │Backend  │    │  │
+│  │  :3001      │       │  │ :3000   │    │ :3001   │    │  │
+│  └──────┬──────┘       │  └─────────┘    └─────────┘    │  │
+│         │              └─────────────────────────────────┘  │
+│         ▼                                                   │
+│  Harvard HUIT API                                          │
+└─────────────────────────────────────────────────────────────┘
+```
+
 ### Prerequisites
 
 - [Docker](https://docs.docker.com/get-docker/) installed
-- [Docker Compose](https://docs.docker.com/compose/install/) installed
+- [Docker Compose](https://docs.docker.com/compose/install/) v2+ installed
 - Firebase project credentials
-- At least one LLM provider API key (Gemini, OpenAI, MiniMax, or Harvard)
+- At least one LLM provider API key
 
 ### Quick Start
 
@@ -285,98 +310,108 @@ This application can be containerized using Docker and Docker Compose for local 
 
 2. **Create environment file:**
    ```bash
-   cp .env.docker .env.docker.local
+   cp .env.example .env
    ```
 
-3. **Edit `.env.docker.local`** with your credentials:
+3. **Edit `.env`** with your credentials:
    ```env
+   # Harvard API (backend server-side only - never exposed to frontend!)
+   HARVARD_OPENAI_KEY=your_harvard_api_key
+
    # Firebase Configuration
    VITE_FIREBASE_API_KEY=your_firebase_api_key
    VITE_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
    VITE_FIREBASE_PROJECT_ID=your-project-id
-   VITE_FIREBASE_STORAGE_BUCKET=your-project.appspot.com
-   VITE_FIREBASE_MESSAGING_SENDER_ID=123456789
    VITE_FIREBASE_APP_ID=1:123456789:web:abc123
-   
-   # LLM Provider (gemini, minimax, or harvard)
-   LLM_PROVIDER=gemini
-   GEMINI_API_KEY=your_gemini_api_key
+
+   # LLM Provider (gemini, openai, minimax, or harvard)
+   VITE_LLM_PROVIDER=harvard
    ```
 
 4. **Start the application:**
+
+   **Development** (hot reload enabled):
    ```bash
-   docker compose --env-file .env.docker.local up
+   docker compose up --build
+   # Access at http://localhost:3000
    ```
 
-5. **Access the app:**
-   Open [http://localhost:3000](http://localhost:3000) in your browser.
+   **Production** (optimized build with Nginx):
+   ```bash
+   docker compose -f docker-compose.prod.yml up --build -d
+   # Access at http://localhost:80
+   ```
 
-### Development Mode
+### Docker Files
 
-The Docker setup uses **hot reload** - changes to source files will automatically refresh the browser.
+| File | Purpose |
+|------|---------|
+| `docker-compose.yml` | Development: Vite dev server + Backend proxy |
+| `docker-compose.prod.yml` | Production: Nginx + Static frontend + Backend |
+| `Dockerfile` | Multi-stage build (deps → build → production/development) |
+| `backend/` | Express proxy server for Harvard API |
+| `nginx/` | Nginx configuration for production reverse proxy |
 
-```bash
-docker compose --env-file .env.docker.local up
-```
+### Environment Variables
 
-### Production Build
+**Backend (server-side only):**
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `HARVARD_OPENAI_KEY` | If using Harvard | Harvard API key (never exposed to frontend) |
+| `HARVARD_OPENAI_BASE_URL` | No | Harvard gateway URL |
 
-To build and run a production-optimized container:
-
-```bash
-# Build the production image
-docker compose -f docker-compose.yml build --target production
-
-# Run the production container
-docker compose -f docker-compose.yml up --profile production
-```
-
-The production build serves optimized static files and is suitable for deployment on any container hosting service (AWS ECS, Google Cloud Run, Azure Container Apps, etc.).
+**Frontend (Vite - client-side):**
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `VITE_FIREBASE_*` | Yes | Firebase configuration |
+| `VITE_LLM_PROVIDER` | No | Provider: `gemini`, `openai`, `minimax`, `harvard` |
+| `VITE_*_API_KEY` | Per provider | API keys for chosen LLM provider |
 
 ### Docker Commands
 
 | Command | Description |
 |---------|-------------|
-| `docker compose up` | Start in development mode |
+| `docker compose up` | Start development mode |
 | `docker compose up -d` | Start in background (detached) |
+| `docker compose -f docker-compose.prod.yml up` | Start production mode |
 | `docker compose down` | Stop and remove containers |
 | `docker compose build --no-cache` | Rebuild without cache |
 | `docker compose logs -f` | View live logs |
-| `docker compose exec app sh` | Shell into the container |
+| `docker compose logs -f backend` | View backend logs only |
 
-### Environment Variables
+### Security Notes
 
-All environment variables from the [Environment Variables section](#-environment-variables) are supported. Firebase browser configuration uses the `VITE_` prefix; LLM configuration uses the unprefixed names shown above.
-
-### Firebase Emulator (Optional)
-
-For local Firebase development without affecting production data, uncomment the `firebase-emulator` service in `docker-compose.yml` and add your Firebase token:
-
-```env
-FIREBASE_TOKEN=your_firebase_auth_token
-```
+- **Harvard API key** is kept server-side in the backend container
+- **Non-root user** runs the backend container for security
+- **Rate limiting** is configured in Nginx for production
+- **CORS headers** are properly set for API routes
 
 ### Troubleshooting
 
+**Backend returns 500 (API key not configured):**
+```bash
+# Check if HARVARD_OPENAI_KEY is set in .env
+grep HARVARD .env
+```
+
 **Port already in use:**
 ```bash
-# Change the host port in docker-compose.yml
-ports:
-  - "3001:3000"  # Map to port 3001 instead
+# Check what's using the port
+lsof -i :3000
+# or
+docker compose ps
 ```
 
 **Container won't start:**
 ```bash
 # Check logs for errors
-docker compose logs app
+docker compose logs
 
 # Rebuild from scratch
-docker compose build --no-cache
-docker compose up
+docker compose down
+docker compose -f docker-compose.prod.yml build --no-cache
+docker compose -f docker-compose.prod.yml up
 ```
-
-**Firebase connection issues:**
-Ensure your Firebase configuration in `.env.docker.local` matches your Firebase project settings from the Firebase Console.
 
 ## 🚀 Deployment (Netlify)
 

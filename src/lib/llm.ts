@@ -63,11 +63,18 @@ ${generatePositiveCitationList()}
 - DO NOT cite IQCODE (it is NOT in our resources)
 - DO NOT cite any assessment tool, article, or resource NOT in the ALLOWED list above
 - DO NOT invent or hallucinate any citation
-- If no resource from the allowed list is relevant, simply do not include a Resources section`;
+- DO NOT include any external URLs or links except those from the ALLOWED list above
+- If you mention any external resource, you MUST use ONLY the exact URLs provided in the ALLOWED list
+- DO NOT add subpages, specific article URLs, or any URL variations not explicitly listed
+- If no resource from the allowed list is relevant, simply do not include a Resources section
+- NEVER write out URLs in full (e.g., write "[National Institute on Aging](https://www.nia.nih.gov/health/alzheimers-and-dementia)" not "https://www.nia.nih.gov/health/...")`;
 }
 
 // Build full MiniMax system prompt with knowledge embedded
 function buildMinimaxSystemPrompt(systemPrompt: string, knowledgeContent: string): string {
+  const baseKnowledge = knowledgeContent || buildToolkitReferenceForPrompt();
+  
+  // Always include Curated External Resources
   return `${systemPrompt}
 
 ---
@@ -75,7 +82,38 @@ function buildMinimaxSystemPrompt(systemPrompt: string, knowledgeContent: string
 ## Toolkit reference (Ariadne Labs Essential Communications)
 The following excerpts are the authoritative in-app reference. Your answers must follow this material: same terminology, phases, and sample language. Do not drift into general advice that is not reflected here.
 
-${knowledgeContent || buildToolkitReferenceForPrompt()}`;
+${baseKnowledge}
+
+---
+
+## Curated External Resources (USE THESE ONLY)
+You can use/mention the following resources only in your response:
+
+${CURATED_EXTERNAL_RESOURCES}
+
+---
+
+## CITATION RULES (MANDATORY - STRICT)
+### For Internal Sources (Ariadne Labs chunks):
+You MAY cite these exact internal sources:
+- "Ariadne Labs - Primer"
+- "Ariadne Labs - Stuck Points Framework"
+- "Ariadne Labs - Sample Language (Phase 1: Recognition)"
+- "Ariadne Labs - Sample Language (Phase 2: Evaluation)"
+- "Ariadne Labs - Sample Language (Phase 3: Diagnosis)"
+
+### For External Sources:
+${generatePositiveCitationList()}
+
+### FORBIDDEN:
+- DO NOT cite IQCODE (it is NOT in our resources)
+- DO NOT cite any assessment tool, article, or resource NOT in the ALLOWED list above
+- DO NOT invent or hallucinate any citation
+- DO NOT include any external URLs or links except those from the ALLOWED list above
+- If you mention any external resource, you MUST use ONLY the exact URLs provided in the ALLOWED list
+- DO NOT add subpages, specific article URLs, or any URL variations not explicitly listed
+- If no resource from the allowed list is relevant, simply do not include a Resources section
+- NEVER write out URLs in full (e.g., write "[National Institute on Aging](https://www.nia.nih.gov/health/alzheimers-and-dementia)" not "https://www.nia.nih.gov/health/...")`;
 }
 
 /** Strip chain-of-thought wrappers some models (e.g. MiniMax) emit. */
@@ -335,7 +373,11 @@ ${generatePositiveCitationList()}
 - DO NOT cite IQCODE (it is NOT in our resources)
 - DO NOT cite any assessment tool, article, or resource NOT in the ALLOWED list above
 - DO NOT invent or hallucinate any citation
+- DO NOT include any external URLs or links except those from the ALLOWED list above
+- If you mention any external resource, you MUST use ONLY the exact URLs provided in the ALLOWED list
+- DO NOT add subpages, specific article URLs, or any URL variations not explicitly listed
 - If no resource from the allowed list is relevant, simply do not include a Resources section
+- NEVER write out URLs in full (e.g., write "[National Institute on Aging](https://www.nia.nih.gov/health/alzheimers-and-dementia)" not "https://www.nia.nih.gov/health/...")
 
 ---
 

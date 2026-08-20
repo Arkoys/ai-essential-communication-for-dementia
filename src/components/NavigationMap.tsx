@@ -76,7 +76,7 @@ export function NavigationMap({
   onShowResources,
   onToggleOpen,
 }: NavigationMapProps) {
-  const [isOpen, setIsOpen] = useState(() => !isMobileViewport());
+  const [isOpen, setIsOpen] = useState(false);
 
   const activePhase = currentPhase || detectedPhase;
   const visiblePhase = detectedPhase || currentPhase;
@@ -123,7 +123,7 @@ export function NavigationMap({
           title="Resources"
         >
           <FolderOpen size={16} />
-          <span className="text-xs font-medium">Internal Resources</span>
+          <span className="text-xs font-medium">Resources</span>
         </button>
       </div>
 

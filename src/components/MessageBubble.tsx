@@ -1,5 +1,6 @@
 import React from 'react';
 import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { cn } from '../lib/utils';
 import { User, Stethoscope, Zap, AlertCircle } from 'lucide-react';
 
@@ -12,104 +13,84 @@ interface MessageBubbleProps {
 
 // Curated Resources keywords with their URLs for auto-linking
 const CURATED_KEYWORDS: { keywords: string[]; url: string }[] = [
+  // Cognitive Screening Tools
   { keywords: ["Mini Cog", "MiniCog"], url: "https://mini-cog.com/" },
   { keywords: ["AD-8"], url: "https://knightadrc.wustl.edu/professionals-clinicians/ad8-instrument/" },
-  { keywords: ["MoCA", "MOCA"], url: "http://mocacognition.com" },
+  { keywords: ["MoCA", "MOCA"], url: "https://mocacognition.com" },
   { keywords: ["SLUMS"], url: "https://www.slu.edu/medicine/internal-medicine/geriatric-medicine/aging-successfully/mental-status-exam.php" },
   { keywords: ["RUDAS"], url: "https://www.dementia.org.au/professionals/assessment-and-diagnosis-dementia/rowland-universal-dementia-assessment-scale-rudas" },
+  
+  // Mood & Mental Health
   { keywords: ["PHQ-9", "PHQ9"], url: "https://www.apa.org/depression-guideline/patient-health-questionnaire.pdf" },
   { keywords: ["GDS", "Geriatric Depression Scale"], url: "https://geriatrictoolkit.missouri.edu/cog/GDS_SHORT_FORM.PDF" },
   { keywords: ["GAD-7", "GAD7"], url: "https://www.apaservices.org/practice/reimbursement/health-registry/anxiety-disorder-response.pdf" },
   { keywords: ["ASRS v1.1", "ASRS"], url: "https://psychology-tools.com/test/adult-adhd-self-report-scale" },
+  
+  // Functional Assessment
   { keywords: ["Katz Index", "Katz index"], url: "https://hign.org/sites/default/files/2020-06/Try_This_General_Assessment_2.pdf" },
   { keywords: ["Barthel Index", "Barthel index"], url: "https://www.sralab.org/sites/default/files/2017-07/barthel.pdf" },
   { keywords: ["Lawton-Brody", "Lawton Brody", "Lawton-Brody Scale"], url: "https://www.bgs.org.uk/sites/default/files/content/attachment/2018-07-05/lawton_brody.pdf" },
   { keywords: ["CDR Scale", "Clinical Dementia Rating Scale", "CDR"], url: "https://knightadrc.wustl.edu/professionals-clinicians/cdr-dementia-staging-instrument/" },
+  
+  // Dementia Resources
   { keywords: ["Alzheimer's Association", "Alzheimer Association"], url: "https://www.alz.org/" },
   { keywords: ["Lewy Body Dementia Association", "Lewy Body"], url: "https://lbda.org/" },
   { keywords: ["Living Well With Dementia Toolkit", "Living Well With Dementia"], url: "/documents" },
+  { keywords: ["Mayo Clinic"], url: "https://www.mayoclinic.org/diseases-conditions" },
+  
+  // Medication & Safety
   { keywords: ["ACB Calculator", "ACB calc"], url: "https://www.acbcalc.com/" },
   { keywords: ["STEADI Algorithm", "STEADI"], url: "https://www.cdc.gov/steadi/media/pdfs/STEADI-Algorithm-508.pdf" },
+  
+  // Psychiatric
   { keywords: ["PsychDB"], url: "https://www.psychdb.com/home" },
+  
+  // Communication
   { keywords: ["Motivational Interviewing", "MINT"], url: "https://motivationalinterviewing.org/" },
   { keywords: ["Motivational Interviewing Paper"], url: "https://pmc.ncbi.nlm.nih.gov/articles/PMC8200683/" },
+  
+  // Public Health
   { keywords: ["CDC BOLD Toolkit", "BOLD Toolkit", "CDC BOLD"], url: "https://www.cdc.gov/aging-programs/about/index.html" },
   { keywords: ["Cognition in Primary Care", "CPC"], url: "https://familymedicine.uw.edu/cpc/" },
-  { keywords: ["Mayo Clinic"], url: "https://www.mayoclinic.org/" },
+  
+  // Geriatric Framework
   { keywords: ["5Ms", "5 Ms", "5Ms of Geriatric Care", "5 Ms Framework"], url: "https://www.aafp.org/afp/2024/0600/editorial-holistic-approach-geriatric-care" },
+  
+  // Ariadne Labs Toolkit Resources (internal documents)
+  { keywords: ["Navigation Map"], url: "/documents" },
+  { keywords: ["Conversation Guides", "Sample Language"], url: "/documents" },
+  { keywords: ["Stuck Points Framework"], url: "/documents" },
+  { keywords: ["Primer principles", "Primer"], url: "/documents" },
+  { keywords: ["Ariadne Labs toolkit resources", "Ariadne Labs toolkit", "Ariadne Labs"], url: "/documents" },
 ];
 
-// Sort keywords by length (longest first) to match longer phrases before shorter ones
-const sortedKeywords = CURATED_KEYWORDS.map(item => ({
-  ...item,
-  keywords: item.keywords.sort((a, b) => b.length - a.length)
-}));
-
-// Regex pattern to match any of the curated keywords
-const keywordPattern = new RegExp(
-  '(' + sortedKeywords.flatMap(item => item.keywords).map(k => k.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('|') + ')(?!\\s*\\])',
-  'gi'
-);
-
-// Function to find URL for a matched keyword
-function findUrlForKeyword(match: string): string | null {
-  const normalizedMatch = match.trim();
-  for (const item of sortedKeywords) {
-    for (const keyword of item.keywords) {
-      if (normalizedMatch.toLowerCase() === keyword.toLowerCase()) {
-        return item.url;
-      }
-    }
-  }
-  return null;
-}
-
-// Parse text and wrap keywords in links
-function parseTextWithLinks(text: string): React.ReactNode[] {
-  const parts: React.ReactNode[] = [];
-  let lastIndex = 0;
-  let match;
-
-  keywordPattern.lastIndex = 0;
-  const textCopy = text;
+// Pre-processor: Convert keyword mentions to markdown links BEFORE ReactMarkdown parsing
+function preprocessContent(content: string): string {
+  let result = content;
   
-  while ((match = keywordPattern.exec(textCopy)) !== null) {
-    // Add text before the match
-    if (match.index > lastIndex) {
-      parts.push(textCopy.slice(lastIndex, match.index));
+  for (const item of CURATED_KEYWORDS) {
+    for (const keyword of item.keywords) {
+      // Skip if keyword already appears to be in a markdown link (preceded by [)
+      // This is a simple heuristic - if the line has [keyword] it's likely already linked
+      const escapedKeyword = keyword.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      
+      // Match keyword that is NOT already inside square brackets
+      // Use a flexible pattern that allows for colons after the keyword
+      // Negative lookbehind for [ ensures we're not inside an existing link
+      // Only consume trailing spaces and colons, NOT newlines (to preserve line breaks)
+      const pattern = new RegExp(`(?<!\\[)\\b${escapedKeyword}\\b[ ]*(?::[ ]*)?`, 'gi');
+      result = result.replace(pattern, `[${keyword}](${item.url})`);
     }
-
-    const url = findUrlForKeyword(match[0]);
-    if (url) {
-      // Add the keyword as a link
-      parts.push(
-        <a
-          key={`link-${match.index}`}
-          href={url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="text-blue-600 dark:text-blue-400 hover:underline"
-        >
-          {match[0]}
-        </a>
-      );
-    } else {
-      parts.push(match[0]);
-    }
-
-    lastIndex = match.index + match[0].length;
   }
-
-  // Add remaining text
-  if (lastIndex < textCopy.length) {
-    parts.push(textCopy.slice(lastIndex));
-  }
-
-  return parts.length > 0 ? parts : [text];
+  
+  return result;
 }
 
 export function MessageBubble({ role, content, isStuck, isInsufficientInfo }: MessageBubbleProps) {
   const isUser = role === 'user';
+  
+  // Preprocess content to convert keywords to markdown links
+  const processedContent = preprocessContent(content);
 
   return (
     <div
@@ -164,6 +145,7 @@ export function MessageBubble({ role, content, isStuck, isInsufficientInfo }: Me
           </div>
           <div className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed space-y-2">
             <ReactMarkdown
+              remarkPlugins={[remarkGfm]}
               components={{
                 h2: ({ children }) => (
                   <h2
@@ -173,7 +155,7 @@ export function MessageBubble({ role, content, isStuck, isInsufficientInfo }: Me
                       isInsufficientInfo && "text-amber-800 dark:text-amber-200"
                     )}
                   >
-                    {typeof children === 'string' ? parseTextWithLinks(children) : children}
+                    {children}
                   </h2>
                 ),
                 strong: ({ children }) => (
@@ -184,7 +166,7 @@ export function MessageBubble({ role, content, isStuck, isInsufficientInfo }: Me
                       isInsufficientInfo && "text-amber-800 dark:text-amber-200"
                     )}
                   >
-                    {typeof children === 'string' ? parseTextWithLinks(children) : children}
+                    {children}
                   </strong>
                 ),
                 ul: ({ children }) => (
@@ -197,29 +179,56 @@ export function MessageBubble({ role, content, isStuck, isInsufficientInfo }: Me
                     {children}
                   </ol>
                 ),
-                li: ({ children }) => (
-                  <li className="pl-4 relative before:content-['•'] before:absolute before:left-0 text-zinc-700 dark:text-zinc-300">
-                    {typeof children === 'string' ? parseTextWithLinks(children) : children}
-                  </li>
-                ),
+                li: ({ children, node }) => {
+                  // Check if this is a paragraph-style list item (has nested paragraphs)
+                  // This allows ReactMarkdown to properly parse URLs within list items
+                  const hasParagraphChildren = node?.children?.some(
+                    (child: any) => child.type === 'paragraph'
+                  );
+                  
+                  return (
+                    <li className="pl-4 relative before:content-['•'] before:absolute before:left-0 text-zinc-700 dark:text-zinc-300">
+                      {hasParagraphChildren ? children : <p className="text-zinc-700 dark:text-zinc-300">{children}</p>}
+                    </li>
+                  );
+                },
                 p: ({ children }) => (
                   <p className="text-zinc-700 dark:text-zinc-300">
-                    {typeof children === 'string' ? parseTextWithLinks(children) : children}
+                    {children}
                   </p>
                 ),
-                a: ({ href, children }) => (
-                  <a 
-                    href={href} 
-                    target="_blank" 
-                    rel="noopener noreferrer"
-                    className="text-blue-600 dark:text-blue-400 hover:underline"
-                  >
-                    {children}
-                  </a>
-                ),
+                a: ({ href, children }) => {
+                  // Check if this link text matches any curated keyword
+                  const linkText = typeof children === 'string' ? children.trim() : '';
+                  const isCuratedKeyword = CURATED_KEYWORDS.some(item => 
+                    item.keywords.some(kw => 
+                      linkText.toLowerCase().includes(kw.toLowerCase())
+                    )
+                  );
+                  
+                  // Check if this URL exactly matches any curated keyword URL
+                  const isAllowedUrl = CURATED_KEYWORDS.some(item => item.url === href);
+                  
+                  // Allow link if: keyword text matches OR URL is in curated list
+                  // This handles cases where LLM uses variations
+                  if (!isCuratedKeyword && !isAllowedUrl) {
+                    return <span>{children}</span>;
+                  }
+                  
+                  return (
+                    <a 
+                      href={href} 
+                      target="_blank" 
+                      rel="noopener noreferrer"
+                      className="text-blue-600 dark:text-blue-400 hover:underline"
+                    >
+                      {children}
+                    </a>
+                  );
+                },
               }}
             >
-              {content}
+              {processedContent}
             </ReactMarkdown>
           </div>
         </div>
