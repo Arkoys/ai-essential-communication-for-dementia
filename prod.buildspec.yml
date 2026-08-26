@@ -42,6 +42,7 @@ phases:
           --build-arg VITE_FIREBASE_FIRESTORE_DATABASE_ID="${VITE_FIREBASE_FIRESTORE_DATABASE_ID:-(default)}" \
           --build-arg VITE_FIREBASE_MEASUREMENT_ID="$VITE_FIREBASE_MEASUREMENT_ID" \
           --build-arg LLM_PROVIDER="${LLM_PROVIDER:-harvard}" \
+          --build-arg GEMINI_API_KEY="$GEMINI_API_KEY" \          
           --tag "$FRONTEND_REPOSITORY_URI:$IMAGE_TAG" \
           --tag "$FRONTEND_REPOSITORY_URI:latest" \
           .
