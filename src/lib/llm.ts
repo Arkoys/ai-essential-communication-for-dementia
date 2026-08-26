@@ -18,6 +18,7 @@ import {
 } from './resources';
 import { runClassificationPipeline, buildSystemPrompt } from './classifier/pipeline';
 import { TEMPLATE_SYSTEM_ADDONS } from './templates';
+import { CONDENSED_MODE_ADDON } from './promptSettings';
 import type { ResponsePath } from './classifier/types';
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
@@ -400,7 +401,8 @@ export async function generateClinicalResponseWithHistory(
   history: { role: 'user' | 'assistant'; content: string }[],
   currentPhase: string | null,
   isStuck?: boolean,
-  forceProvider?: string
+  forceProvider?: string,
+  responseMode?: 'basic' | 'condensed'
 ): Promise<GenerationResult> {
   try {
     // Load prompt settings from Firestore
@@ -458,12 +460,21 @@ export async function generateClinicalResponseWithHistory(
     const knowledgeContent = promptSettings.knowledgeContent || DEFAULT_KNOWLEDGE_CONTENT;
     const baseSystemPrompt = promptSettings.systemPrompt || SYSTEM_PROMPT;
     
-    const fullSystemPrompt = templateAddon 
+    // Build the base prompt with template addon
+    let promptWithTemplate = templateAddon 
       ? buildSystemPrompt(
           buildMinimaxSystemPrompt(baseSystemPrompt, knowledgeContent),
           templateAddon
         )
       : buildMinimaxSystemPrompt(baseSystemPrompt, knowledgeContent);
+    
+    // Add condensed mode addon if enabled (only in normal mode, not stuck mode)
+    const effectiveResponseMode = responseMode === 'condensed' && !isStuck ? 'condensed' : 'basic';
+    if (effectiveResponseMode === 'condensed') {
+      promptWithTemplate = `${promptWithTemplate}\n\n${CONDENSED_MODE_ADDON}`;
+    }
+    
+    const fullSystemPrompt = promptWithTemplate;
 
     // ===== STEP 3: Generate Response Based on Provider =====
     

@@ -141,7 +141,29 @@ rigid scripts,
 judgmental language,
 excessive verbosity,
 overwhelming information,
-or replacing clinical judgment.`;
+  or replacing clinical judgment.`;
+
+// CONDENSED MODE ADDON
+// Condensed mode reduces repetition and length while keeping the core structure
+export const CONDENSED_MODE_ADDON = `
+
+## CONDENSED MODE INSTRUCTIONS
+In condensed mode, respond with maximum efficiency:
+• NEVER repeat or restate the user's question
+• NEVER re-explain context that's already established
+• Go straight to the answer with minimal preamble
+• Keep section headers (##) only if they add clarity
+• Use bullet points sparingly - only for actual lists
+• Target 80-120 words maximum
+• No redundant acknowledgments or summaries
+• Direct, actionable, no-fluff responses
+• Keep only what's essential from the toolkit guidance
+
+Example structure:
+- Direct answer or key point (1-2 sentences max)
+- Essential details/bullets if needed
+- Single specific next step or action
+`;
 
 // Interface for prompt settings
 export interface PromptSettings {
@@ -154,6 +176,7 @@ export interface PromptSettings {
   suggestedPrompts: string[];
   knowledgeContent: string;
   coachingResource: string;
+  responseMode: 'basic' | 'condensed';
 }
 
 // Get default settings
@@ -168,6 +191,7 @@ export function getDefaultPromptSettings(): PromptSettings {
     suggestedPrompts: DEFAULT_SUGGESTED_PROMPTS,
     knowledgeContent: DEFAULT_KNOWLEDGE_CONTENT,
     coachingResource: DEFAULT_COACHING_RESOURCE,
+    responseMode: 'basic',
   };
 }
 

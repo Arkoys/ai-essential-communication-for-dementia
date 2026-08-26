@@ -1,7 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Loader2, AlertTriangle } from 'lucide-react';
+import { Send, Loader2, AlertTriangle, Minimize2, AlignLeft } from 'lucide-react';
 import { MessageBubble } from './MessageBubble';
 import { anonymize } from '../lib/anonymizer';
+
+type ResponseMode = 'basic' | 'condensed';
+
+const RESPONSE_MODE_KEY = 'responseMode';
 
 interface Message {
   id: string;
@@ -19,6 +23,8 @@ interface ChatWindowProps {
   isLoading: boolean;
   suggestedPrompts?: string[];
   provider?: string;
+  responseMode?: ResponseMode;
+  onResponseModeChange?: (mode: ResponseMode) => void;
 }
 
 export function ChatWindow({
@@ -31,10 +37,27 @@ export function ChatWindow({
   const [input, setInput] = useState('');
   const [isStuck, setIsStuck] = useState(false);
   const [isInputFocused, setIsInputFocused] = useState(false);
+  const [responseMode, setResponseMode] = useState<ResponseMode>(() => {
+    // Load from localStorage or default to 'basic'
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem(RESPONSE_MODE_KEY);
+      return (saved === 'condensed' ? 'condensed' : 'basic') as ResponseMode;
+    }
+    return 'basic';
+  });
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   // Check if this is a new session (no messages yet)
   const isNewSession = messages.length === 0;
+
+  // Toggle response mode and persist
+  const toggleResponseMode = () => {
+    const newMode = responseMode === 'basic' ? 'condensed' : 'basic';
+    setResponseMode(newMode);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem(RESPONSE_MODE_KEY, newMode);
+    }
+  };
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -148,6 +171,33 @@ export function ChatWindow({
                 <span>Do not input identifiable patient data (PHI). Inputs are anonymized.</span>
               </div>
             </div>
+
+            {/* Response Mode Toggle - always visible */}
+            <div className="flex justify-center mt-4">
+              <button
+                onClick={toggleResponseMode}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs transition-all ${
+                  responseMode === 'condensed'
+                    ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-700'
+                    : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-700 dark:hover:text-zinc-300 hover:bg-zinc-100 dark:hover:bg-zinc-800 border border-zinc-200 dark:border-zinc-700'
+                }`}
+                title={responseMode === 'condensed' ? 'Switch to Basic mode' : 'Switch to Condensed mode'}
+              >
+                {responseMode === 'condensed' ? (
+                  <>
+                    <Minimize2 size={14} />
+                    <span className="font-medium">Condensed</span>
+                    <span className="text-zinc-400">/ Basic</span>
+                  </>
+                ) : (
+                  <>
+                    <AlignLeft size={14} />
+                    <span>Basic</span>
+                    <span className="text-zinc-400">/ Condensed</span>
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         ) : (
           <div className="pt-12 md:pt-14 pb-24 md:pb-28">
@@ -215,6 +265,29 @@ export function ChatWindow({
               </div>
             </form>
             <div className="flex items-center justify-between mt-1.5 md:mt-2 px-1">
+              {/* Response mode toggle */}
+              <button
+                onClick={toggleResponseMode}
+                className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-[10px] transition-all ${
+                  responseMode === 'condensed'
+                    ? 'bg-blue-100 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border border-blue-300 dark:border-blue-700'
+                    : 'text-zinc-400 dark:text-zinc-500 hover:text-zinc-600 dark:hover:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                }`}
+                title={responseMode === 'condensed' ? 'Switch to Basic mode' : 'Switch to Condensed mode'}
+              >
+                {responseMode === 'condensed' ? (
+                  <>
+                    <Minimize2 size={12} />
+                    <span className="font-medium">Condensed</span>
+                  </>
+                ) : (
+                  <>
+                    <AlignLeft size={12} />
+                    <span>Basic</span>
+                  </>
+                )}
+              </button>
+              
               <span className="text-[10px] text-zinc-400 dark:text-zinc-500 uppercase tracking-wider">
                 {providerDisplayName}
               </span>

@@ -117,6 +117,9 @@ export default function App() {
   const [promptSettings, setPromptSettings] = useState<PromptSettings | null>(null);
   const [isNavMapOpen, setIsNavMapOpen] = useState(false);
   
+  // Response mode state (condensed vs basic)
+  const [responseMode, setResponseMode] = useState<'basic' | 'condensed'>('basic');
+  
   // Dual mode state
   const [dualMessages, setDualMessages] = useState<{
     primary: Message[];
@@ -463,12 +466,20 @@ export default function App() {
       // Track detected template for debugging
       let detectedTemplate: ResponsePath = 'assess_template_1_or_3';
       
+      // Get responseMode from localStorage
+      const savedResponseMode = typeof window !== 'undefined' 
+        ? (localStorage.getItem('responseMode') || 'basic')
+        : 'basic';
+      const responseMode = savedResponseMode as 'basic' | 'condensed';
+      
       try {
         const result = await generateClinicalResponseWithHistory(
           content,
           currentMessages,
           effectivePhase,
-          isStuck
+          isStuck,
+          undefined,
+          responseMode
         );
 
         // Extract response and template from result
