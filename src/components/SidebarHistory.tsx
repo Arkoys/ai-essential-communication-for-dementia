@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, MessageSquare, LogOut, Trash2, Settings, X, ChevronLeft, ChevronRight, Columns2 } from 'lucide-react';
+import { Plus, MessageSquare, LogOut, Trash2, Settings, X, ChevronLeft, ChevronRight, Columns2, Minimize2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '../lib/utils';
 
@@ -8,7 +8,7 @@ interface Conversation {
   title: string;
   createdAt: Date;
   updatedAt: Date;
-  type?: 'normal' | 'dual';
+  type?: 'normal' | 'dual' | 'compare';
   primaryProvider?: string;
   secondaryProvider?: string;
 }
@@ -19,6 +19,7 @@ interface SidebarHistoryProps {
   onSelect: (id: string) => void;
   onNew: () => void;
   onNewDual: () => void;
+  onNewCompare: () => void;
   onDelete: (id: string) => void;
   onLogout: () => void;
   userEmail: string;
@@ -33,6 +34,7 @@ export function SidebarHistory({
   onSelect,
   onNew,
   onNewDual,
+  onNewCompare,
   onDelete,
   onLogout,
   userEmail,
@@ -43,8 +45,9 @@ export function SidebarHistory({
   const [isOpen, setIsOpen] = useState(true);
 
   // Separate conversations by type
-  const normalConversations = conversations.filter(c => c.type !== 'dual');
+  const normalConversations = conversations.filter(c => c.type !== 'dual' && c.type !== 'compare');
   const dualConversations = conversations.filter(c => c.type === 'dual');
+  const compareConversations = conversations.filter(c => c.type === 'compare');
 
   return (
     <div
@@ -109,6 +112,17 @@ export function SidebarHistory({
             <Columns2 size={18} />
             {isOpen && "Dual Mode"}
           </button>
+          
+          <button
+            onClick={() => {
+              onNewCompare();
+              onClose?.();
+            }}
+            className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white px-2 py-2 rounded-lg font-medium transition-colors"
+          >
+            <Minimize2 size={18} />
+            {isOpen && "Compare Mode"}
+          </button>
         </div>
       </div>
 
@@ -148,6 +162,53 @@ export function SidebarHistory({
                   {isOpen && (
                     <div className="truncate text-sm font-medium">
                       {conv.title || 'Dual Mode'}
+                      <div className="text-xs text-zinc-400 dark:text-zinc-500 font-normal">
+                        {format(conv.updatedAt, 'MMM d, yyyy')}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {isOpen && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onDelete(conv.id);
+                    }}
+                    className="opacity-0 group-hover:opacity-100 text-zinc-400 hover:text-red-500 transition-all p-1"
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                )}
+              </div>
+            ))}
+
+            {/* Compare conversations section */}
+            {compareConversations.length > 0 && isOpen && (
+              <div className="text-xs font-semibold text-blue-600 dark:text-blue-400 uppercase tracking-wider mb-1 px-3 mt-4">
+                Compare Mode
+              </div>
+            )}
+            {compareConversations.map((conv) => (
+              <div
+                key={conv.id}
+                className={cn(
+                  "group flex items-center justify-between px-3 py-2 rounded-lg cursor-pointer transition-colors",
+                  activeId === conv.id
+                    ? "bg-blue-100 dark:bg-blue-900/30 text-blue-900 dark:text-blue-200"
+                    : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-100 dark:hover:bg-zinc-900"
+                )}
+                onClick={() => {
+                  onSelect(conv.id);
+                  onClose?.();
+                }}
+              >
+                <div className="flex items-center gap-3 overflow-hidden">
+                  <Minimize2 size={16} className="shrink-0 text-blue-500" />
+                  
+                  {isOpen && (
+                    <div className="truncate text-sm font-medium">
+                      {conv.title || 'Compare Mode'}
                       <div className="text-xs text-zinc-400 dark:text-zinc-500 font-normal">
                         {format(conv.updatedAt, 'MMM d, yyyy')}
                       </div>

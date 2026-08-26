@@ -6,6 +6,8 @@ import { SidebarHistory } from './components/SidebarHistory';
 import { ChatWindow } from './components/ChatWindow';
 import { DualChatView } from './components/DualChatView';
 import { DualInputForm } from './components/DualInputForm';
+import { CompareChatView } from './components/CompareChatView';
+import { CompareInputForm } from './components/CompareInputForm';
 import { NavigationMap, PhaseName } from './components/NavigationMap';
 import { AdminPanel } from './components/AdminPanel';
 import { SettingsPanel } from './components/SettingsPanel';
@@ -34,7 +36,7 @@ interface Conversation {
   title: string;
   createdAt: Date;
   updatedAt: Date;
-  type: 'normal' | 'dual';
+  type: 'normal' | 'dual' | 'compare';
   primaryProvider?: string;
   secondaryProvider?: string;
 }
@@ -129,6 +131,16 @@ export default function App() {
     primary: boolean;
     secondary: boolean;
   }>({ primary: false, secondary: false });
+  
+  // Compare mode state (basic vs condensed)
+  const [compareMessages, setCompareMessages] = useState<{
+    basic: Message[];
+    condensed: Message[];
+  }>({ basic: [], condensed: [] });
+  const [compareLoading, setCompareLoading] = useState<{
+    basic: boolean;
+    condensed: boolean;
+  }>({ basic: false, condensed: false });
   
   // Dev template badge state
   const { 
@@ -336,8 +348,9 @@ export default function App() {
     return () => unsubscribe();
   }, [activeConversationId, user, isAuthReady]);
 
-  // Determine if current conversation is dual mode
+  // Determine if current conversation is dual or compare mode
   const isDualMode = activeConversation?.type === 'dual';
+  const isCompareMode = activeConversation?.type === 'compare';
   const primaryProvider = activeConversation?.primaryProvider || promptSettings?.provider || 'harvard';
   const secondaryProvider = activeConversation?.secondaryProvider || promptSettings?.dualModeProvider || 'minimax';
 
@@ -370,8 +383,8 @@ export default function App() {
     }
     
     // Get provider settings with fallback defaults
-    const primaryProvider = promptSettings?.provider || 'harvard';
-    const secondaryProvider = promptSettings?.dualModeProvider || 'minimax';
+    const primaryProv = promptSettings?.provider || 'harvard';
+    const secondaryProv = promptSettings?.dualModeProvider || 'minimax';
     
     try {
       const title = `Dual Mode - ${new Date().toLocaleTimeString()}`;
@@ -381,8 +394,8 @@ export default function App() {
         userId: user.uid,
         title,
         type: 'dual',
-        primaryProvider: primaryProvider,
-        secondaryProvider: secondaryProvider,
+        primaryProvider: primaryProv,
+        secondaryProvider: secondaryProv,
         createdAt: serverTimestamp(),
         updatedAt: serverTimestamp(),
       });
@@ -402,6 +415,113 @@ export default function App() {
       console.log('State updated, conversation should be active now');
     } catch (error) {
       console.error("Error creating dual conversation:", error);
+    }
+  };
+
+  // Create a new compare conversation
+  const handleNewCompareConversation = async () => {
+    if (!user) return;
+    
+    try {
+      const title = `Compare Mode - ${new Date().toLocaleTimeString()}`;
+      
+      const convRef = await addDoc(collection(db, 'conversations'), {
+        userId: user.uid,
+        title,
+        type: 'compare',
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+      });
+      
+      // Clear compare messages and set new conversation
+      setCompareMessages({ basic: [], condensed: [] });
+      setCompareLoading({ basic: false, condensed: false });
+      setActiveConversationId(convRef.id);
+      setMessages([]);
+      setCurrentPhase(null);
+      setCurrentStep(null);
+      setLastDetectedPhase(null);
+      setIsSidebarOpen(false);
+    } catch (error) {
+      console.error("Error creating compare conversation:", error);
+    }
+  };
+
+  // Compare mode: send message with both basic and condensed responses
+  const handleCompareSendMessage = async (content: string, isStuck?: boolean) => {
+    if (!user) return;
+    
+    // Add user message to both views
+    const userMsgBasic: Message = {
+      id: `user-${Date.now()}-basic`,
+      role: 'user',
+      content,
+      createdAt: new Date(),
+    };
+    const userMsgCondensed: Message = {
+      id: `user-${Date.now()}-condensed`,
+      role: 'user',
+      content,
+      createdAt: new Date(),
+    };
+    
+    setCompareMessages(prev => ({
+      basic: [...prev.basic, userMsgBasic],
+      condensed: [...prev.condensed, userMsgCondensed],
+    }));
+    
+    setCompareLoading({ basic: true, condensed: true });
+
+    try {
+      // Run both response modes in parallel
+      const [basicResponse, condensedResponse] = await Promise.allSettled([
+        generateClinicalResponseWithHistory(content, [], null, isStuck, primaryProvider, 'basic'),
+        generateClinicalResponseWithHistory(content, [], null, isStuck, primaryProvider, 'condensed'),
+      ]);
+
+      // Handle basic response
+      if (basicResponse.status === 'fulfilled') {
+        const assistantMsgBasic: Message = {
+          id: `assistant-${Date.now()}-basic`,
+          role: 'assistant',
+          content: basicResponse.value.response,
+          createdAt: new Date(),
+        };
+        setCompareMessages(prev => ({ ...prev, basic: [...prev.basic, assistantMsgBasic] }));
+      } else {
+        const errorMsgBasic: Message = {
+          id: `error-${Date.now()}-basic`,
+          role: 'assistant',
+          content: `❌ Error: ${basicResponse.reason?.message || 'Failed to get basic response'}`,
+          createdAt: new Date(),
+        };
+        setCompareMessages(prev => ({ ...prev, basic: [...prev.basic, errorMsgBasic] }));
+      }
+      setCompareLoading(prev => ({ ...prev, basic: false }));
+
+      // Handle condensed response
+      if (condensedResponse.status === 'fulfilled') {
+        const assistantMsgCondensed: Message = {
+          id: `assistant-${Date.now()}-condensed`,
+          role: 'assistant',
+          content: condensedResponse.value.response,
+          createdAt: new Date(),
+        };
+        setCompareMessages(prev => ({ ...prev, condensed: [...prev.condensed, assistantMsgCondensed] }));
+      } else {
+        const errorMsgCondensed: Message = {
+          id: `error-${Date.now()}-condensed`,
+          role: 'assistant',
+          content: `❌ Error: ${condensedResponse.reason?.message || 'Failed to get condensed response'}`,
+          createdAt: new Date(),
+        };
+        setCompareMessages(prev => ({ ...prev, condensed: [...prev.condensed, errorMsgCondensed] }));
+      }
+      setCompareLoading(prev => ({ ...prev, condensed: false }));
+
+    } catch (error) {
+      console.error("Error in compare mode:", error);
+      setCompareLoading({ basic: false, condensed: false });
     }
   };
 
@@ -752,6 +872,7 @@ export default function App() {
           onSelect={handleSelectConversation}
           onNew={handleNewConversation}
           onNewDual={handleNewDualConversation}
+          onNewCompare={handleNewCompareConversation}
           onDelete={handleDeleteConversation}
           onLogout={logOut}
           userEmail={user.email}
@@ -768,6 +889,7 @@ export default function App() {
             <Stethoscope size={20} className="text-orange-600 dark:text-orange-400" />
             Dementia Assistant
             {isDualMode && <span className="text-xs bg-purple-100 text-purple-700 px-2 py-0.5 rounded">Dual</span>}
+            {isCompareMode && <span className="text-xs bg-blue-100 text-blue-700 px-2 py-0.5 rounded">Compare</span>}
           </div>
           <button onClick={() => setIsSidebarOpen(true)} className="p-2 -mr-2 text-zinc-600 dark:text-zinc-400">
             <Menu size={24} />
@@ -787,7 +909,24 @@ export default function App() {
         </div>
         
         <div className="flex-1 relative min-h-0">
-          {isDualMode ? (
+          {isCompareMode ? (
+            <>
+              <CompareChatView
+                primaryMessages={compareMessages.basic}
+                secondaryMessages={compareMessages.condensed}
+                primaryLoading={compareLoading.basic}
+                secondaryLoading={compareLoading.condensed}
+              />
+              {/* Compare mode input overlay */}
+              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-white via-white to-transparent dark:from-zinc-950 dark:via-zinc-950 p-2 md:p-4 pt-8 md:pt-12">
+                <CompareInputForm
+                  onSendMessage={handleCompareSendMessage}
+                  basicLoading={compareLoading.basic}
+                  condensedLoading={compareLoading.condensed}
+                />
+              </div>
+            </>
+          ) : isDualMode ? (
             <>
               <DualChatView
                 primaryMessages={dualMessages.primary}
