@@ -85,7 +85,7 @@ export function ChatWindow({
             <div className="flex items-start justify-center px-4 md:px-8">
               <div className="w-full max-w-2xl space-y-0">
                 <div className={[
-                  "bg-white dark:bg-zinc-900 rounded-2xl shadow-sm transition-all border-2 border-orange-500 overflow-hidden",
+                  "bg-white dark:bg-zinc-900 rounded-2xl shadow-sm transition-all border-2 border-zinc-400 overflow-hidden",
                   isStuck 
                     ? "ring-4 ring-green-200 dark:ring-green-800/30" 
                     : !isInputFocused 
@@ -103,7 +103,7 @@ export function ChatWindow({
                       onFocus={() => setIsInputFocused(true)}
                       onBlur={() => setIsInputFocused(false)}
                       placeholder={isStuck ? "Describe your stuck point..." : "Ask the coach…"}
-                      className={`w-full bg-transparent py-3 md:py-4 pl-4 md:pl-6 pr-12 md:pr-14 outline-none text-sm md:text-base text-zinc-800 dark:text-zinc-200 ${!isInputFocused && !isStuck ? 'placeholder:text-orange-500/70 animate-pulse-text' : 'placeholder:text-zinc-400'}`}
+                      className={`w-full bg-transparent py-3 md:py-4 pl-4 md:pl-6 pr-12 md:pr-14 outline-none text-sm md:text-base text-zinc-800 dark:text-zinc-200 ${!isInputFocused && !isStuck ? 'placeholder:text-zinc-400 animate-pulse-text' : 'placeholder:text-zinc-400'}`}
                       disabled={isLoading}
                     />
                     <button
@@ -114,7 +114,7 @@ export function ChatWindow({
                       <Send size={16} />
                     </button>
                   </form>
-                  <div className="border-t border-orange-200 dark:border-orange-800/30">
+                  <div className="border-t border-zinc-200 dark:border-zinc-700/30">
                     <div className="flex flex-col gap-1.5 p-3">
                       {suggestedPrompts.map((prompt, index) => (
                         <button
