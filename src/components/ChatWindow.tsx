@@ -65,77 +65,87 @@ export function ChatWindow({
     <div className="flex flex-col h-full bg-white dark:bg-zinc-950">
       <div className="flex-1 overflow-y-auto relative z-0">
         {messages.length === 0 ? (
-          <div className="h-full flex flex-col justify-center">
+          <div className="h-full flex flex-col justify-center items-center px-4 md:px-8">
             {/* Intro text */}
-            <div className="px-8 md:px-16 lg:px-24 pb-2">
-              <div className="max-w-2xl mx-auto text-center">
-                <h1 className="text-2xl md:text-3xl font-semibold text-zinc-700 dark:text-zinc-200 leading-tight">
-                  Welcome to the Cognitive Care Coach
-                </h1>
-                <p className="text-base md:text-lg text-zinc-500 dark:text-zinc-400 leading-relaxed mt-3">
-                  Practical communication support for primary care conversations about cognitive health, memory concerns, and dementia.
-                </p>
-                <p className="text-sm md:text-base text-zinc-600 dark:text-zinc-400 font-medium mt-3">
-                  What would help today?
-                </p>
+            <div className="max-w-3xl mx-auto text-center mb-8">
+              <h1 className="text-2xl md:text-3xl font-semibold text-zinc-700 dark:text-zinc-200 leading-tight">
+                Welcome to the Cognitive Care Coach
+              </h1>
+              <p className="text-base md:text-lg text-zinc-500 dark:text-zinc-400 leading-relaxed mt-3">
+                Practical communication support for primary care conversations about cognitive health, memory concerns, and dementia.
+              </p>
+            </div>
+            
+            {/* Prompt window - standalone input */}
+            <div className="w-full max-w-3xl mb-4">
+              <div className={[
+                "bg-white dark:bg-zinc-900 rounded-2xl shadow-sm transition-all border-2",
+                isStuck 
+                  ? "border-green-500 ring-4 ring-green-200 dark:ring-green-800/30" 
+                  : !isInputFocused 
+                    ? "border-orange-500 animate-pulse-border" 
+                    : "border-orange-500"
+              ].join(" ")}>
+                <form
+                  onSubmit={handleSubmit}
+                  className="relative flex items-center"
+                >
+                  <input
+                    type="text"
+                    value={input}
+                    onChange={(e) => setInput(e.target.value)}
+                    onFocus={() => setIsInputFocused(true)}
+                    onBlur={() => setIsInputFocused(false)}
+                    placeholder={isStuck ? "Describe your stuck point..." : "Ask the coach…"}
+                    className={`w-full bg-transparent py-3 md:py-4 pl-4 md:pl-6 pr-12 md:pr-14 outline-none text-sm md:text-base text-zinc-800 dark:text-zinc-200 ${!isInputFocused && !isStuck ? 'placeholder:text-zinc-400 animate-pulse-text' : 'placeholder:text-zinc-400'}`}
+                    disabled={isLoading}
+                  />
+                  <button
+                    type="submit"
+                    disabled={!input.trim() || isLoading}
+                    className="absolute right-2 p-1.5 md:p-2 rounded-xl bg-orange-500 text-white hover:bg-orange-600 disabled:opacity-50 disabled:hover:bg-orange-500 transition-colors"
+                  >
+                    <Send size={16} />
+                  </button>
+                </form>
               </div>
             </div>
             
-            {/* Centered input form + example prompts as single block */}
-            <div className="flex items-start justify-center px-4 md:px-8">
-              <div className="w-full max-w-2xl space-y-0">
-                <div className={[
-                  "bg-white dark:bg-zinc-900 rounded-2xl shadow-sm transition-all border-2 border-zinc-400 overflow-hidden",
-                  isStuck 
-                    ? "ring-4 ring-green-200 dark:ring-green-800/30" 
-                    : !isInputFocused 
-                      ? "animate-pulse-border" 
-                      : ""
-                ].join(" ")}>
-                  <form
-                    onSubmit={handleSubmit}
-                    className="relative flex items-center"
-                  >
-                    <input
-                      type="text"
-                      value={input}
-                      onChange={(e) => setInput(e.target.value)}
-                      onFocus={() => setIsInputFocused(true)}
-                      onBlur={() => setIsInputFocused(false)}
-                      placeholder={isStuck ? "Describe your stuck point..." : "Ask the coach…"}
-                      className={`w-full bg-transparent py-3 md:py-4 pl-4 md:pl-6 pr-12 md:pr-14 outline-none text-sm md:text-base text-zinc-800 dark:text-zinc-200 ${!isInputFocused && !isStuck ? 'placeholder:text-zinc-400 animate-pulse-text' : 'placeholder:text-zinc-400'}`}
-                      disabled={isLoading}
-                    />
+            {/* Prompt template pairs - each line has 2 prompts fitting content width */}
+            <div className="flex flex-col items-center gap-3">
+              {Array.from({ length: Math.ceil(suggestedPrompts.length / 2) }).map((_, rowIndex) => {
+                const prompt1 = suggestedPrompts[rowIndex * 2];
+                const prompt2 = suggestedPrompts[rowIndex * 2 + 1];
+                return (
+                  <div key={`pair-${rowIndex}`} className="flex gap-3">
                     <button
-                      type="submit"
-                      disabled={!input.trim() || isLoading}
-                      className="absolute right-2 p-1.5 md:p-2 rounded-xl bg-orange-500 text-white hover:bg-orange-600 disabled:opacity-50 disabled:hover:bg-orange-500 transition-colors"
+                      onClick={() => handleSuggestedPrompt(prompt1)}
+                      className="shrink-0 text-left px-4 py-3 rounded-xl bg-zinc-100 dark:bg-zinc-800/50 text-zinc-700 dark:text-zinc-200 text-sm hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors border border-zinc-200 dark:border-zinc-700 whitespace-nowrap"
+                      disabled={isLoading}
                     >
-                      <Send size={16} />
+                      {prompt1}
                     </button>
-                  </form>
-                  <div className="border-t border-zinc-200 dark:border-zinc-700/30">
-                    <div className="flex flex-col gap-1.5 p-3">
-                      {suggestedPrompts.map((prompt, index) => (
-                        <button
-                          key={index}
-                          onClick={() => handleSuggestedPrompt(prompt)}
-                          className="text-left px-3 py-2.5 rounded-lg bg-zinc-50 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200 text-sm hover:bg-zinc-100 dark:hover:bg-zinc-700 transition-colors"
-                          disabled={isLoading}
-                        >
-                          {prompt}
-                        </button>
-                      ))}
-                    </div>
+                    {prompt2 ? (
+                      <button
+                        onClick={() => handleSuggestedPrompt(prompt2)}
+                        className="shrink-0 text-left px-4 py-3 rounded-xl bg-zinc-100 dark:bg-zinc-800/50 text-zinc-700 dark:text-zinc-200 text-sm hover:bg-zinc-200 dark:hover:bg-zinc-700 transition-colors border border-zinc-200 dark:border-zinc-700 whitespace-nowrap"
+                        disabled={isLoading}
+                      >
+                        {prompt2}
+                      </button>
+                    ) : (
+                      <div className="shrink-0 w-[200px]" />
+                    )}
                   </div>
-                </div>
-                {/* PHI Warning */}
-                <div className="flex justify-center pt-3">
-                  <div className="inline-flex items-center gap-2 text-[10px] md:text-xs text-amber-600 dark:text-amber-500 bg-amber-50 dark:bg-amber-950/30 py-1.5 px-3 rounded-full border border-amber-200 dark:border-amber-900/50">
-                    <AlertTriangle size={12} className="shrink-0" />
-                    <span>Do not input identifiable patient data (PHI). Inputs are anonymized.</span>
-                  </div>
-                </div>
+                );
+              })}
+            </div>
+            
+            {/* PHI Warning */}
+            <div className="flex justify-center mt-6">
+              <div className="inline-flex items-center gap-2 text-[10px] md:text-xs text-amber-600 dark:text-amber-500 bg-amber-50 dark:bg-amber-950/30 py-1.5 px-3 rounded-full border border-amber-200 dark:border-amber-900/50">
+                <AlertTriangle size={12} className="shrink-0" />
+                <span>Do not input identifiable patient data (PHI). Inputs are anonymized.</span>
               </div>
             </div>
           </div>
