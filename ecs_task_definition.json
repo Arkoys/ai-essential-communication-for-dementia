@@ -15,7 +15,7 @@
       "name": "ecllm_app",
       "image": "895735450791.dkr.ecr.us-west-2.amazonaws.com/ecllm_app:latest",
       "essential": true,
-      "cpu": 500,
+      "cpu": 250,
       "memoryReservation": 256,
       "portMappings": [
         {
@@ -50,7 +50,7 @@
       "logConfiguration": {
         "logDriver": "awslogs",
         "options": {
-          "awslogs-group": "/ecs/ecllm_app",
+          "awslogs-group": "ecllm_app",
           "awslogs-region": "us-west-2",
           "awslogs-stream-prefix": "ecs"
         }
@@ -60,7 +60,7 @@
       "name": "ecllm_backend",
       "image": "895735450791.dkr.ecr.us-west-2.amazonaws.com/ecllm_backend:latest",
       "essential": true,
-      "cpu": 500,
+      "cpu": 250,
       "memoryReservation": 256,
       "portMappings": [
         {
@@ -87,7 +87,7 @@
       "secrets": [
         {
           "name": "HARVARD_OPENAI_KEY",
-          "valueFrom": "arn:aws:ssm:us-west-2:895735450791:parameter/ecllm/HARVARD_OPENAI_KEY"
+          "valueFrom": "arn:aws:secretsmanager:us-west-2:895735450791:secret:ecllmapp-fRw0Wn:HARVARD_OPENAI_KEY::"
         }
       ],
       "healthCheck": {
@@ -103,7 +103,7 @@
       "logConfiguration": {
         "logDriver": "awslogs",
         "options": {
-          "awslogs-group": "/ecs/ecllm_backend",
+          "awslogs-group": "ecllm_backend",
           "awslogs-region": "us-west-2",
           "awslogs-stream-prefix": "ecs"
         }
