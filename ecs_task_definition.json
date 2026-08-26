@@ -1,7 +1,7 @@
 {
   "family": "ecllm_app",
   "taskRoleArn": "arn:aws:iam::895735450791:role/Aria_API_ECS_Task",
-  "executionRoleArn": "arn:aws:iam::895735450791:role/ecsTaskExecutionRole",
+  "executionRoleArn": "arn:aws:iam::895735450791:role/Aria_API_ECS_Task",
   "networkMode": "bridge",
   "requiresCompatibilities": [
     "EC2"
