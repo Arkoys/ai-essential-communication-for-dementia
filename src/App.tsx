@@ -908,7 +908,7 @@ export default function App() {
           />
         </div>
         
-        <div className="flex-1 relative min-h-0">
+        <div className="flex-1 relative min-h-0 pt-6">
           {isCompareMode ? (
             <>
               <CompareChatView

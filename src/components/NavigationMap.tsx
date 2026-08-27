@@ -152,13 +152,13 @@ export function NavigationMap({
         </div>
       )}
 
-      <div
-        className={cn(
-          'overflow-hidden transition-all duration-300',
-          isOpen ? 'max-h-[400px] opacity-100' : 'max-h-0 opacity-0'
-        )}
-      >
-        <div className="overflow-x-auto px-4 py-2">
+        <div
+          className={cn(
+            'overflow-hidden transition-all duration-300',
+            isOpen ? 'max-h-[280px] opacity-100' : 'max-h-0 opacity-0'
+          )}
+        >
+          <div className="overflow-x-auto px-4 py-2">
 
           {/* Main grid with consistent columns */}
           <div
