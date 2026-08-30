@@ -18,11 +18,35 @@ const app = express();
 
 // Configuration from environment variables
 const HARVARD_API_KEY = process.env.HARVARD_OPENAI_KEY || '';
-const HARVARD_BASE_URL = process.env.HARVARD_OPENAI_BASE_URL || 'https://go.apis.huit.harvard.edu/ais-openai-direct/v2/';
+const HARVARD_BASE_URL = (
+  process.env.HARVARD_OPENAI_BASE_URL ||
+  'https://go.apis.huit.harvard.edu/ais-openai-direct/v2/'
+).replace(/\/+$/, '');
 const PORT = process.env.PORT || 3001;
 
 // Models that don't support temperature parameter
 const NO_TEMP_MODELS = ['gpt-5.5', 'gpt-5.4', 'gpt-5.4-mini', 'gpt-5.4-nano'];
+
+function harvardUrl(path) {
+  return `${HARVARD_BASE_URL}/${path.replace(/^\/+/, '')}`;
+}
+
+function extractResponseText(data) {
+  if (typeof data.output_text === 'string') {
+    return data.output_text;
+  }
+
+  for (const item of data.output || []) {
+    if (item.type !== 'message') continue;
+    for (const content of item.content || []) {
+      if (content.type === 'output_text' && typeof content.text === 'string') {
+        return content.text;
+      }
+    }
+  }
+
+  return '';
+}
 
 // Middleware
 app.use(cors());
@@ -33,7 +57,7 @@ app.get('/health', (req, res) => {
   res.json({ status: 'ok', service: 'harvard-proxy' });
 });
 
-// Harvard Chat Completions Proxy
+// Chat-shaped compatibility endpoint backed by Harvard's Responses API.
 app.post('/api/harvard', async (req, res) => {
   // Check for API key
   if (!HARVARD_API_KEY) {
@@ -48,16 +72,24 @@ app.post('/api/harvard', async (req, res) => {
       return res.status(400).json({ error: 'Invalid request: messages array required' });
     }
 
-    // Build request body dynamically based on model capabilities
+    // Translate the existing frontend chat contract to the Responses API.
     const harvardRequest = {
       model: model || 'gpt-4o-mini',
-      messages: messages,
+      input: messages,
       stream: stream ?? false,
     };
 
-    // Forward response_format for structured outputs support
-    if (response_format !== undefined) {
-      harvardRequest.response_format = response_format;
+    if (response_format?.type === 'json_schema' && response_format.json_schema) {
+      harvardRequest.text = {
+        format: {
+          type: 'json_schema',
+          name: response_format.json_schema.name,
+          schema: response_format.json_schema.schema,
+          strict: response_format.json_schema.strict ?? true,
+        },
+      };
+    } else if (response_format?.type === 'json_object') {
+      harvardRequest.text = { format: { type: 'json_object' } };
     }
 
     // Only include temperature for models that support it
@@ -66,18 +98,18 @@ app.post('/api/harvard', async (req, res) => {
     }
 
     if (max_tokens !== undefined) {
-      harvardRequest.max_tokens = max_tokens;
+      harvardRequest.max_output_tokens = max_tokens;
     }
 
-    console.log('[Harvard Proxy] Forwarding chat completion request to:', `${HARVARD_BASE_URL}chat/completions`);
+    const endpoint = harvardUrl('/responses');
+    console.log('[Harvard Proxy] Forwarding compatibility request to:', endpoint);
 
     // Forward request to Harvard API
-    const response = await fetch(`${HARVARD_BASE_URL}chat/completions`, {
+    const response = await fetch(endpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'api-key': HARVARD_API_KEY,
-        'Authorization': `Bearer ${HARVARD_API_KEY}`,
+        'X-Api-Key': HARVARD_API_KEY,
       },
       body: JSON.stringify(harvardRequest),
     });
@@ -106,7 +138,27 @@ app.post('/api/harvard', async (req, res) => {
       response.body.pipe(res);
     } else {
       const data = await response.json();
-      res.json(data);
+      const content = extractResponseText(data);
+
+      if (!content) {
+        return res.status(502).json({ error: 'Harvard API returned no text output' });
+      }
+
+      // Preserve the Chat Completions-shaped response expected by the frontend.
+      res.json({
+        id: data.id,
+        object: 'chat.completion',
+        created: data.created_at,
+        model: data.model,
+        choices: [
+          {
+            index: 0,
+            message: { role: 'assistant', content },
+            finish_reason: data.status === 'completed' ? 'stop' : data.status,
+          },
+        ],
+        usage: data.usage,
+      });
     }
 
   } catch (error) {
@@ -146,15 +198,15 @@ app.post('/api/harvardResponses', async (req, res) => {
       harvardRequest.instructions = instructions;
     }
 
-    console.log('[Harvard Proxy] Forwarding responses API request to:', `${HARVARD_BASE_URL}responses`);
+    const endpoint = harvardUrl('/responses');
+    console.log('[Harvard Proxy] Forwarding responses API request to:', endpoint);
 
     // Forward request to Harvard Responses API
-    const response = await fetch(`${HARVARD_BASE_URL}responses`, {
+    const response = await fetch(endpoint, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'api-key': HARVARD_API_KEY,
-        'Authorization': `Bearer ${HARVARD_API_KEY}`,
+        'X-Api-Key': HARVARD_API_KEY,
       },
       body: JSON.stringify(harvardRequest),
     });

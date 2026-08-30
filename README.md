@@ -413,35 +413,17 @@ docker compose -f docker-compose.prod.yml build --no-cache
 docker compose -f docker-compose.prod.yml up
 ```
 
-## 🚀 Deployment (Netlify)
+## 🚀 Automated deployment (AWS)
 
-This application uses Netlify Functions to proxy API calls and avoid CORS issues.
+To deploy:
 
-### 1. Set Environment Variables in Netlify Dashboard
+- Click the [deployment link](https://api.aria.ariadnelabs.net/deployaria/ecllmapp).
+  - This starts the build process. The repository's `from-july-revamp` branch is checked out and built as Docker images. Changes from another branch must first be merged into `from-july-revamp`.
+  - A successfully submitted deployment displays: `Sucessfully submitted aria deployment job`.
+  - Do not click the deployment link multiple times, because each click starts a separate deployment job.
+- The updated version will be deployed within a few minutes and become available on the [EC Dementia site](https://ec-dementia-app.ariadnelabs.net/).
 
-Go to **Site Settings → Environment Variables** and add:
-
-For **Harvard Provider:**
-- `HARVARD_OPENAI_KEY` = your Harvard API key
-- `HARVARD_OPENAI_BASE_URL` = https://go.apis.huit.harvard.edu/ais-openai-direct/v2/
-
-### 2. Deploy
-
-The `netlify.toml` file is pre-configured to:
-- Build the React app
-- Deploy serverless functions from `netlify/functions/`
-- Redirect `/api/*` requests to Netlify Functions
-
-Simply push to your connected Git repository and Netlify will:
-1. Run `npm run build`
-2. Deploy functions from `netlify/functions/`
-3. Serve the app from `dist/`
-
-### 3. Verify Harvard Provider Setup
-
-After deployment, check the **AI Provider** tab in Prompt Settings to confirm:
-- Harvard is shown as configured
-- When `LLM_PROVIDER=harvard`, responses will be routed through the proxy function
+In the future, this job could be scheduled to run nightly and automatically deploy the latest version of `from-july-revamp`.
 
 ## 🤝 In Collaboration With
 

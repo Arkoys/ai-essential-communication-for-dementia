@@ -5,6 +5,7 @@ import {defineConfig, loadEnv} from 'vite';
 
 export default defineConfig(({mode}) => {
   const env = loadEnv(mode, '.', '');
+  const apiProxyTarget = env.API_PROXY_TARGET || 'http://localhost:3001';
   return {
     plugins: [react(), tailwindcss()],
     define: {
@@ -33,9 +34,8 @@ export default defineConfig(({mode}) => {
       // For local development without Docker: http://localhost:3001
       proxy: {
         '/api': {
-          target: process.env.VITE_API_PROXY_URL || 'http://localhost:3001',
+          target: apiProxyTarget,
           changeOrigin: true,
-          rewrite: (path) => path,
         },
       },
     },

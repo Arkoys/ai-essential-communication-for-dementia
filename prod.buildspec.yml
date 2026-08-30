@@ -1,0 +1,80 @@
+version: 0.2
+
+env:
+  variables:
+    AWS_DEFAULT_REGION: us-west-2
+    FRONTEND_REPOSITORY_URI: 895735450791.dkr.ecr.us-west-2.amazonaws.com/ecllm_app
+    BACKEND_REPOSITORY_URI: 895735450791.dkr.ecr.us-west-2.amazonaws.com/ecllm_backend
+
+phases:
+  pre_build:
+    commands:
+      - echo Logging in to Amazon ECR...
+      - aws ecr get-login-password --region "$AWS_DEFAULT_REGION" | docker login --username AWS --password-stdin 895735450791.dkr.ecr.us-west-2.amazonaws.com
+      - echo Logging in to Docker Hub...
+      - aws s3 cp s3://ariadnelabs-admin/docker.key docker.key
+      - docker login --username ssrinathal --password-stdin < docker.key
+      - rm -f docker.key
+      - COMMIT_HASH=$(echo "${CODEBUILD_RESOLVED_SOURCE_VERSION:-latest}" | cut -c 1-7)
+      - IMAGE_TAG=${COMMIT_HASH:-latest}
+      - echo Building image tag "$IMAGE_TAG"
+      - test -n "$VITE_FIREBASE_API_KEY"
+      - test -n "$VITE_FIREBASE_AUTH_DOMAIN"
+      - test -n "$VITE_FIREBASE_PROJECT_ID"
+      - test -n "$VITE_FIREBASE_STORAGE_BUCKET"
+      - test -n "$VITE_FIREBASE_MESSAGING_SENDER_ID"
+      - test -n "$VITE_FIREBASE_APP_ID"
+
+  build:
+    commands:
+      - echo Build started on `date`
+      - echo Building the frontend production image...
+      - |
+        frontend_env_file=.env.production.local
+        trap 'rm -f "$frontend_env_file"' EXIT
+        printf '%s\n' \
+          "GEMINI_API_KEY=${GEMINI_API_KEY-}" \
+          "MINIMAX_API_KEY=${MINIMAX_API_KEY-}" \
+          "MINIMAX_MODEL=${MINIMAX_MODEL:-MiniMax-Text-01}" \
+          "MINIMAX_API_BASE_URL=${MINIMAX_API_BASE_URL:-https://api.minimaxi.chat}" \
+          "MINIMAX_API_PATH=${MINIMAX_API_PATH:-/v1/chat/completions}" \
+          > "$frontend_env_file"
+
+        docker build \
+          --target production \
+          --build-arg VITE_API_PROXY_URL=/api \
+          --build-arg VITE_FIREBASE_API_KEY="$VITE_FIREBASE_API_KEY" \
+          --build-arg VITE_FIREBASE_AUTH_DOMAIN="$VITE_FIREBASE_AUTH_DOMAIN" \
+          --build-arg VITE_FIREBASE_PROJECT_ID="$VITE_FIREBASE_PROJECT_ID" \
+          --build-arg VITE_FIREBASE_STORAGE_BUCKET="$VITE_FIREBASE_STORAGE_BUCKET" \
+          --build-arg VITE_FIREBASE_MESSAGING_SENDER_ID="$VITE_FIREBASE_MESSAGING_SENDER_ID" \
+          --build-arg VITE_FIREBASE_APP_ID="$VITE_FIREBASE_APP_ID" \
+          --build-arg VITE_FIREBASE_FIRESTORE_DATABASE_ID="${VITE_FIREBASE_FIRESTORE_DATABASE_ID:-(default)}" \
+          --build-arg VITE_FIREBASE_MEASUREMENT_ID="$VITE_FIREBASE_MEASUREMENT_ID" \
+          --build-arg LLM_PROVIDER="${LLM_PROVIDER:-harvard}" \
+          --tag "$FRONTEND_REPOSITORY_URI:$IMAGE_TAG" \
+          --tag "$FRONTEND_REPOSITORY_URI:latest" \
+          .
+      - echo Building the backend image...
+      - |
+        docker build \
+          --file backend/Dockerfile \
+          --tag "$BACKEND_REPOSITORY_URI:$IMAGE_TAG" \
+          --tag "$BACKEND_REPOSITORY_URI:latest" \
+          .
+
+  post_build:
+    commands:
+      - echo Build completed on `date`
+      - echo Pushing frontend images...
+      - docker push "$FRONTEND_REPOSITORY_URI:$IMAGE_TAG"
+      - docker push "$FRONTEND_REPOSITORY_URI:latest"
+      - echo Pushing backend images...
+      - docker push "$BACKEND_REPOSITORY_URI:$IMAGE_TAG"
+      - docker push "$BACKEND_REPOSITORY_URI:latest"
+      - printf '[{"name":"ecllm_app","imageUri":"%s"},{"name":"ecllm_backend","imageUri":"%s"}]' "$FRONTEND_REPOSITORY_URI:$IMAGE_TAG" "$BACKEND_REPOSITORY_URI:$IMAGE_TAG" > imagedefinitions.json
+
+artifacts:
+  files:
+    - imagedefinitions.json
+    - ecs_task_definition.json
