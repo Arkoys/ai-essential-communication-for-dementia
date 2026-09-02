@@ -61,7 +61,7 @@ async function main() {
   try {
     // ---- 2. pgvector ----
     console.log('— pgvector —');
-    const ext = await client.query<{ extname: string }[]>(
+    const ext = await client.query<{ extname: string }>(
       `SELECT extname FROM pg_extension WHERE extname = 'vector'`,
     );
     if (ext.rowCount && ext.rowCount > 0) pass('pgvector extension installed');
@@ -69,7 +69,7 @@ async function main() {
 
     // ---- 3. tables ----
     console.log('— schema —');
-    const { rows: tables } = await client.query<{ table_name: string }[]>(
+    const { rows: tables } = await client.query<{ table_name: string }>(
       `SELECT table_name FROM information_schema.tables WHERE table_schema = 'public'`,
     );
     const tableSet = new Set(tables.map((t) => t.table_name));
@@ -80,7 +80,7 @@ async function main() {
 
     // ---- 4. migrations applied ----
     console.log('— migrations —');
-    const mig = await client.query<{ id: string }[]>(
+    const mig = await client.query<{ id: string }>(
       `SELECT id FROM __migrations ORDER BY id`,
     );
     if (mig.rowCount && mig.rowCount > 0) {
@@ -93,7 +93,7 @@ async function main() {
     console.log('— better auth schema —');
     // The `account` table should have the unique (issuer, account_id) index
     // and a NOT-NULL `issuer` column (required by better-auth@1.7+).
-    const acctCols = await client.query<{ column_name: string; is_nullable: string }[]>(
+    const acctCols = await client.query<{ column_name: string; is_nullable: string }>(
       `SELECT column_name, is_nullable FROM information_schema.columns
         WHERE table_name = 'account' AND table_schema = 'public'`,
     );
@@ -105,7 +105,7 @@ async function main() {
     } else {
       fail('account.issuer column missing — better-auth@1.7+ requires it');
     }
-    const idx = await client.query<{ indexname: string }[]>(
+    const idx = await client.query<{ indexname: string }>(
       `SELECT indexname FROM pg_indexes
         WHERE tablename = 'account' AND indexname = 'account_issuer_account_idx'`,
     );
