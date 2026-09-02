@@ -27,6 +27,13 @@ interface ChatWindowProps {
   provider?: string;
   responseMode?: ResponseMode;
   onResponseModeChange?: (mode: ResponseMode) => void;
+  /**
+   * True while the parent is fetching this conversation's message history
+   * from the database. When set, the empty-state "Welcome" copy is
+   * swapped for a centered spinner so the user has feedback during the
+   * fetch. The input form below remains interactive.
+   */
+  isFetchingHistory?: boolean;
 }
 
 export function ChatWindow({
@@ -35,6 +42,7 @@ export function ChatWindow({
   isLoading,
   suggestedPrompts = DEFAULT_SUGGESTED_PROMPTS,
   provider = 'harvard',
+  isFetchingHistory = false,
 }: ChatWindowProps) {
   const [input, setInput] = useState('');
   const [isStuck, setIsStuck] = useState(false);
@@ -91,15 +99,40 @@ export function ChatWindow({
       <div className="flex-1 overflow-y-auto relative z-0">
         {messages.length === 0 ? (
           <div className="h-full flex flex-col justify-center items-center px-4 md:px-8">
-            {/* Intro text */}
-            <div className="max-w-3xl mx-auto text-center mb-8">
-              <h1 className="text-2xl md:text-3xl font-semibold text-zinc-700 dark:text-zinc-200 leading-tight">
-                Welcome to the Cognitive Care Coach
-              </h1>
-              <p className="text-base md:text-lg text-zinc-500 dark:text-zinc-400 leading-relaxed mt-3">
-                Practical communication support for primary care conversations about cognitive health, memory concerns, and dementia.
-              </p>
-            </div>
+            {/* Centered loader while the database is being fetched.
+                Replaces the welcome copy; the input form and prompts
+                below remain visible and interactive. */}
+            {isFetchingHistory ? (
+              <div
+                role="status"
+                aria-live="polite"
+                aria-label="Loading conversation"
+                className="flex flex-col items-center gap-3 px-6 py-5 mb-8 rounded-2xl bg-white/80 dark:bg-zinc-900/80 shadow-sm border border-zinc-200 dark:border-zinc-800"
+              >
+                <Loader2
+                  size={40}
+                  className="animate-spin text-orange-500 dark:text-orange-400"
+                />
+                <div className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
+                  Loading conversation…
+                </div>
+                <div className="text-xs text-zinc-500 dark:text-zinc-400">
+                  Fetching message history from the database
+                </div>
+              </div>
+            ) : (
+              <>
+                {/* Intro text */}
+                <div className="max-w-3xl mx-auto text-center mb-8">
+                  <h1 className="text-2xl md:text-3xl font-semibold text-zinc-700 dark:text-zinc-200 leading-tight">
+                    Welcome to the Cognitive Care Coach
+                  </h1>
+                  <p className="text-base md:text-lg text-zinc-500 dark:text-zinc-400 leading-relaxed mt-3">
+                    Practical communication support for primary care conversations about cognitive health, memory concerns, and dementia.
+                  </p>
+                </div>
+              </>
+            )}
             
             {/* Prompt window - standalone input */}
             <div className="w-full max-w-3xl mb-4">

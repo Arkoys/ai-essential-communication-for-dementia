@@ -10,6 +10,13 @@ interface CompareChatViewProps {
   secondaryMessages: { id: string; role: 'user' | 'assistant'; content: string }[];
   primaryLoading: boolean;
   secondaryLoading: boolean;
+  /**
+   * True while the parent is fetching the conversation's message history
+   * from the database. When set, we overlay a centered spinning wheel so
+   * the user has feedback that something is happening during the
+   * otherwise-empty "Waiting for input" state.
+   */
+  isFetchingHistory?: boolean;
 }
 
 export function CompareChatView({
@@ -17,9 +24,10 @@ export function CompareChatView({
   secondaryMessages,
   primaryLoading,
   secondaryLoading,
+  isFetchingHistory = false,
 }: CompareChatViewProps) {
   return (
-    <div className="flex h-full gap-1 bg-white dark:bg-zinc-950">
+    <div className="relative flex h-full gap-1 bg-white dark:bg-zinc-950">
       {/* Basic Mode (Left) */}
       <div className="flex-1 flex flex-col min-w-0 border-r border-zinc-200 dark:border-zinc-800">
         {/* Header */}
@@ -117,6 +125,36 @@ export function CompareChatView({
           )}
         </div>
       </div>
+
+      {/* Centered loader while we're fetching history from the database.
+          Only shown when both panes are empty — once the user starts
+          chatting (or messages have arrived), the per-pane "Generating"
+          spinners take over and the overlay goes away. */}
+      {isFetchingHistory &&
+        primaryMessages.length === 0 &&
+        secondaryMessages.length === 0 && (
+          <div
+            role="status"
+            aria-live="polite"
+            aria-label="Loading conversation"
+            className="absolute inset-0 z-10 flex items-center justify-center bg-white/70 dark:bg-zinc-950/70 backdrop-blur-[2px]"
+          >
+            <div className="flex flex-col items-center gap-3 px-6 py-5 rounded-2xl bg-white/80 dark:bg-zinc-900/80 shadow-sm border border-zinc-200 dark:border-zinc-800">
+              <div className="relative">
+                <Loader2
+                  size={40}
+                  className="animate-spin text-orange-500 dark:text-orange-400"
+                />
+              </div>
+              <div className="text-sm font-medium text-zinc-700 dark:text-zinc-200">
+                Loading conversation…
+              </div>
+              <div className="text-xs text-zinc-500 dark:text-zinc-400">
+                Fetching message history from the database
+              </div>
+            </div>
+          </div>
+        )}
     </div>
   );
 }

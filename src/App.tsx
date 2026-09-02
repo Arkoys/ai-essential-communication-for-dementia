@@ -178,6 +178,19 @@ export default function App() {
     condensed: boolean;
   }>({ basic: false, condensed: false });
 
+  // True while we're fetching a compare conversation's message history
+  // from the database. Drives the centered loader in CompareChatView so
+  // the user has feedback during the fetch (separate from per-pane
+  // generation spinners which show while the LLM is responding).
+  const [isFetchingCompareMessages, setIsFetchingCompareMessages] = useState(false);
+
+  // True while we're fetching a normal conversation's message history
+  // from the database AND that history was not already prefetched.
+  // Drives the centered loader in ChatWindow. Prefetched conversations
+  // skip this — they render instantly from the in-memory cache and a
+  // spinner would just flash for one frame.
+  const [isFetchingNormalMessages, setIsFetchingNormalMessages] = useState(false);
+
   const {
     currentTemplate,
     tier1Complete,
@@ -370,6 +383,23 @@ export default function App() {
     setActiveConversationId(id);
     setIsSidebarOpen(false);
 
+    const convType = conversations.find((c) => c.id === id)?.type ?? 'normal';
+    // Surface a centered spinner for compare conversations while we wait
+    // on the database. Normal / dual paths don't need this — their
+    // existing "Welcome" / "Waiting for input" copy is fine for an empty
+    // chat, but a compare conversation has two empty panes side by side
+    // and looks broken without feedback.
+    const showCompareLoader = convType === 'compare';
+    if (showCompareLoader) setIsFetchingCompareMessages(true);
+
+    // For normal conversations, only show the loader if the messages
+    // aren't already in the prefetch cache. Prefetched conversations
+    // resolve inside `fetchMessagesForConversation` synchronously and
+    // would otherwise flash the spinner for a single frame.
+    const showNormalLoader =
+      convType === 'normal' && !messagesCacheRef.current.has(id);
+    if (showNormalLoader) setIsFetchingNormalMessages(true);
+
     // Load messages for the selected conversation and route them to the
     // correct state slot. Normal conversations use `setMessages`; dual
     // conversations route by `lane` (primary/secondary); compare
@@ -377,7 +407,6 @@ export default function App() {
     // collected into the single-pane `messages` array as a fallback.
     try {
       const all = await fetchMessagesForConversation(id);
-      const convType = conversations.find((c) => c.id === id)?.type ?? 'normal';
 
       if (convType === 'dual') {
         const primary = all.filter((m) => m.lane === 'primary');
@@ -394,6 +423,9 @@ export default function App() {
       }
     } catch (error) {
       console.warn('listMessages failed:', error);
+    } finally {
+      if (showCompareLoader) setIsFetchingCompareMessages(false);
+      if (showNormalLoader) setIsFetchingNormalMessages(false);
     }
   };
 
@@ -1040,6 +1072,7 @@ export default function App() {
                 secondaryMessages={compareMessages.condensed}
                 primaryLoading={compareLoading.basic}
                 secondaryLoading={compareLoading.condensed}
+                isFetchingHistory={isFetchingCompareMessages}
               />
               <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-white via-white to-transparent dark:from-zinc-950 dark:via-zinc-950 p-2 md:p-4 pt-8 md:pt-12">
                 <CompareInputForm
@@ -1074,6 +1107,7 @@ export default function App() {
               isLoading={isLoading}
               suggestedPrompts={promptSettings?.suggestedPrompts || DEFAULT_SUGGESTED_PROMPTS}
               provider={primaryProvider}
+              isFetchingHistory={isFetchingNormalMessages}
             />
           )}
         </div>
