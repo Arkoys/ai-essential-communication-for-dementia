@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { authClient, useSession } from '@/lib/auth-client';
 import {
   listConversations,
@@ -258,7 +258,93 @@ export default function App() {
     };
   }, [user, isAuthReady]);
 
+  // In-memory message cache. Keyed by conversation id. Holds the
+  // most-recently-fetched message list for a conversation so a click on
+  // the sidebar can render immediately without waiting on the network.
+  //
+  // The cache is intentionally in-process only — we never persist message
+  // contents because they may include clinical / PHI-adjacent content.
+  //
+  // `inflight` tracks in-flight prefetches so a click can't trigger a
+  // duplicate request if the prefetch is still resolving.
+  const messagesCacheRef = useRef<Map<string, Message[]>>(new Map());
+  const inflightMessagesRef = useRef<Map<string, Promise<Message[]>>>(new Map());
+
+  // Reset cache whenever the authed user changes (login / logout / switch).
+  useEffect(() => {
+    messagesCacheRef.current.clear();
+    inflightMessagesRef.current.clear();
+  }, [user?.uid]);
+
+  const fetchMessagesForConversation = useCallback(async (id: string): Promise<Message[]> => {
+    const cached = messagesCacheRef.current.get(id);
+    if (cached) return cached;
+    const inflight = inflightMessagesRef.current.get(id);
+    if (inflight) return inflight;
+    const promise = (async () => {
+      try {
+        const { messages: rows } = await listMessages(id);
+        return rows.map(apiMsgToLocal);
+      } finally {
+        inflightMessagesRef.current.delete(id);
+      }
+    })();
+    inflightMessagesRef.current.set(id, promise);
+    const all = await promise;
+    messagesCacheRef.current.set(id, all);
+    return all;
+  }, []);
+
+  // First three normal conversations in current sidebar order. We slice
+  // after filtering so we match what SidebarHistory actually renders.
+  const prefetchIds = useMemo(() => {
+    const normals = conversations.filter((c) => c.type !== 'dual' && c.type !== 'compare');
+    return normals.slice(0, 3).map((c) => c.id);
+  }, [conversations]);
+
+  // Prefetch the first three normal conversations as soon as the
+  // conversation list is available. Each conversation is fetched
+  // independently; a failure on one does not block the others.
+  useEffect(() => {
+    if (!isAuthReady || !user) return;
+    if (prefetchIds.length === 0) return;
+
+    let cancelled = false;
+    (async () => {
+      await Promise.all(
+        prefetchIds.map(async (id) => {
+          if (messagesCacheRef.current.has(id)) return;
+          try {
+            const all = await fetchMessagesForConversation(id);
+            if (cancelled) return;
+            // Only store if we still care about it (the conversation may
+            // have been deleted or pushed out of the top three).
+            if (!prefetchIds.includes(id)) {
+              messagesCacheRef.current.delete(id);
+              return;
+            }
+            messagesCacheRef.current.set(id, all);
+          } catch (err) {
+            if (!cancelled) {
+              console.warn('Prefetch messages failed for', id, err);
+            }
+          }
+        })
+      );
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [prefetchIds, fetchMessagesForConversation, isAuthReady, user]);
+
   const activeConversation = conversations.find(c => c.id === activeConversationId) || null;
+
+  // Drop a cached conversation's messages so the next fetch returns the
+  // fresh state. Called after writes that mutate message history.
+  const invalidateMessagesCache = useCallback((id: string) => {
+    messagesCacheRef.current.delete(id);
+    inflightMessagesRef.current.delete(id);
+  }, []);
 
   // Refresh a single conversation (used after writes).
   const refreshConversation = useCallback(async (id: string) => {
@@ -290,9 +376,8 @@ export default function App() {
     // conversations route by `lane` (basic/condensed). Unknown lanes are
     // collected into the single-pane `messages` array as a fallback.
     try {
-      const { messages: rows } = await listMessages(id);
+      const all = await fetchMessagesForConversation(id);
       const convType = conversations.find((c) => c.id === id)?.type ?? 'normal';
-      const all = rows.map(apiMsgToLocal);
 
       if (convType === 'dual') {
         const primary = all.filter((m) => m.lane === 'primary');
@@ -374,6 +459,7 @@ export default function App() {
     try {
       await deleteConversation(id);
       setConversations(prev => prev.filter(c => c.id !== id));
+      messagesCacheRef.current.delete(id);
       if (activeConversationId === id) handleNewConversation();
     } catch (error) {
       console.warn('Failed to delete conversation:', error);
@@ -401,7 +487,6 @@ export default function App() {
         }
         setActiveConversationId(convId);
       }
-
       // Optimistic user message in local state so the UI flips immediately.
       const localUserId = `local-user-${Date.now()}-${Math.random().toString(36).slice(2)}`;
       setMessages(prev => [...prev, {
@@ -422,10 +507,10 @@ export default function App() {
           clientId: localUserId,
         });
         persistedUserId = message.id;
+        invalidateMessagesCache(convId);
       } catch (err) {
         console.warn('Failed to persist user message:', err);
       }
-
       let finalContent: string;
       let isInsufficientInfo: boolean = false;
       let detectedPhase: PhaseName | null = null;
@@ -485,10 +570,10 @@ export default function App() {
           clientId: localAssistantId,
         });
         void message;
+        invalidateMessagesCache(convId);
       } catch (err) {
         console.warn('Failed to persist assistant message:', err);
       }
-
       // Update framework state via API (best-effort).
       const nextPhase = currentPhase ?? detectedPhase ?? lastDetectedPhase ?? null;
       const nextStep = currentStep ?? detectedStep ?? null;
@@ -557,10 +642,10 @@ export default function App() {
           lane: 'secondary',
         }),
       ]);
+      invalidateMessagesCache(convId);
     } catch (err) {
       console.warn('Failed to persist dual user message:', err);
     }
-
     try {
       const [primaryResponse, secondaryResponse] = await Promise.allSettled([
         generateClinicalResponseWithHistory(content, [], null, isStuck, 'harvard', 'basic'),
@@ -588,6 +673,7 @@ export default function App() {
             clientId: primaryAssistantId,
             lane: 'primary',
           });
+          invalidateMessagesCache(convId);
         } catch (err) {
           console.warn('Failed to persist dual primary assistant message:', err);
         }
@@ -629,6 +715,7 @@ export default function App() {
             clientId: secondaryAssistantId,
             lane: 'secondary',
           });
+          invalidateMessagesCache(convId);
         } catch (err) {
           console.warn('Failed to persist dual secondary assistant message:', err);
         }
@@ -700,10 +787,10 @@ export default function App() {
           lane: 'condensed',
         }),
       ]);
+      invalidateMessagesCache(convId);
     } catch (err) {
       console.warn('Failed to persist compare user message:', err);
     }
-
     try {
       const [basicResponse, condensedResponse] = await Promise.allSettled([
         generateClinicalResponseWithHistory(content, [], null, isStuck, 'harvard', 'basic'),
@@ -731,6 +818,7 @@ export default function App() {
             clientId: basicAssistantId,
             lane: 'basic',
           });
+          invalidateMessagesCache(convId);
         } catch (err) {
           console.warn('Failed to persist compare basic assistant message:', err);
         }
@@ -772,6 +860,7 @@ export default function App() {
             clientId: condensedAssistantId,
             lane: 'condensed',
           });
+          invalidateMessagesCache(convId);
         } catch (err) {
           console.warn('Failed to persist compare condensed assistant message:', err);
         }
