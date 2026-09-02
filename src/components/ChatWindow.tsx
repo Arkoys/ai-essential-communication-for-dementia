@@ -98,7 +98,7 @@ export function ChatWindow({
     <div className="flex flex-col h-full bg-white dark:bg-zinc-950">
       <div className="flex-1 overflow-y-auto relative z-0">
         {messages.length === 0 ? (
-          <div className="h-full flex flex-col justify-center items-center px-4 md:px-8">
+          <div className="h-full flex flex-col justify-center items-center px-4 md:px-8 pt-16 md:pt-24">
             {/* Centered loader while the database is being fetched.
                 Replaces the welcome copy; the input form and prompts
                 below remain visible and interactive. */}
