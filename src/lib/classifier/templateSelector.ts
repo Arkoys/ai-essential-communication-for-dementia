@@ -22,7 +22,9 @@ export function selectTemplate(
     return {
       template: 'delirium_flag',
       tier1_complete: false,
-      templateInstructions: TEMPLATE_INSTRUCTIONS.delirium_flag,
+      // Delirium content lives under the `template_6` key; the explicit
+      // `delirium_flag` system-prompt addon provides an extra safety header.
+      templateInstructions: TEMPLATE_INSTRUCTIONS.template_6,
       systemPromptAddon: TEMPLATE_SYSTEM_ADDONS.delirium_flag
     };
   }
@@ -43,14 +45,17 @@ export function selectTemplate(
   if (response_path === 'assess_template_1_or_3') {
     if (tier1_complete) {
       return {
-        template: 'template_3',
+        // `assess_template_1_or_3` keeps the response_path as the
+        // ResponsePath value, but the underlying template content is
+        // template_3 (full guidance) once Tier 1 is complete.
+        template: 'assess_template_1_or_3',
         tier1_complete: true,
         templateInstructions: TEMPLATE_INSTRUCTIONS.template_3,
         systemPromptAddon: TEMPLATE_SYSTEM_ADDONS.template_3
       };
     } else {
       return {
-        template: 'template_1',
+        template: 'assess_template_1_or_3',
         tier1_complete: false,
         templateInstructions: TEMPLATE_INSTRUCTIONS.template_1,
         systemPromptAddon: TEMPLATE_SYSTEM_ADDONS.template_1

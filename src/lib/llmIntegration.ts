@@ -11,9 +11,9 @@ import {
   runClassificationPipeline,
   buildSystemPrompt,
   getFallbackNotificationMessage,
-  type PipelineResult,
-  type ClassifierProvider
+  type PipelineResult
 } from './classifier/pipeline';
+import { type ClassifierProvider } from './classifier/classifier';
 
 import {
   DEFAULT_SYSTEM_PROMPT,
@@ -28,7 +28,7 @@ import { generateClinicalResponseWithHistory } from './llm';
  */
 export async function processWithClassification(
   userPrompt: string,
-  conversationHistory: { role: string; content: string }[],
+  conversationHistory: { role: 'user' | 'assistant'; content: string }[],
   currentPhase: string | null,
   provider: ClassifierProvider = 'openai',
   isStuck: boolean = false
@@ -47,23 +47,24 @@ export async function processWithClassification(
 
   // Build the system prompt with template addon
   const promptSettings = await getPromptSettings();
-  const basePrompt = isStuck 
+  const basePrompt = isStuck
     ? promptSettings.stuckModePrompt || DEFAULT_SYSTEM_PROMPT
     : promptSettings.systemPrompt || DEFAULT_SYSTEM_PROMPT;
-  
+
   const fullSystemPrompt = buildSystemPrompt(basePrompt, pipelineResult.systemPromptAddon);
 
   // Generate response using the existing LLM function
   let response: string;
-  
+
   try {
-    response = await generateClinicalResponseWithHistory(
+    const result = await generateClinicalResponseWithHistory(
       userPrompt,
       conversationHistory,
       currentPhase,
       isStuck,
       provider
     );
+    response = result.response;
   } catch (error) {
     console.error('Response generation failed:', error);
     response = 'I apologize, but I encountered an error generating a response. Please try again.';

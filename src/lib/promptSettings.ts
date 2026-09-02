@@ -178,7 +178,7 @@ export async function getPromptSettings(): Promise<PromptSettings> {
     const merged: PromptSettings = { ...base, ...(settings ?? {}) };
     for (const key of Object.keys(base) as (keyof PromptSettings)[]) {
       if (merged[key] == null) {
-        (merged as Record<string, unknown>)[key] = base[key];
+        Object.assign(merged as object, { [key]: base[key] });
       }
     }
     return merged;

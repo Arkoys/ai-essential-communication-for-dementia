@@ -7,12 +7,10 @@
  * Add new providers here to keep imports clean.
  */
 
-export { 
-  createHarvardClient, 
-  getHarvardClient, 
-  harvardChatCompletion, 
+export {
+  harvardChatCompletion,
   harvardResponsesAPI,
-  isHarvardConfigured 
+  isHarvardConfigured
 } from './harvard';
 
 // Re-export types for convenience
