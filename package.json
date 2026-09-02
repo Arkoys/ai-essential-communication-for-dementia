@@ -9,6 +9,7 @@
     "start": "next start -p 3000",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
+    "smoke": "node --env-file=.env.local --import tsx scripts/smoke.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "node --env-file=.env.local --import tsx scripts/migrate.ts",
     "db:push": "drizzle-kit push",

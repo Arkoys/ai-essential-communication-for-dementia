@@ -43,6 +43,10 @@ services:
       DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-dementia_coach}
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET}
       BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3000}
+      # Comma-separated admin emails. Both server-side (lib/admin.ts) and
+      # client-side (lib/auth-client.ts) check this list.
+      ADMIN_EMAILS: ${ADMIN_EMAILS:-}
+      NEXT_PUBLIC_ADMIN_EMAILS: ${NEXT_PUBLIC_ADMIN_EMAILS:-}
       # Server-side LLM provider keys — read by /api/* proxies. Never exposed
       # to the client (no NEXT_PUBLIC_ prefix).
       LLM_PROVIDER: ${LLM_PROVIDER:-harvard}

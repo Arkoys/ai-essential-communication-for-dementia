@@ -17,7 +17,7 @@ import { runClassificationPipeline, buildSystemPrompt } from './classifier/pipel
 import { TEMPLATE_SYSTEM_ADDONS } from './templates';
 import { CONDENSED_MODE_ADDON } from './promptSettings';
 import type { ResponsePath } from './classifier/types';
-import { chatCompletion as serverChatCompletion } from './api-client';
+import { chatCompletion as serverChatCompletion } from '@/lib/api-client';
 
 // Harvard configuration
 const HARVARD_DEFAULT_MODEL = 'gpt-4o-mini';

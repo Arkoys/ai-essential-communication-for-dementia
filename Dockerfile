@@ -11,16 +11,18 @@ WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Server-side env. NEXT_PUBLIC_* must be available at build time so the
-# values get inlined into the JS chunks; the rest are only needed at runtime.
-ARG NEXT_PUBLIC_LLM_PROVIDER=harvard
+# Build-time args for client-side values. Only NEXT_PUBLIC_* values are
+# inlined into the JS bundle; everything else stays server-side and is
+# supplied at runtime via the docker-compose environment block.
+ARG NEXT_PUBLIC_ADMIN_EMAILS=
 
 # Server-only LLM provider keys + Postgres URL + Better Auth.
 # (For local dev, copy these from .env.example; for production, supply them
-# as build args or docker-compose env entries.)
+# via docker-compose env entries — never via NEXT_PUBLIC_* build args.)
 ARG DATABASE_URL
 ARG BETTER_AUTH_SECRET
 ARG BETTER_AUTH_URL=http://localhost:3000
+ARG ADMIN_EMAILS=
 ARG LLM_PROVIDER=harvard
 ARG GEMINI_API_KEY
 ARG MINIMAX_API_KEY
@@ -31,10 +33,11 @@ ARG HARVARD_OPENAI_KEY
 ARG HARVARD_OPENAI_BASE_URL=https://go.apis.huit.harvard.edu/ais-openai-direct/v2/
 ARG HARVARD_MODEL=gpt-4o-mini
 
-ENV NEXT_PUBLIC_LLM_PROVIDER=$NEXT_PUBLIC_LLM_PROVIDER \
+ENV NEXT_PUBLIC_ADMIN_EMAILS=$NEXT_PUBLIC_ADMIN_EMAILS \
     DATABASE_URL=$DATABASE_URL \
     BETTER_AUTH_SECRET=$BETTER_AUTH_SECRET \
     BETTER_AUTH_URL=$BETTER_AUTH_URL \
+    ADMIN_EMAILS=$ADMIN_EMAILS \
     LLM_PROVIDER=$LLM_PROVIDER \
     GEMINI_API_KEY=$GEMINI_API_KEY \
     MINIMAX_API_KEY=$MINIMAX_API_KEY \

@@ -10,7 +10,7 @@ import {
   addChunk,
   removeChunk,
 } from '../lib/rag';
-import { ApiKnowledgeChunk } from '../lib/api-client';
+import { ApiKnowledgeChunk } from '@/lib/api-client';
 import { Settings, Database, Plus, Trash2, Loader2 } from 'lucide-react';
 import { DEFAULT_KNOWLEDGE_CHUNKS } from '../lib/defaultData';
 

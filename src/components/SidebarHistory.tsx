@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import { Plus, MessageSquare, LogOut, Trash2, Settings, X, ChevronLeft, ChevronRight, Columns2, Minimize2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { cn } from '../lib/utils';
+import { isAdminEmail } from '@/lib/auth-client';
 
 interface Conversation {
   id: string;
@@ -293,7 +294,7 @@ export function SidebarHistory({
           )}
 
           <div className="flex items-center gap-1">
-            {userEmail === 'victor.negadi@gmail.com' && (
+            {isAdminEmail(userEmail) && (
               <button
                 onClick={() => setShowAdminPanel(true)}
                 className="text-zinc-400 hover:text-orange-500 transition-colors p-1"

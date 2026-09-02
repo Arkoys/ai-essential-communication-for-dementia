@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { authClient, useSession } from '@/lib/auth-client';
+import { authClient, useSession, isAdminFromSession } from '@/lib/auth-client';
 import {
   listConversations,
   createConversation,
@@ -1113,7 +1113,7 @@ export default function App() {
         </div>
       </div>
 
-      {showAdminPanel && user.email === 'victor.negadi@gmail.com' && (
+      {showAdminPanel && isAdminFromSession(session) && (
         <AdminPanel onClose={() => setShowAdminPanel(false)} />
       )}
 

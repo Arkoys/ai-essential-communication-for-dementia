@@ -1,434 +1,362 @@
 # Dementia Clinical Coach
 
-> **🚧 Active migration in progress** — moved from Vite + Firebase to **Next.js 15 + PostgreSQL + Drizzle + Better Auth** (Docker-only deploy). See [Migration status](#migration-status) below.
+A clinical decision support web application for primary care providers. It assists in the recognition, evaluation, and diagnosis of dementia using evidence-based medical resources, grounded in the Ariadne Labs **Essential Communications Toolkit**.
 
-A clinical decision support web application designed for primary care providers. This tool assists them in the recognition, evaluation, and diagnosis of dementia by leveraging evidence-based medical resources.
+This codebase is a **Next.js 15 + PostgreSQL + Drizzle + Better Auth** single-stack app, containerized for Docker. The previous Vite + Firebase architecture has been fully removed.
 
-## 🌟 Features
+---
 
-- **Specialized AI Coach:** A chatbot powered by Google Gemini API (or MiniMax), configured to provide relevant clinical guidance.
-- **Integrated Knowledge Base (RAG):** The assistant uses Retrieval-Augmented Generation (RAG) to ground its responses in the Ariadne Labs "Essential Communications Toolkit".
-- **Consultation Management:** Conversation history is saved and organized by session via Firebase.
-- **Navigation Map:** An interface guiding the practitioner through 3 key phases: Recognition, Evaluation, and Diagnosis.
-- **Stuck Mode:** A special mode for handling relational communication obstacles - skips normal framework structure to address specific stuck points.
-- **Input Validation:** Automatic detection of insufficient user input with guidance for better prompts.
-- **Admin Panel:** A dedicated interface to inject and manage documentary resources (Knowledge Chunks) and configure RAG parameters.
-- **Auto-Seeding:** Automatic injection of default medical resources upon the administrator's first login.
-- **Secure Authentication:** Email/password sign-in (Better Auth) to restrict access.
-- **Responsive Design:** Interface optimized for desktop, tablet, and mobile use.
+## Table of contents
 
-## 🛠️ Tech Stack
+- [Quick start (Docker)](#quick-start-docker)
+- [Local development without Docker](#local-development-without-docker)
+- [Environment variables](#environment-variables)
+- [Project layout](#project-layout)
+- [Database, migrations, and RAG](#database-migrations-and-rag)
+- [Admin management](#admin-management)
+- [Deployment](#deployment)
+- [Key rotation runbook](#key-rotation-runbook)
+- [Troubleshooting](#troubleshooting)
+- [Roadmap](#roadmap)
+- [In collaboration with](#in-collaboration-with)
+- [Security warning (PHI)](#security-warning-phi)
 
-- **Frontend:** Next.js 15 (App Router), React 19, TypeScript
-- **Styling:** Tailwind CSS v4, Lucide React (icons)
-- **Auth:** Better Auth (email/password)
-- **Database:** PostgreSQL 16 + pgvector, accessed via Drizzle ORM
-- **Artificial Intelligence:** Google Gemini API (`@google/genai`), MiniMax, or Harvard HUIT OpenAI gateway for text generation and embeddings.
+---
 
-## 🚀 Installation and Setup
+## Quick start (Docker)
 
-### Prerequisites
-- Node.js 18+
-- A Firebase project with Authentication (Google) and Firestore enabled.
-- API keys for Gemini and/or MiniMax (optional - defaults to Gemini)
+This is the fastest way to get the app running locally for a new developer.
 
-### Steps
+### 1. Prerequisites
 
-1. **Install dependencies:**
-   ```bash
-   npm install
-   ```
+- **Node.js 20+** (matches the Dockerfile)
+- **Docker + Docker Compose v2** — `docker compose version` should print `v2.x`
+- **One LLM provider key** — at least one of `HARVARD_OPENAI_KEY`, `GEMINI_API_KEY`, or `MINIMAX_API_KEY`
 
-2. **Configuration:**
-   
-   Create a `.env.local` file with your API keys:
-   ```env
-   # Gemini API (default LLM)
-   GEMINI_API_KEY=your_gemini_api_key
-   
-   # MiniMax API (alternative LLM - optional)
-   MINIMAX_API_KEY=your_minimax_api_key
-   MINIMAX_MODEL=MiniMax-M2.7
-   MINIMAX_API_BASE_URL=https://api.minimaxi.chat
-   MINIMAX_API_PATH=/v1/chat/completions
-   
-   # LLM Provider selection (default: 'gemini')
-   LLM_PROVIDER=gemini  # or 'minimax'
-   ```
+### 2. Clone and configure
 
-3. **Firebase Configuration:**
-   - Place your `firebase-applet-config.json` at the project root (already included in this project).
-   - Deploy Firestore security rules: `firebase deploy --only firestore:rules`
+```bash
+git clone https://github.com/Arkoys/ai-essential-communication-for-dementia.git
+cd ai-essential-communication-for-dementia
 
-4. **Start the development server:**
-   ```bash
-   npm run dev
-   ```
-   The application will be accessible on port 3000.
+# Copy the template. NEVER commit a populated .env.local.
+cp .env.example .env.local
+```
 
-## 🎯 How It Works
+Edit `.env.local` and fill in at least:
 
-### Normal Mode
-The AI provides structured clinical guidance following the framework:
-1. **Where you are in the framework** - Recognition, Evaluation, or Diagnosis phase
-2. **What needs to happen next** - Immediate next actions
-3. **Communication tools you could use** - Ready-to-use phrases from the toolkit
-4. **Relational considerations** - Stuck Points framework when relevant
+- `BETTER_AUTH_SECRET` — generate with `openssl rand -base64 48`
+- `ADMIN_EMAILS` — comma-separated list of emails that should see the Admin panel
+- One of `HARVARD_OPENAI_KEY`, `GEMINI_API_KEY`, `MINIMAX_API_KEY`
+- Set `NEXT_PUBLIC_ADMIN_EMAILS` to the same value as `ADMIN_EMAILS` (it's safe to ship to the browser — only used to gate the Admin button)
 
-### Stuck Mode
-When the "Stuck" button is activated, the AI focuses on relational communication obstacles:
-- Skips normal framework structure
-- Provides conversational, colleague-like guidance
-- Addresses specific stuck points with acknowledge/get curious/summarize-plan approach
+### 3. Boot the stack
 
-### Insufficient Input Handling
-The system validates user input before LLM calls:
-- Detects vague queries ("help", "patient", "dementia", etc.)
-- Provides specific guidance on what information is needed
-- Skips LLM call for insufficient inputs, saving API costs
+```bash
+docker compose up --build
+```
 
-## 🗄️ Database Schema
+This brings up three services:
+
+| Service | Port | Purpose |
+|---|---|---|
+| `postgres` | 5432 | Postgres 16 with the `pgvector` extension |
+| `migrate` | — | One-shot: applies Drizzle migrations on every stack boot |
+| `next` | 3000 | Next.js dev server with hot reload |
+
+Open **http://localhost:3000** and sign up for the first account.
+
+### 4. Sanity check
+
+```bash
+npm run smoke     # inside the repo, with .env.local loaded
+```
+
+Verifies: env vars present, Postgres reachable, pgvector installed, every required table exists, migrations applied, and Better Auth's `account.issuer` shape is correct.
+
+---
+
+## Local development without Docker
+
+If you already have Postgres + pgvector installed (or want to use a hosted instance like Neon):
+
+```bash
+# 1. Point your env at your own Postgres
+echo 'DATABASE_URL=postgres://user:pass@localhost:5432/dementia_coach' >> .env.local
+
+# 2. Install deps and run migrations
+npm install
+npm run db:migrate
+
+# 3. Start the dev server
+npm run dev
+```
+
+The app reads Postgres directly via `DATABASE_URL`. The rest of the env behaves identically to the Docker flow.
+
+---
+## Environment variables
+
+All variables live in `.env.local` (Docker compose reads the same file). The full template is in [`.env.example`](./.env.example).
+
+### Required
+
+| Variable | Purpose | Used by |
+|---|---|---|
+| `DATABASE_URL` | Postgres connection string | Drizzle, every API route |
+| `BETTER_AUTH_SECRET` | HMAC secret for sessions (≥32 chars) | Better Auth cookie signing |
+| `BETTER_AUTH_URL` | Public URL the app is served at | Better Auth trusted origins / cookies |
+| `ADMIN_EMAILS` | Comma-separated admin allowlist | `lib/admin.ts` (RAG mutations) |
+| `NEXT_PUBLIC_ADMIN_EMAILS` | Mirror of `ADMIN_EMAILS` for the client | `lib/auth-client.ts` (UI gating) |
+| `LLM_PROVIDER` | `harvard` \| `gemini` \| `minimax` | `/api/chat` proxy |
+| One of `HARVARD_OPENAI_KEY` / `GEMINI_API_KEY` / `MINIMAX_API_KEY` | LLM provider credentials | `/api/chat`, `/api/knowledge-chunks` |
+
+### Optional
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `HARVARD_MODEL` | `gpt-4o-mini` | Default Harvard model |
+| `HARVARD_OPENAI_BASE_URL` | Harvard gateway URL | Override for testing |
+| `MINIMAX_MODEL` | `MiniMax-Text-01` | Default MiniMax model |
+| `MINIMAX_API_BASE_URL` | `https://api.minimaxi.chat` | |
+| `MINIMAX_API_PATH` | `/v1/chat/completions` | |
+| `APP_URL` / `NEXT_PUBLIC_APP_URL` | `http://localhost:3000` | Used by Better Auth client during SSR |
+| `NODE_ENV` | `development` | Standard Next.js |
+
+### Security rules
+
+1. **Never** prefix a secret with `NEXT_PUBLIC_`. Next.js inlines `NEXT_PUBLIC_*` into the JS bundle and ships it to every browser. Keep API keys and the Better Auth secret server-side.
+2. The `.env.example` file is committed; `.env.local` is git-ignored.
+3. If a key ever leaks to a public surface, rotate immediately (see [Key rotation runbook](#key-rotation-runbook)).
+
+---
+
+## Project layout
+
+```
+.
+├── docker-compose.yml          # Dev stack: postgres + migrate + next
+├── docker-compose.prod.yml     # Prod stack: postgres + migrate + next + nginx
+├── Dockerfile                  # Multi-stage Next.js standalone build
+├── nginx/                      # Reverse proxy (SSL, gzip, SSE-friendly)
+├── scripts/
+│   ├── migrate.ts              # Idempotent Drizzle migration runner
+│   └── smoke.ts                # `npm run smoke` — env/DB/table check
+├── drizzle/                    # SQL migrations (committed)
+│   ├── 0000_*.sql              # Initial schema (Better Auth + app + pgvector)
+│   ├── 0001_prompt_settings_columns.sql
+│   ├── 0002_message_lane.sql
+│   └── meta/_journal.json      # drizzle-kit journal
+├── lib/                        # Server-only modules (auth, db, admin)
+│   ├── auth.ts                 # Better Auth instance
+│   ├── auth-server.ts          # `requireUser()` helper for route handlers
+│   ├── auth-client.ts          # React hooks + `isAdminFromSession()`
+│   ├── admin.ts                # Server-side admin allowlist
+│   ├── api-client.ts           # Client wrapper over /api/*
+│   ├── db/
+│   │   ├── index.ts            # Drizzle pool (HMR-safe singleton)
+│   │   └── schema.ts           # All tables + enums
+│   ├── env.ts                  # zod-validated server env
+│   ├── prompt-settings-shared.ts
+│   └── promptSettings.ts
+├── src/
+│   ├── app/                    # Next.js App Router
+│   │   ├── layout.tsx
+│   │   ├── page.tsx            # Renders the legacy App.tsx client island
+│   │   ├── healthz/route.ts    # GET /healthz → 200 ok
+│   │   ├── documents/page.tsx  # Static PDF viewer
+│   │   └── api/                # All route handlers (see below)
+│   ├── components/             # ChatWindow, NavigationMap, AdminPanel, …
+│   ├── lib/                    # Client-side libs (llm.ts, rag.ts, classifier/, providers/)
+│   ├── config/                 # safetyRules.json, classificationMatrix.json
+│   └── App.tsx                 # Main client component (single island)
+└── public/                     # Static assets (favicon, PDFs)
+```
+
+### API surface
+
+All routes under `/api/` are Node runtime and require an authenticated session unless noted.
+
+| Route | Methods | Purpose |
+|---|---|---|
+| `/api/auth/[...all]` | GET, POST | Better Auth handlers (sign-up, sign-in, sign-out, session) |
+| `/api/healthz` | GET | Public — returns `200 ok` |
+| `/api/conversations` | GET, POST | List / create conversations |
+| `/api/conversations/[id]` | GET, PATCH, DELETE | Single conversation CRUD |
+| `/api/conversations/[id]/messages` | GET, POST | List / append messages (idempotent via `clientId`) |
+| `/api/prompt-settings` | GET, PUT, DELETE | Per-user prompt configuration |
+| `/api/rag-config` | GET, PUT | Per-user RAG tuning |
+| `/api/rag-search` | POST | Server-side RAG retrieval |
+| `/api/knowledge-chunks` | GET, POST, DELETE | Admin-only RAG corpus management |
+| `/api/chat` | POST | LLM proxy — dispatches to Harvard / MiniMax / Gemini |
+| `/api/harvard` | POST | Direct Harvard gateway proxy (used by classifier) |
+| `/api/harvard-responses` | POST | Harvard Responses API proxy |
+| `/api/gemini` | POST | Direct Gemini proxy |
+| `/api/minimax` | POST | Direct MiniMax proxy |
+
+---
+
+## Database, migrations, and RAG
+
+### Schema overview
+
+10 tables plus the `__migrations` tracker. The Drizzle source is in [`lib/db/schema.ts`](./lib/db/schema.ts).
 
 ```mermaid
 erDiagram
-    APP_SETTINGS {
-        string documentId PK "e.g., 'prompts'"
-        string systemPrompt "Default system prompt"
-        string stuckModePrompt "Stuck mode prompt"
-        string[] suggestedPrompts "Quick-start prompts"
-        string knowledgeContent "Embedded toolkit reference"
-    }
+    USER ||--o{ SESSION : owns
+    USER ||--o{ ACCOUNT : owns
+    USER ||--o{ CONVERSATION : owns
+    CONVERSATION ||--o{ MESSAGE : contains
+    USER ||--|| PROMPT_SETTINGS : "singleton"
+    USER ||--|| RAG_CONFIG : "singleton"
+    KNOWLEDGE_CHUNK }o..|| USER : "managed by admin"
 
-    KNOWLEDGE_CHUNKS {
-        string documentId PK "Auto-generated"
-        string source "e.g., 'Ariadne Labs - Primer'"
-        string content "Raw text of the resource"
-        number[] embedding "Array of floats (vector)"
-    }
-
-    CONVERSATIONS {
-        string conversationId PK "Auto-generated"
-        string userId FK "Owner of the conversation"
-        string title "Conversation title"
-        string currentPhase "Recognition | Evaluation | Diagnosis"
-        string currentStep "Current step within phase"
-        string lastDetectedPhase "Last detected framework phase"
-        timestamp createdAt "Creation time"
-        timestamp updatedAt "Last update time"
-    }
-
-    MESSAGES {
-        string messageId PK "Auto-generated"
-        string conversationId FK "Parent conversation"
-        string role "'user' or 'assistant'"
-        string content "Message text content"
-        boolean isStuck "Message was generated in stuck mode"
-        boolean isInsufficientInfo "Input was insufficient"
-        timestamp createdAt "Creation time"
-    }
+    USER { text id PK; text email UK; bool is_admin; }
+    SESSION { text id PK; text token UK; text user_id FK; timestamp expires_at; }
+    ACCOUNT { text id PK; text user_id FK; text issuer; text account_id; }
+    CONVERSATION { text id PK; text user_id FK; text title; enum type; enum current_phase; }
+    MESSAGE { text id PK; text conversation_id FK; enum role; enum lane; bool is_stuck; }
+    PROMPT_SETTINGS { text user_id PK FK; text provider; text system_prompt; jsonb suggested_prompts; }
+    RAG_CONFIG { text user_id PK FK; int top_k; text min_similarity; bool enabled; }
+    KNOWLEDGE_CHUNK { text id PK; text source; text content; vector embedding; }
 ```
 
-## 📚 Knowledge Base (RAG)
+### Migration commands
 
-The application is pre-configured with Ariadne Labs resources:
-- **Primer:** Introductory guide to essential communication.
-- **Stuck Points Framework:** Framework for managing emotional and relational roadblocks.
-- **Phase Guides:** Sample language for Recognition, Evaluation, and Diagnosis phases.
+| Script | Purpose |
+|---|---|
+| `npm run db:generate` | Use `drizzle-kit` to scaffold a new migration after editing `lib/db/schema.ts` |
+| `npm run db:migrate` | Apply pending migrations to the DB in `DATABASE_URL` |
+| `npm run db:studio` | Open Drizzle Studio (web UI for the DB) |
+| `npm run db:push` | Push schema directly without migration files (dev only) |
+| `npm run smoke` | Verify env, connectivity, schema, and Better Auth table shapes |
 
-## 🏗️ System Architecture
+The custom migration runner ([`scripts/migrate.ts`](./scripts/migrate.ts)) is **idempotent** — it splits each SQL file on drizzle's `--> statement-breakpoint` marker and tolerates `42710`/`42P07`/`42701`/`42P06` (already-exists) errors so re-runs are safe. The `__migrations` table tracks which files have been applied.
 
-```mermaid
-flowchart TD
-    %% Users
-    Provider([Primary Care Provider])
-    Admin([System Admin])
+### Adding a new migration
 
-    %% Frontend App
-    subgraph Client [Client Application - React SPA]
-        UI_Chat[Chat Interface]
-        UI_Admin[Admin Panel]
-        InputValidator[Input Validator - insufficientInfo check]
-        RAG_Engine[RAG Controller - rag.ts]
-        LLM_Service[LLM Service - llm.ts]
-    end
+After editing `lib/db/schema.ts`:
 
-    %% Firebase / BaaS
-    subgraph Firebase [Firebase Cloud]
-        Auth[Firebase Authentication]
-        Firestore[(Firestore NoSQL DB)]
-    end
+1. Run `npm run db:generate` — drizzle-kit produces a new `drizzle/NNNN_*.sql` file.
+2. Verify the SQL by reading it. Manual edits are often needed for `CREATE INDEX CONCURRENTLY`, data backfills, etc.
+3. Commit the SQL file.
+4. On next deploy, the `migrate` service applies it automatically. Locally: `npm run db:migrate`.
 
-    %% External APIs
-    subgraph External_APIs [External AI Providers]
-        Gemini[Google Gemini API]
-        Minimax[Minimax API]
-    end
+### RAG pipeline
 
-    %% Cloud Hosting
-    Hosting((Netlify, Vercel, or else...))
+- `embedding` column is `vector(768)` — sized for `text-embedding-004`.
+- Chunks are embedded via Gemini on the server when uploaded (admin endpoint).
+- Retrieval is in-memory cosine similarity over the small toolkit corpus. If the corpus grows past ~200 chunks, swap to pgvector's `<=>` operator (see comments in `src/app/api/rag-search/route.ts`).
+- `ragConfig` lets each user tune `topK`, `min_similarity`, and toggle RAG on/off.
 
-    %% Connections - Auth & DB
-    Provider -->|Logs in| Auth
-    Admin -->|Logs in| Auth
-    UI_Chat -->|Reads chunks & config| Firestore
-    UI_Admin -->|Writes chunks & config| Firestore
+---
 
-    %% Input Validation Flow
-    Provider -->|Asks clinical question| UI_Chat
-    UI_Chat --> InputValidator
-    InputValidator -->|Sufficient input| RAG_Engine
-    InputValidator -->|Insufficient| Guidance[Show guidance message]
+## Admin management
 
-    %% RAG Admin Flow
-    Admin -->|Uploads Guidelines/Ressources| UI_Admin
-    UI_Admin -->|Generate Embedding| Gemini
-    UI_Admin -->|Save Doc + Vector| Firestore
+The admin allowlist is **driven by env**, not by hardcoded emails or DB roles:
 
-    %% LLM Generation Flow
-    RAG_Engine --> LLM_Service
-    LLM_Service -->|LLM_PROVIDER=gemini| Gemini
-    LLM_Service -->|LLM_PROVIDER=minimax| Minimax
-    
-    %% Stuck Mode
-    Provider -->|Stuck button| UI_Chat
-    UI_Chat -->|isStuck=true| LLM_Service
-    LLM_Service -->|Stuck prompt| Gemini
+- **Server-side enforcement** — `lib/admin.ts` exports `isAdminEmail(email)`, used by `POST/DELETE /api/knowledge-chunks`. This is the source of truth — non-admins are blocked at the API boundary even if the UI is fooled.
+- **Client-side UI gating** — `lib/auth-client.ts` exports `isAdminFromSession(session)`, which reads the `NEXT_PUBLIC_ADMIN_EMAILS` build-time env and shows the Admin panel button only to those users.
 
-    %% Hosting
-    Hosting -.->|Serves compiled App| Client
-```
+To grant admin access to a new user:
 
-## 🗄️ Database Schema
+1. Add their email to `ADMIN_EMAILS` (comma-separated) and `NEXT_PUBLIC_ADMIN_EMAILS` (same value).
+2. Redeploy the stack. (Build-time changes require a rebuild.)
 
-```mermaid
-erDiagram
-    APP_SETTINGS {
-        string documentId PK "e.g., 'rag_config'"
-        number topK "Number of chunks (e.g., 3)"
-        number similarityThreshold "e.g., 0.7"
-        string mode "'rag' or 'prompt_stuffing'"
-        string modelProvider "'gemini' or 'minimax'"
-    }
+The schema also has a `user.is_admin` boolean column reserved for a future per-user role, but it is not yet wired into the API.
 
-    KNOWLEDGE_CHUNKS {
-        string documentId PK "Auto-generated"
-        string source "e.g., 'Ariadne Labs - Primer'"
-        string content "Raw text of the resource"
-        number[] embedding "Array of floats (GenAI Vector)"
-    }
-
-    USERS {
-        string uid PK "Matches Firebase Auth UID"
-        string email 
-        string role "'provider' or 'admin'"
-    }
-
-    CONVERSATIONS {
-        string conversationId PK 
-        string uid FK "Owner of the conversation"
-        string currentPhase "e.g., 'Recognition'"
-        timestamp lastUpdatedAt 
-    }
-
-    MESSAGES {
-        string messageId PK 
-        string conversationId FK 
-        string role "'user' or 'assistant'"
-        string content "Message text content"
-        timestamp createdAt 
-    }
-
-    %% Relationships
-    USERS ||--o{ CONVERSATIONS : "owns"
-    CONVERSATIONS ||--o{ MESSAGES : "contains"
-```
+---
 
 
-## 🔧 Environment Variables
+## Deployment
 
-### Frontend (Vite - Client-side)
+### Development (default)
 
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `VITE_FIREBASE_API_KEY` | Yes | - | Firebase API key |
-| `VITE_FIREBASE_AUTH_DOMAIN` | Yes | - | Firebase auth domain |
-| `VITE_FIREBASE_PROJECT_ID` | Yes | - | Firebase project ID |
-| `VITE_FIREBASE_APP_ID` | Yes | - | Firebase app ID |
-| `GEMINI_API_KEY` | Yes* | - | Google Gemini API key |
-| `LLM_PROVIDER` | No | `gemini` | LLM provider: `gemini`, `minimax`, or `harvard` |
-| `MINIMAX_API_KEY` | No* | - | MiniMax API key (required if LLM_PROVIDER=minimax) |
-
-### Backend (Netlify Functions - Server-side only)
-
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `HARVARD_OPENAI_KEY` | If using Harvard | Harvard HUIT API key |
-| `HARVARD_OPENAI_BASE_URL` | No | Harvard gateway URL (default: https://go.apis.huit.harvard.edu/ais-openai-direct/v2/) |
-
-*At least one LLM provider API key is required.
-
-## 🐳 Deployment with Docker
-
-This application can be containerized using Docker and Docker Compose for local development or self-hosting.
-
-### Architecture Overview
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│  Docker Compose                                             │
-│                                                             │
-│  Development:           Production:                           │
-│  ┌─────────────┐       ┌─────────────────────────────────┐  │
-│  │  Frontend   │       │         Nginx Reverse Proxy     │  │
-│  │  Vite :3000 │       │  Port 80/443                    │  │
-│  └──────┬──────┘       │  ┌───────────┐  ┌───────────┐   │  │
-│         │              │  │ /        │  │ /api/*   │   │  │
-│         │              │  │    ↓     │  │    ↓     │   │  │
-│         ▼              │  └───────────┘  └───────────┘   │  │
-│  ┌─────────────┐       │       ↓              ↓          │  │
-│  │  Backend    │       │  ┌─────────┐    ┌─────────┐    │  │
-│  │  Express    │       │  │Frontend │    │Backend  │    │  │
-│  │  :3001      │       │  │ :3000   │    │ :3001   │    │  │
-│  └──────┬──────┘       │  └─────────┘    └─────────┘    │  │
-│         │              └─────────────────────────────────┘  │
-│         ▼                                                   │
-│  Harvard HUIT API                                          │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### Prerequisites
-
-- [Docker](https://docs.docker.com/get-docker/) installed
-- [Docker Compose](https://docs.docker.com/compose/install/) v2+ installed
-- Firebase project credentials
-- At least one LLM provider API key
-
-### Quick Start
-
-1. **Clone and configure:**
-   ```bash
-   git clone https://github.com/Arkoys/ai-essential-communication-for-dementia.git
-   cd ai-essential-communication-for-dementia
-   ```
-
-2. **Create environment file:**
-   ```bash
-   cp .env.example .env
-   ```
-
-3. **Edit `.env`** with your credentials:
-   ```env
-   # Harvard API (backend server-side only - never exposed to frontend!)
-   HARVARD_OPENAI_KEY=your_harvard_api_key
-
-   # Firebase Configuration
-   VITE_FIREBASE_API_KEY=your_firebase_api_key
-   VITE_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
-   VITE_FIREBASE_PROJECT_ID=your-project-id
-   VITE_FIREBASE_APP_ID=1:123456789:web:abc123
-
-   # LLM Provider (gemini, openai, minimax, or harvard)
-   VITE_LLM_PROVIDER=harvard
-   ```
-
-4. **Start the application:**
-
-   **Development** (hot reload enabled):
-   ```bash
-   docker compose up --build
-   # Access at http://localhost:3000
-   ```
-
-   **Production** (optimized build with Nginx):
-   ```bash
-   docker compose -f docker-compose.prod.yml up --build -d
-   # Access at http://localhost:80
-   ```
-
-### Docker Files
-
-| File | Purpose |
-|------|---------|
-| `docker-compose.yml` | Development: Vite dev server + Backend proxy |
-| `docker-compose.prod.yml` | Production: Nginx + Static frontend + Backend |
-| `Dockerfile` | Multi-stage build (deps → build → production/development) |
-| `backend/` | Express proxy server for Harvard API |
-| `nginx/` | Nginx configuration for production reverse proxy |
-
-### Environment Variables
-
-**Backend (server-side only):**
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `HARVARD_OPENAI_KEY` | If using Harvard | Harvard API key (never exposed to frontend) |
-| `HARVARD_OPENAI_BASE_URL` | No | Harvard gateway URL |
-
-**Frontend (Vite - client-side):**
-| Variable | Required | Description |
-|----------|----------|-------------|
-| `VITE_FIREBASE_*` | Yes | Firebase configuration |
-| `VITE_LLM_PROVIDER` | No | Provider: `gemini`, `openai`, `minimax`, `harvard` |
-| `VITE_*_API_KEY` | Per provider | API keys for chosen LLM provider |
-
-### Docker Commands
-
-| Command | Description |
-|---------|-------------|
-| `docker compose up` | Start development mode |
-| `docker compose up -d` | Start in background (detached) |
-| `docker compose -f docker-compose.prod.yml up` | Start production mode |
-| `docker compose down` | Stop and remove containers |
-| `docker compose build --no-cache` | Rebuild without cache |
-| `docker compose logs -f` | View live logs |
-| `docker compose logs -f backend` | View backend logs only |
-
-### Security Notes
-
-- **Harvard API key** is kept server-side in the backend container
-- **Non-root user** runs the backend container for security
-- **Rate limiting** is configured in Nginx for production
-- **CORS headers** are properly set for API routes
-
-### Troubleshooting
-
-**Backend returns 500 (API key not configured):**
 ```bash
-# Check if HARVARD_OPENAI_KEY is set in .env
-grep HARVARD .env
+docker compose up
+# Postgres on :5432, Next.js on http://localhost:3000
 ```
 
-**Port already in use:**
+### Production (self-hosted, single host)
+
 ```bash
-# Check what's using the port
-lsof -i :3000
-# or
-docker compose ps
+docker compose -f docker-compose.prod.yml up --build -d
+# Nginx on :80 / :443, proxying to Next.js
 ```
 
-**Container won't start:**
-```bash
-# Check logs for errors
-docker compose logs
+`docker-compose.prod.yml` adds:
 
-# Rebuild from scratch
-docker compose down
-docker compose -f docker-compose.prod.yml build --no-cache
-docker compose -f docker-compose.prod.yml up
-```
+- **`nginx`** — SSL termination, gzip, rate limiting, SSE-friendly buffering
+- **No dev server** — the `next` service runs `next start` against the built image
+- **Healthchecks** — `/healthz` for the Next.js app, `/healthz` (nginx-local) for the proxy
 
-## 🚀 Automated deployment (AWS)
+Place SSL certs at `nginx/ssl/` and edit `nginx/nginx.conf` to set your `server_name` and TLS paths.
 
-To deploy:
+### Production (Ariadne Labs ECS)
 
-- Click the [deployment link](https://api.aria.ariadnelabs.net/deployaria/ecllmapp).
-  - This starts the build process. The repository's `from-july-revamp` branch is checked out and built as Docker images. Changes from another branch must first be merged into `from-july-revamp`.
-  - A successfully submitted deployment displays: `Sucessfully submitted aria deployment job`.
-  - Do not click the deployment link multiple times, because each click starts a separate deployment job.
-- The updated version will be deployed within a few minutes and become available on the [EC Dementia site](https://ec-dementia-app.ariadnelabs.net/).
+The deployment is triggered by the `aria-deploy` workflow after pushing the `from-july-revamp` branch:
 
-In the future, this job could be scheduled to run nightly and automatically deploy the latest version of `from-july-revamp`.
+1. Push to `from-july-revamp`.
+2. Open the [aria-deploy job](https://github.com/Arkoys/ai-essential-communication-for-dementia/actions) and click **Run workflow** on `aria deployment job`.
+3. A successfully submitted deployment displays `Sucessfully submitted aria deployment job`.
+4. Do not click the deployment link multiple times — each click starts a separate deployment job.
+5. The updated version will be deployed within a few minutes and become available on the [EC Dementia site](https://ec-dementia-app.ariadnelabs.net/).
 
-## 🤝 In Collaboration With
+The future plan is to schedule this job nightly to auto-deploy the latest `from-july-revamp`.
+
+### CI/CD secrets (what to provision in your deploy env)
+
+- `BETTER_AUTH_SECRET` — same secret across all replicas
+- `DATABASE_URL` — pointing at a managed Postgres (Neon, RDS, etc.)
+- `BETTER_AUTH_URL` — public URL (e.g. `https://ec-dementia-app.ariadnelabs.net`)
+- `ADMIN_EMAILS` and `NEXT_PUBLIC_ADMIN_EMAILS`
+- `LLM_PROVIDER` plus the matching API key
+
+---
+
+## Key rotation runbook
+
+The following values are real secrets. If any of them leaks (commit, log, screenshot, support ticket), rotate **immediately**.
+
+| Secret | Where it's used | Rotation procedure |
+|---|---|---|
+| `BETTER_AUTH_SECRET` | Cookie HMAC; rotating invalidates all sessions | Generate new (`openssl rand -base64 48`), redeploy. All users will be signed out — expect a brief spike of re-logins |
+| `DATABASE_URL` | All DB calls | Rotate DB password at the provider; update `DATABASE_URL`; redeploy |
+| `GEMINI_API_KEY` | `/api/chat`, `/api/knowledge-chunks` (embeddings) | Create new key in Google AI Studio; set as `GEMINI_API_KEY`; revoke old key |
+| `MINIMAX_API_KEY` | `/api/chat` when provider is `minimax` | Rotate via MiniMax dashboard |
+| `HARVARD_OPENAI_KEY` | `/api/chat` and `/api/harvard*` when provider is `harvard` | Request new key from HUIT; revoke old |
+
+After rotating any LLM key, run `npm run smoke` (against a deployed environment) to confirm `/api/chat` still returns 200.
+
+---
+
+## Troubleshooting
+
+| Symptom | Likely cause | Fix |
+|---|---|---|
+| `lane_column_missing` warning on `/api/conversations/[id]/messages` | Migration `0002_message_lane.sql` not applied | `npm run db:migrate` |
+| `auth/account.issuer column missing` on sign-up | Outdated DB schema (pre-better-auth@1.7) | Re-run all migrations; `pgvector/pgvector:pg16` recommended |
+| `pgvector extension NOT installed` | Postgres image without pgvector | Use `pgvector/pgvector:pg16` (not `postgres:16`) |
+| `BETTER_AUTH_URL` mismatch / cookies not set | Frontend URL ≠ env URL | Set `BETTER_AUTH_URL` to the exact origin (incl. scheme) |
+| Admin panel button missing | Email not in `NEXT_PUBLIC_ADMIN_EMAILS` | Set env, rebuild (it's a build-time inlined value) |
+| `401 unauthorized` on every API call | Session cookie expired / `BETTER_AUTH_SECRET` rotated | Sign in again |
+| `harvard_not_configured` 503 | Missing `HARVARD_OPENAI_KEY` | Set the key; restart `next` |
+| `gemini_not_configured` 503 | Missing `GEMINI_API_KEY` (only matters if RAG or Gemini fallback path is hit) | Set the key |
+| `npm run smoke` exits non-zero | See the printed ✗ lines | Each tells you exactly what to fix |
+
+---
+
+## Roadmap
+
+- **Drizzle journal** is now consistent (`0000`/`0001`/`0002`); `drizzle-kit generate` will not re-emit them as new files.
+- **Per-user `is_admin`** column exists in the schema but is not yet read by the API. Wiring it would let admins be granted via SQL instead of env.
+- **Streaming** for `/api/chat` is scaffolded (`/api/.+/stream` location in nginx, `stream: true` flag in the proxy) but not exposed in the client UI.
+- **Compare-mode UI polish** — already functional but could use better empty-state copy.
+
+---
+
+## In collaboration with
 
 This project is done in collaboration with the following schools and labs:
 
@@ -436,54 +364,9 @@ This project is done in collaboration with the following schools and labs:
 | :---: | :---: | :---: | :---: |
 | <img src="https://upload.wikimedia.org/wikipedia/commons/thumb/9/95/Logo_EPFL_2019.svg/1280px-Logo_EPFL_2019.svg.png" width="150" alt="EPFL"> | <img src="https://avatars.githubusercontent.com/u/62012557?s=200&v=4" width="150" alt="LIGHT LABORATORY"> | <img src="https://upload.wikimedia.org/wikipedia/en/1/18/Harvard_shield-Public_Health.png" width="150" alt="Harvard T.H. Chan School"> | <img src="https://www.ariadnelabs.org/wp-content/themes/ariadne-labs/assets/images/AL-logo-solo-white.svg" width="150" alt="Ariadne Labs"> |
 
+---
 
-## ⚠️ Security Warning (PHI)
+## Security warning (PHI)
 
 **Warning:** This tool is designed for general clinical decision support. Users **must never** input Protected Health Information (PHI) or identifiable patient data into the chat interface. All queries must be anonymized.
 
----
-
-## Migration status
-
-| Phase | Scope | Status |
-|---|---|---|
-| **1a — Foundation** | Next.js + Drizzle + Better Auth + Postgres (Docker) | ✅ **Done** |
-| 1b — Server-side LLM proxy | Move LLM calls into Route Handlers; rotate keys | ⏳ Pending |
-| 1c — Component migration | Rewrite App.tsx to call `/api` instead of Firestore | ⏳ Pending |
-| 2 — Data migration | Dual-write Firestore + Postgres, then drop Firebase | ⏳ Pending |
-| 3 — Cleanup | Delete `firebase/`, `backend/`, `netlify/` | ⏳ Pending |
-
-### What changed in 1a
-- **Build**: Vite 6 → Next.js 15 (App Router, standalone output).
-- **Auth**: Firebase Auth → Better Auth (email/password).
-- **DB schema**: Drizzle ORM ready (Postgres + pgvector). Tables defined in `lib/db/schema.ts`.
-- **Docker**: `frontend` + `backend` services collapsed into a single `next` service plus `postgres`.
-- **Env vars**: `VITE_*` → `NEXT_PUBLIC_*` (client) / `*` (server).
-- **Routing**: `BrowserRouter` → App Router (`src/app/{layout,page,documents/page}.tsx`).
-
-### Quick start (Docker)
-
-```bash
-cp .env.example .env.local       # fill in the secrets
-docker compose up                # Postgres + Next.js dev server on http://localhost:3000
-```
-
-### Local commands
-
-```bash
-npm install
-npm run dev               # next dev (requires Postgres reachable via DATABASE_URL)
-npm run build             # next build (standalone output)
-npm run typecheck         # tsc --noEmit
-npm run db:generate       # drizzle-kit generate (after schema changes)
-npm run db:migrate        # apply migrations to the DB in DATABASE_URL
-npm run db:studio         # drizzle-kit studio
-```
-
-### Migration TODOs for 1b (do these next)
-
-1. Create `app/api/chat/route.ts`, `app/api/harvard/route.ts`, `app/api/minimax/route.ts`, `app/api/gemini/route.ts` — server-side proxies.
-2. Refactor `src/lib/llm.ts`, `src/lib/rag.ts`, `src/lib/classifier/providers/*` to `fetch('/api/...')`.
-3. Delete `src/lib/env-client.ts`.
-4. Strip `NEXT_PUBLIC_*` LLM keys from `.env.example`, `Dockerfile`, and `docker-compose*.yml`.
-5. Rotate the previously-leaked API keys (Gemini, MiniMax, Harvard).

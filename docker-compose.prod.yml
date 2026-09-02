@@ -55,20 +55,14 @@ services:
       DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-dementia_coach}
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET must be set}
       BETTER_AUTH_URL: ${BETTER_AUTH_URL:?BETTER_AUTH_URL must be set}
+      # Comma-separated list of emails granted admin access (RAG corpus management).
+      ADMIN_EMAILS: ${ADMIN_EMAILS:-}
       NODE_ENV: production
     build_args:
-      NEXT_PUBLIC_FIREBASE_API_KEY: ${NEXT_PUBLIC_FIREBASE_API_KEY}
-      NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN: ${NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN}
-      NEXT_PUBLIC_FIREBASE_PROJECT_ID: ${NEXT_PUBLIC_FIREBASE_PROJECT_ID}
-      NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET: ${NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET}
-      NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID: ${NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID}
-      NEXT_PUBLIC_FIREBASE_APP_ID: ${NEXT_PUBLIC_FIREBASE_APP_ID}
-      NEXT_PUBLIC_FIREBASE_FIRESTORE_DATABASE_ID: ${NEXT_PUBLIC_FIREBASE_FIRESTORE_DATABASE_ID:-(default)}
-      NEXT_PUBLIC_API_PROXY_URL: /api
-      NEXT_PUBLIC_LLM_PROVIDER: ${NEXT_PUBLIC_LLM_PROVIDER:-harvard}
-      NEXT_PUBLIC_GEMINI_API_KEY: ${NEXT_PUBLIC_GEMINI_API_KEY:-}
-      NEXT_PUBLIC_MINIMAX_API_KEY: ${NEXT_PUBLIC_MINIMAX_API_KEY:-}
-      NEXT_PUBLIC_HARVARD_OPENAI_KEY: ${NEXT_PUBLIC_HARVARD_OPENAI_KEY:-}
+      # Comma-separated admin emails. Safe to expose at build time — these are
+      # only used for client-side UI gating. The authoritative check is
+      # server-side (lib/admin.ts) and reads ADMIN_EMAILS at runtime.
+      NEXT_PUBLIC_ADMIN_EMAILS: ${NEXT_PUBLIC_ADMIN_EMAILS:-}
     depends_on:
       postgres:
         condition: service_healthy

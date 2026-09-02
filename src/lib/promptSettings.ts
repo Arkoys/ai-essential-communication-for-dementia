@@ -4,7 +4,7 @@ import {
   getPromptSettings as fetchPromptSettings,
   savePromptSettings as persistPromptSettings,
   resetPromptSettings as clearPromptSettings,
-} from './api-client';
+} from '@/lib/api-client';
 import { generatePositiveCitationList } from './resources';
 
 // Default system prompt - Generic base (templates handle specific structures)

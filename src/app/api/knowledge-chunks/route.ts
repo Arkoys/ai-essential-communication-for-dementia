@@ -6,6 +6,7 @@ import { randomUUID } from 'crypto';
 import { db } from '@/lib/db';
 import { knowledgeChunks } from '@/lib/db/schema';
 import { requireUser } from '@/lib/auth-server';
+import { isAdminEmail } from '@/lib/admin';
 
 export const runtime = 'nodejs';
 
@@ -38,7 +39,7 @@ export async function POST(req: NextRequest) {
   }
 
   // Only admins can create chunks — checked at API boundary.
-  if (user.email !== 'victor.negadi@gmail.com') {
+  if (!isAdminEmail(user.email)) {
     return Response.json({ error: 'forbidden' }, { status: 403 });
   }
 
@@ -87,7 +88,7 @@ export async function DELETE(req: NextRequest) {
     return resp as Response;
   }
 
-  if (user.email !== 'victor.negadi@gmail.com') {
+  if (!isAdminEmail(user.email)) {
     return Response.json({ error: 'forbidden' }, { status: 403 });
   }
 

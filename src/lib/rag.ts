@@ -12,7 +12,7 @@ import {
   ragSearch,
   type ApiRagConfig,
   type ApiKnowledgeChunk,
-} from './api-client';
+} from '@/lib/api-client';
 
 export interface KnowledgeChunk {
   id: string;
