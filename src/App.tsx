@@ -199,8 +199,11 @@ export default function App() {
     hideBadge
   } = useTemplateBadge();
 
-  // Load prompt settings on mount.
+  // Load prompt settings on mount. Gate on auth so we don't fire an
+  // unauthenticated request before Better Auth has resolved the session
+  // (which would 401 and produce a console error on every page load).
   useEffect(() => {
+    if (!isAuthReady || !user) return;
     let cancelled = false;
     (async () => {
       try {
@@ -230,7 +233,7 @@ export default function App() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [isAuthReady, user]);
 
   // Auth Listener — Better Auth.
   const isBrowser = typeof window !== 'undefined';
