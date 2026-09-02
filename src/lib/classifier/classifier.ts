@@ -41,40 +41,78 @@ export async function classifyPrompt(
   const fullContext = buildClassificationContext(userPrompt, conversationHistory);
   
   let lastError: Error | null = null;
-  
+  let lastRawResult: unknown = null;
+
+  // Track the provider we actually used so we can log it on the fallback path.
+  let attemptedProvider: ClassifierProvider = provider;
+
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
       let result: ClassificationResult;
-      
-      // Dispatch to provider-specific classifier
-      switch (provider) {
-        case 'openai':
-          result = await classifyWithOpenAI(fullContext);
-          break;
-        case 'minimax':
+
+      // Dispatch to provider-specific classifier. If the configured provider
+      // keeps failing (network error, malformed JSON, schema rejection), fall
+      // back to the prompt-based classifier so we don't give up entirely.
+      let usedProvider: ClassifierProvider = provider;
+      try {
+        switch (provider) {
+          case 'openai':
+            usedProvider = 'openai';
+            result = await classifyWithOpenAI(fullContext);
+            break;
+          case 'minimax':
+            usedProvider = 'minimax';
+            result = await classifyWithMinimax(fullContext);
+            break;
+          default:
+            usedProvider = 'minimax';
+            result = await classifyWithMinimax(fullContext);
+        }
+      } catch (primaryError) {
+        // Primary provider threw — try the prompt-based fallback if we haven't
+        // already tried it. This is what gives us resilience: a Harvard outage
+        // or a malformed structured-output response no longer means the user
+        // sees the static "fallback" template.
+        if (provider !== 'minimax' && attempt === 0) {
+          console.warn(
+            `Primary provider "${provider}" threw, attempting prompt-based fallback`,
+            primaryError instanceof Error ? primaryError.message : primaryError
+          );
+          usedProvider = 'minimax';
           result = await classifyWithMinimax(fullContext);
-          break;
-        default:
-          // Default to MiniMax-style (more compatible)
-          result = await classifyWithMinimax(fullContext);
+        } else {
+          throw primaryError;
+        }
       }
-      
+      attemptedProvider = usedProvider;
+
       // Validate the result
       if (validateClassificationResult(result)) {
         return result;
       }
-      
-      // If validation fails, try again
-      console.warn(`Classification attempt ${attempt + 1} failed validation, retrying...`);
-      
+
+      // If validation fails, try again — but log the raw payload so the actual
+      // reason for rejection is visible (not just "validation failed").
+      lastRawResult = result;
+      console.warn(
+        `Classification attempt ${attempt + 1} failed validation, retrying...`,
+        { provider: usedProvider, rawResult: result }
+      );
+
     } catch (error) {
       lastError = error instanceof Error ? error : new Error(String(error));
-      console.error(`Classification error (attempt ${attempt + 1}):`, lastError.message);
+      console.error(`Classification error (attempt ${attempt + 1}):`, lastError);
     }
   }
-  
-  // All attempts failed - return fallback
-  console.error('Classification failed after retries, using fallback');
+
+  // All attempts failed - return fallback.
+  // Log the underlying cause so debugging doesn't require reproducing the request.
+  console.error('Classification failed after retries, using fallback', {
+    configuredProvider: provider,
+    attemptedProvider,
+    lastError: lastError?.message,
+    lastRawResult,
+  });
   return createFallbackResult();
 }
 
@@ -124,14 +162,15 @@ function validateClassificationResult(result: unknown): result is Classification
     'assess_template_5', 'delirium_flag', 'out_of_scope'
   ];
   if (!validPaths.includes(r.response_path as ResponsePath)) return false;
-  
+
   const validConfidences: Confidence[] = ['high', 'medium', 'low'];
   if (!validConfidences.includes(r.confidence as Confidence)) return false;
-  
-  // Valid query type IDs
+
+  // Valid query type IDs — derived from the dynamic matrix so newly added
+  // query types don't trip validation.
   const validQueryTypes = CLASSIFICATION_MATRIX.queryTypes.map(qt => qt.id);
   if (!validQueryTypes.includes(r.query_type_id as QueryTypeId)) return false;
-  
+
   return true;
 }
 

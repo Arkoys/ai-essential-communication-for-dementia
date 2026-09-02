@@ -47,6 +47,14 @@ export async function POST(req: NextRequest) {
   if (supportsTemp) payload.temperature = typeof body.temperature === 'number' ? body.temperature : 0.2;
   if (typeof body.max_tokens === 'number') payload.max_tokens = body.max_tokens;
 
+  // Forward Structured Outputs / JSON-mode constraints so the upstream gateway
+  // can enforce the schema. Without it, gpt-4o-mini returns free-form prose and
+  // the client-side JSON.parse in classifyWithOpenAI throws, leading to a
+  // "Classification failed after retries" fallback in the browser console.
+  if (body.response_format && typeof body.response_format === 'object') {
+    payload.response_format = body.response_format;
+  }
+
   try {
     const upstream = await fetch(baseUrl.replace(/\/$/, '') + '/chat/completions', {
       method: 'POST',
