@@ -1,29 +1,23 @@
-import { GoogleGenAI } from '@google/genai';
+'use client';
+
 import { DEFAULT_KNOWLEDGE_CHUNKS } from './defaultData';
 import { retrieveRelevantChunks } from './rag';
-import { 
-  DEFAULT_SYSTEM_PROMPT, 
-  DEFAULT_STUCK_MODE_PROMPT, 
+import {
+  DEFAULT_SYSTEM_PROMPT,
+  DEFAULT_STUCK_MODE_PROMPT,
   DEFAULT_KNOWLEDGE_CONTENT,
-  getPromptSettings 
+  getPromptSettings
 } from './promptSettings';
-import { 
-  harvardChatCompletion, 
-  isHarvardConfigured,
-  getHarvardClient 
-} from './providers/harvard';
-import { 
+import { harvardChatCompletion, isHarvardConfigured } from './providers/harvard';
+import {
   CURATED_EXTERNAL_RESOURCES,
-  generatePositiveCitationList 
+  generatePositiveCitationList
 } from './resources';
 import { runClassificationPipeline, buildSystemPrompt } from './classifier/pipeline';
 import { TEMPLATE_SYSTEM_ADDONS } from './templates';
 import { CONDENSED_MODE_ADDON } from './promptSettings';
 import type { ResponsePath } from './classifier/types';
-
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-const MINIMAX_API_BASE_URL = process.env.MINIMAX_API_BASE_URL || 'https://api.minimaxi.chat';
-const MINIMAX_API_PATH = process.env.MINIMAX_API_PATH || '/v1/chat/completions';
+import { chatCompletion as serverChatCompletion } from './api-client';
 
 // Harvard configuration
 const HARVARD_DEFAULT_MODEL = 'gpt-4o-mini';
@@ -305,40 +299,15 @@ async function generateWithMinimax(
   messages: { role: string; content: string }[],
   model?: string
 ) {
-  const apiKey = process.env.MINIMAX_API_KEY;
-  if (!apiKey) {
-    throw new Error('MINIMAX_API_KEY is missing. Add it to your local env file.');
-  }
-
-  const minimaxModel = model || MINIMAX_DEFAULT_MODEL;
-  const url = `${MINIMAX_API_BASE_URL}${MINIMAX_API_PATH}`;
-  const body: Record<string, unknown> = {
+  const minimaxModel = model || 'MiniMax-Text-01';
+  const result = await serverChatCompletion({
+    provider: 'minimax',
     model: minimaxModel,
-    messages,
+    messages: messages as Array<{ role: 'system' | 'user' | 'assistant'; content: string }>,
     temperature: 0.2,
-  };
-
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${apiKey}`,
-    },
-    body: JSON.stringify(body),
   });
-
-  if (!response.ok) {
-    const errorText = await response.text();
-    throw new Error(`MiniMax API request failed: ${response.status} ${errorText}`);
-  }
-
-  const data = await response.json();
-  const rawText = (
-    data?.choices?.[0]?.message?.content ||
-    data?.reply ||
-    data?.output_text ||
-    'No response text returned from MiniMax.'
-  );
+  const rawText =
+    result?.choices?.[0]?.message?.content || 'No response text returned from MiniMax.';
   return sanitizeModelOutput(rawText);
 }
 
@@ -418,7 +387,7 @@ export async function generateClinicalResponseWithHistory(
       : '';
 
     // Determine provider: forceProvider (for dual mode) > Firestore settings > env var > default
-    const provider = forceProvider || promptSettings.provider || (process.env.LLM_PROVIDER || 'harvard').toLowerCase();
+    const provider = (forceProvider || promptSettings.provider || 'harvard').toLowerCase();
     
     // ===== STEP 1: Run Classification Pipeline =====
     let classificationResult;
@@ -478,19 +447,15 @@ export async function generateClinicalResponseWithHistory(
 
     // ===== STEP 3: Generate Response Based on Provider =====
     
-    // Harvard: OpenAI-compatible gateway with api-key auth
+    // Harvard: OpenAI-compatible gateway with api-key auth (server-side proxy).
     if (provider === 'harvard') {
-      if (!isHarvardConfigured()) {
-        throw new Error('Harvard provider not configured. Set HARVARD_OPENAI_KEY environment variable.');
-      }
-
       const userContent = query + phaseContext;
-      const harvardModel = promptSettings.selectedModel || HARVARD_DEFAULT_MODEL;
-      
+      const harvardModel = promptSettings.selectedModel || 'gpt-4o-mini';
+
       const harvardMessages: { role: 'system' | 'user' | 'assistant'; content: string }[] = [
-        { 
-          role: 'system', 
-          content: isStuck 
+        {
+          role: 'system',
+          content: isStuck
             ? buildStuckModeSystemPrompt(
                 promptSettings.stuckModePrompt || DEFAULT_STUCK_MODE_PROMPT,
                 knowledgeContent
@@ -504,16 +469,18 @@ export async function generateClinicalResponseWithHistory(
         { role: 'user', content: userContent },
       ];
 
-      const response = await harvardChatCompletion(harvardMessages, harvardModel);
-      if ('choices' in response) {
-        return {
-          response: sanitizeModelOutput(response.choices[0]?.message?.content || 'No response returned.'),
-          template: detectedTemplate,
-          tier1Complete,
-          safetyOverride
-        };
-      }
-      return { response: '', template: detectedTemplate, tier1Complete, safetyOverride };
+      const response = await serverChatCompletion({
+        provider: 'harvard',
+        model: harvardModel,
+        messages: harvardMessages,
+        temperature: 0.2,
+      });
+      return {
+        response: sanitizeModelOutput(response.choices?.[0]?.message?.content || 'No response returned.'),
+        template: detectedTemplate,
+        tier1Complete,
+        safetyOverride,
+      };
     }
 
     // MiniMax: no RAG — full toolkit text is embedded in the system prompt.
@@ -554,22 +521,18 @@ export async function generateClinicalResponseWithHistory(
 
     const userText = query + contextString + phaseContext;
 
-    contents.push({
-      role: 'user',
-      parts: [{ text: userText }]
-    });
-
-    const response = await ai.models.generateContent({
-      model: 'gemini-3.1-pro-preview',
-      contents: contents,
-      config: {
-        systemInstruction: fullSystemPrompt,
-        temperature: 0.2,
-      },
+    const result = await serverChatCompletion({
+      provider: 'gemini',
+      model: 'gemini-1.5-pro',
+      messages: [
+        { role: 'system', content: fullSystemPrompt },
+        { role: 'user', content: userText },
+      ],
+      temperature: 0.2,
     });
 
     return {
-      response: sanitizeModelOutput(response.text || ''),
+      response: sanitizeModelOutput(result.choices?.[0]?.message?.content ?? ''),
       template: detectedTemplate,
       tier1Complete,
       safetyOverride

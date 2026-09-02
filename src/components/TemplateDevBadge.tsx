@@ -1,3 +1,5 @@
+'use client';
+
 /**
  * TemplateDevBadge - Dev-only badge showing which template is being used
  * 

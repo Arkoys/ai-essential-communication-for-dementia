@@ -1,0 +1,44 @@
+@import "tailwindcss";
+
+html,
+body,
+#__next,
+#root {
+  height: 100%;
+}
+
+html,
+body {
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+@keyframes pulse-border {
+  0%, 100% {
+    border-color: rgb(107 114 128 / 0.3);
+    box-shadow: 0 0 0 0 rgb(107 114 128 / 0);
+  }
+  50% {
+    border-color: rgb(107 114 128 / 1);
+    box-shadow: 0 0 16px 4px rgb(107 114 128 / 0.5);
+  }
+}
+
+.animate-pulse-border {
+  animation: pulse-border 3s ease-in-out infinite;
+}
+
+@keyframes pulse-text {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+.animate-pulse-text {
+  animation: pulse-text 3s ease-in-out infinite;
+}
+
+/* Tailwind v4 @theme tokens for the custom pulse-border we had in tailwind.config.js.
+   Re-exposing here so we can move that config to pure CSS later if we want. */
+@theme {
+  --animate-pulse-border: pulse-border 3s ease-in-out infinite;
+}

@@ -1,5 +1,7 @@
+'use client';
+
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { FileText, ChevronLeft, ChevronRight, Download, ExternalLink, ArrowLeft } from 'lucide-react';
 import { cn } from '../lib/utils';
 
@@ -63,7 +65,7 @@ export default function DocumentsPage() {
       <header className="bg-white dark:bg-zinc-900 border-b border-zinc-200 dark:border-zinc-700 px-4 py-3 flex items-center justify-between shrink-0">
         <div className="flex items-center gap-4">
           <Link
-            to="/"
+            href="/"
             className="flex items-center gap-2 text-sm text-zinc-600 hover:text-zinc-900 dark:text-zinc-400 dark:hover:text-zinc-200"
           >
             <ArrowLeft size={18} />

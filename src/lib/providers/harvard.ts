@@ -1,3 +1,5 @@
+'use client';
+
 /**
  * Harvard HUIT OpenAI Direct v2 Provider
  * 
@@ -8,11 +10,13 @@
  * DEVELOPMENT: Uses local proxy server or direct API call.
  */
 
-const HARVARD_API_KEY = process.env.HARVARD_OPENAI_KEY || '';
-const HARVARD_BASE_URL = process.env.HARVARD_OPENAI_BASE_URL || 'https://go.apis.huit.harvard.edu/ais-openai-direct/v2/';
+import { CLIENT_ENV } from '../env-client';
+
+const HARVARD_API_KEY = CLIENT_ENV.HARVARD_OPENAI_KEY;
+const HARVARD_BASE_URL = CLIENT_ENV.HARVARD_OPENAI_BASE_URL;
 
 // API base URL - uses proxy in production to avoid CORS
-const API_BASE_URL = import.meta.env.VITE_API_PROXY_URL || '/api';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_PROXY_URL || '/api';
 
 // Models that don't support temperature parameter (or only support default value 1)
 const NO_TEMP_MODELS = ['gpt-5.5', 'gpt-5.4', 'gpt-5.4-mini', 'gpt-5.4-nano'];

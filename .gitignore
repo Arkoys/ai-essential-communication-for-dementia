@@ -7,6 +7,21 @@ coverage/
 .env*
 !.env.example
 .env.docker.local
+.env.local
 docker-compose.override.yml
 package-lock.json
 .vagrant
+
+# Next.js
+.next/
+out/
+next-env.d.ts
+
+# Drizzle generated migrations are committed; compiled JS in drizzle/ is not
+drizzle/*.js
+drizzle/*.d.ts
+!drizzle/meta/
+
+# IDE
+.idea/
+.vscode/

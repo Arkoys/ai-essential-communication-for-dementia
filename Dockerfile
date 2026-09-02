@@ -1,71 +1,76 @@
-# Stage 1: Dependencies
+# syntax=docker/dockerfile:1.7
+# ---------- Stage 1: deps ----------
 FROM node:20-alpine AS deps
-
 WORKDIR /app
-
 COPY package.json package-lock.json ./
 RUN npm ci
 
-# Stage 2: Build
-FROM deps AS build
-
+# ---------- Stage 2: builder ----------
+FROM node:20-alpine AS builder
 WORKDIR /app
-
+COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Vite reads frontend configuration while building the static bundle.
-ARG VITE_API_PROXY_URL=/api
-ARG VITE_FIREBASE_API_KEY
-ARG VITE_FIREBASE_AUTH_DOMAIN
-ARG VITE_FIREBASE_PROJECT_ID
-ARG VITE_FIREBASE_STORAGE_BUCKET
-ARG VITE_FIREBASE_MESSAGING_SENDER_ID
-ARG VITE_FIREBASE_APP_ID
-ARG VITE_FIREBASE_FIRESTORE_DATABASE_ID=(default)
-ARG VITE_FIREBASE_MEASUREMENT_ID
-ARG LLM_PROVIDER=harvard
+# Server-side env. NEXT_PUBLIC_* must be available at build time so the
+# values get inlined into the JS chunks; the rest are only needed at runtime.
+ARG NEXT_PUBLIC_LLM_PROVIDER=harvard
 
-ENV VITE_API_PROXY_URL=${VITE_API_PROXY_URL} \
-    VITE_FIREBASE_API_KEY=${VITE_FIREBASE_API_KEY} \
-    VITE_FIREBASE_AUTH_DOMAIN=${VITE_FIREBASE_AUTH_DOMAIN} \
-    VITE_FIREBASE_PROJECT_ID=${VITE_FIREBASE_PROJECT_ID} \
-    VITE_FIREBASE_STORAGE_BUCKET=${VITE_FIREBASE_STORAGE_BUCKET} \
-    VITE_FIREBASE_MESSAGING_SENDER_ID=${VITE_FIREBASE_MESSAGING_SENDER_ID} \
-    VITE_FIREBASE_APP_ID=${VITE_FIREBASE_APP_ID} \
-    VITE_FIREBASE_FIRESTORE_DATABASE_ID=${VITE_FIREBASE_FIRESTORE_DATABASE_ID} \
-    VITE_FIREBASE_MEASUREMENT_ID=${VITE_FIREBASE_MEASUREMENT_ID} \
-    LLM_PROVIDER=${LLM_PROVIDER}
+# Server-only LLM provider keys + Postgres URL + Better Auth.
+# (For local dev, copy these from .env.example; for production, supply them
+# as build args or docker-compose env entries.)
+ARG DATABASE_URL
+ARG BETTER_AUTH_SECRET
+ARG BETTER_AUTH_URL=http://localhost:3000
+ARG LLM_PROVIDER=harvard
+ARG GEMINI_API_KEY
+ARG MINIMAX_API_KEY
+ARG MINIMAX_MODEL=MiniMax-Text-01
+ARG MINIMAX_API_BASE_URL=https://api.minimaxi.chat
+ARG MINIMAX_API_PATH=/v1/chat/completions
+ARG HARVARD_OPENAI_KEY
+ARG HARVARD_OPENAI_BASE_URL=https://go.apis.huit.harvard.edu/ais-openai-direct/v2/
+ARG HARVARD_MODEL=gpt-4o-mini
+
+ENV NEXT_PUBLIC_LLM_PROVIDER=$NEXT_PUBLIC_LLM_PROVIDER \
+    DATABASE_URL=$DATABASE_URL \
+    BETTER_AUTH_SECRET=$BETTER_AUTH_SECRET \
+    BETTER_AUTH_URL=$BETTER_AUTH_URL \
+    LLM_PROVIDER=$LLM_PROVIDER \
+    GEMINI_API_KEY=$GEMINI_API_KEY \
+    MINIMAX_API_KEY=$MINIMAX_API_KEY \
+    MINIMAX_MODEL=$MINIMAX_MODEL \
+    MINIMAX_API_BASE_URL=$MINIMAX_API_BASE_URL \
+    MINIMAX_API_PATH=$MINIMAX_API_PATH \
+    HARVARD_OPENAI_KEY=$HARVARD_OPENAI_KEY \
+    HARVARD_OPENAI_BASE_URL=$HARVARD_OPENAI_BASE_URL \
+    HARVARD_MODEL=$HARVARD_MODEL \
+    NEXT_TELEMETRY_DISABLED=1
 
 RUN npm run build
 
-# Stage 3: Production - serve static files
-FROM node:20-alpine AS production
-
+# ---------- Stage 3: runner ----------
+FROM node:20-alpine AS runner
 WORKDIR /app
 
-# Install serve to serve static files
-RUN npm install -g serve
+ENV NODE_ENV=production \
+    PORT=3000 \
+    HOSTNAME=0.0.0.0 \
+    NEXT_TELEMETRY_DISABLED=1
 
-# Copy built assets from build stage
-COPY --from=build /app/dist ./dist
-COPY --from=build /app/package.json ./
+# Non-root user for security
+RUN addgroup --system --gid 1001 nodejs \
+ && adduser  --system --uid 1001 nextjs
 
-# Expose production port
+# Copy the standalone server, the static assets, and the public/ folder
+COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
+COPY --from=builder --chown=nextjs:nodejs /app/.next/static    ./.next/static
+COPY --from=builder --chown=nextjs:nodejs /app/public           ./public
+
+USER nextjs
 EXPOSE 3000
 
-# Start production server
-CMD ["serve", "-s", "dist", "-l", "3000"]
+# Healthcheck
+HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
+  CMD wget -q --spider http://localhost:3000/ || exit 1
 
-# Stage 4: Development
-FROM deps AS development
-
-WORKDIR /app
-
-# Copy source code
-COPY . .
-
-# Expose development port
-EXPOSE 3000
-
-# Start development server
-CMD ["npm", "run", "dev"]
+CMD ["node", "server.js"]

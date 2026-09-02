@@ -1,3 +1,5 @@
+'use client';
+
 /**
  * Classification Matrix - loaded from JSON config
  */

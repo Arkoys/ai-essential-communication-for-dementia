@@ -1,3 +1,5 @@
+'use client';
+
 /**
  * Classification Types for the Dementia Clinical Coach
  * These types define the structure of the classification pipeline

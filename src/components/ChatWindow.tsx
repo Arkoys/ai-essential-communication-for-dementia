@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Loader2, AlertTriangle, Minimize2, AlignLeft } from 'lucide-react';
 import { MessageBubble } from './MessageBubble';

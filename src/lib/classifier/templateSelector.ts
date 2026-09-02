@@ -1,3 +1,5 @@
+'use client';
+
 /**
  * Template Selector - Étape 3a du pipeline
  * 

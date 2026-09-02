@@ -1,3 +1,5 @@
+'use client';
+
 /**
  * Classifier - Étape 2 du pipeline
  * 

@@ -1,3 +1,5 @@
+'use client';
+
 // A basic anonymizer for the MVP.
 // In a real production app, this would use a more robust NLP model (like Presidio) 
 // to detect and redact PHI (Protected Health Information).

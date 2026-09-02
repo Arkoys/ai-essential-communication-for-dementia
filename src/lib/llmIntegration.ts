@@ -1,3 +1,5 @@
+'use client';
+
 /**
  * Integration layer for the classification pipeline
  * 

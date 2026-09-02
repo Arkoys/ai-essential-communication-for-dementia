@@ -1,3 +1,5 @@
+'use client';
+
 import { DEFAULT_KNOWLEDGE_CHUNKS } from './defaultData';
 
 function buildToolkitReferenceForPrompt(): string {

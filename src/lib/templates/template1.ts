@@ -1,3 +1,5 @@
+'use client';
+
 /**
  * Template 1 - Clarification (Collecte d'information)
  * 

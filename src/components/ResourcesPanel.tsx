@@ -1,5 +1,7 @@
+'use client';
+
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import Link from 'next/link';
 import { X, FolderOpen, FileText, ChevronLeft, ChevronRight, Download, ExternalLink, Maximize2 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
@@ -72,7 +74,7 @@ export function ResourcesPanel({ isOpen, onClose }: ResourcesPanelProps) {
             <FolderOpen size={18} className="text-orange-600 dark:text-orange-400" />
             <h2 className="font-medium text-sm text-zinc-900 dark:text-zinc-100">Internal Resources</h2>
             <Link
-              to="/documents"
+              href="/documents"
               target="_blank"
               className="flex items-center gap-1.5 px-2.5 py-1 text-xs bg-orange-100 dark:bg-orange-900/30 text-orange-700 dark:text-orange-400 rounded-md hover:bg-orange-200 dark:hover:bg-orange-900/50 transition-colors"
             >

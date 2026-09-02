@@ -1,10 +1,18 @@
-import { GoogleGenAI } from '@google/genai';
-import { collection, getDocs, doc, getDoc, setDoc } from 'firebase/firestore';
-import { db } from '../firebase';
+'use client';
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-const LLM_PROVIDER = (process.env.LLM_PROVIDER || 'gemini').toLowerCase();
-const useGeminiForRag = LLM_PROVIDER !== 'minimax' && Boolean(process.env.GEMINI_API_KEY);
+// Server-side RAG retrieval wrappers. The API does the embedding + scoring
+// so we never need a client-side Gemini key.
+
+import {
+  getRagConfig as fetchRagConfig,
+  saveRagConfig as persistRagConfig,
+  listKnowledgeChunks,
+  createKnowledgeChunk,
+  deleteKnowledgeChunk,
+  ragSearch,
+  type ApiRagConfig,
+  type ApiKnowledgeChunk,
+} from './api-client';
 
 export interface KnowledgeChunk {
   id: string;
@@ -23,87 +31,65 @@ export const DEFAULT_RAG_CONFIG: RagConfig = {
   similarityThreshold: 0.7,
 };
 
+function wireToRagConfig(wire: ApiRagConfig): RagConfig {
+  return {
+    topK: wire.topK,
+    similarityThreshold: Number(wire.minSimilarity) || DEFAULT_RAG_CONFIG.similarityThreshold,
+  };
+}
+
 export async function getRagConfig(): Promise<RagConfig> {
   try {
-    const docRef = doc(db, 'app_settings', 'rag_config');
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-      return docSnap.data() as RagConfig;
-    }
+    const { config, defaults } = await fetchRagConfig();
+    return wireToRagConfig((config ?? defaults) as ApiRagConfig);
   } catch (error) {
-    console.error("Error fetching RAG config:", error);
+    console.error('Error fetching RAG config:', error);
+    return DEFAULT_RAG_CONFIG;
   }
-  return DEFAULT_RAG_CONFIG;
 }
 
 export async function saveRagConfig(config: RagConfig): Promise<void> {
-  const docRef = doc(db, 'app_settings', 'rag_config');
-  await setDoc(docRef, config);
-}
-
-export async function generateEmbedding(text: string): Promise<number[]> {
-  if (!useGeminiForRag) {
-    // Local MiniMax-only runs can skip RAG embeddings safely.
-    return [];
-  }
-
-  const response = await ai.models.embedContent({
-    model: 'gemini-embedding-2-preview',
-    contents: text,
+  await persistRagConfig({
+    topK: config.topK,
+    minSimilarity: String(config.similarityThreshold),
+    enabled: true,
   });
-  return response.embeddings?.[0]?.values || [];
 }
 
-function cosineSimilarity(a: number[], b: number[]): number {
-  if (a.length !== b.length) return 0;
-  let dotProduct = 0;
-  let normA = 0;
-  let normB = 0;
-  for (let i = 0; i < a.length; i++) {
-    dotProduct += a[i] * b[i];
-    normA += a[i] * a[i];
-    normB += b[i] * b[i];
-  }
-  if (normA === 0 || normB === 0) return 0;
-  return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
+export async function generateEmbedding(_text: string): Promise<number[]> {
+  // Client-side embedding generation is no longer used — the API handles it.
+  // Returning an empty array lets callers bail out gracefully if they still
+  // call this function.
+  return [];
 }
 
 export async function retrieveRelevantChunks(query: string): Promise<KnowledgeChunk[]> {
-  if (!useGeminiForRag) {
+  try {
+    const config = await getRagConfig();
+    const { chunks } = await ragSearch(query, config.topK, config.similarityThreshold);
+    return chunks.map((c) => ({
+      id: c.id,
+      content: c.content,
+      embedding: [],
+      source: c.source,
+    }));
+  } catch (error) {
+    console.error('Error retrieving relevant chunks:', error);
     return [];
   }
+}
 
-  const config = await getRagConfig();
-  const queryEmbedding = await generateEmbedding(query);
-  
-  if (!queryEmbedding || queryEmbedding.length === 0) {
-    return [];
-  }
+// Re-export the chunk CRUD helpers so AdminPanel.tsx can keep its existing
+// import shape (`import { ... } from '../lib/rag'`).
+export async function listChunks(): Promise<ApiKnowledgeChunk[]> {
+  const { chunks } = await listKnowledgeChunks();
+  return chunks;
+}
 
-  // Fetch all chunks (in a real app with large data, use a vector DB like Pinecone or pgvector)
-  // For MVP, we fetch all and calculate similarity in memory
-  const chunksRef = collection(db, 'knowledge_chunks');
-  const snapshot = await getDocs(chunksRef);
-  
-  const chunks: (KnowledgeChunk & { similarity: number })[] = [];
-  
-  snapshot.forEach((doc) => {
-    const data = doc.data();
-    if (data.embedding && data.embedding.length > 0) {
-      const similarity = cosineSimilarity(queryEmbedding, data.embedding);
-      if (similarity >= config.similarityThreshold) {
-        chunks.push({
-          id: doc.id,
-          content: data.content,
-          embedding: data.embedding,
-          source: data.source,
-          similarity,
-        });
-      }
-    }
-  });
+export async function addChunk(input: { source: string; content: string; embedding?: number[] }) {
+  return createKnowledgeChunk(input);
+}
 
-  // Sort by similarity descending and take topK
-  chunks.sort((a, b) => b.similarity - a.similarity);
-  return chunks.slice(0, config.topK);
+export async function removeChunk(id: string) {
+  return deleteKnowledgeChunk(id);
 }

@@ -1,3 +1,5 @@
+'use client';
+
 /**
  * NotificationBadge - Discreet popup for fallback notifications
  * 

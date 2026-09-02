@@ -1,3 +1,5 @@
+'use client';
+
 /**
  * Template Instructions - System prompt addons for each response template
  * 

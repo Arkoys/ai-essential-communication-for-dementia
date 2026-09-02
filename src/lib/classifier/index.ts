@@ -1,3 +1,5 @@
+'use client';
+
 /**
  * Classifier Module - Unified Export
  * 

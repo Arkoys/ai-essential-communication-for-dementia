@@ -1,3 +1,5 @@
+'use client';
+
 /**
  * Template 2 - Out of Scope Conceptual Query → Redirect
  * 

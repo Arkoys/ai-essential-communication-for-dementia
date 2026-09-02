@@ -1,3 +1,5 @@
+'use client';
+
 /**
  * Template 5 - Blocage Relationnel (Relational/Emotional Guidance)
  * 

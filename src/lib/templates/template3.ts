@@ -1,3 +1,5 @@
+'use client';
+
 /**
  * Template 3 - Guidance Complète (Complete Clinical Guidance)
  * 

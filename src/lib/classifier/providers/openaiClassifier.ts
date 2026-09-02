@@ -1,3 +1,5 @@
+'use client';
+
 /**
  * OpenAI/Structured Outputs Classifier
  * 
@@ -139,7 +141,7 @@ async function callHarvardStructuredOutput(
   userMessage: string
 ): Promise<ClassificationResult> {
   // Use the Harvard OpenAI-compatible endpoint
-  const apiBaseUrl = import.meta.env.VITE_API_PROXY_URL || '/api';
+  const apiBaseUrl = process.env.NEXT_PUBLIC_API_PROXY_URL || '/api';
   
   const response = await fetch(`${apiBaseUrl}/harvard`, {
     method: 'POST',

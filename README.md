@@ -1,5 +1,7 @@
 # Dementia Clinical Coach
 
+> **🚧 Active migration in progress** — moved from Vite + Firebase to **Next.js 15 + PostgreSQL + Drizzle + Better Auth** (Docker-only deploy). See [Migration status](#migration-status) below.
+
 A clinical decision support web application designed for primary care providers. This tool assists them in the recognition, evaluation, and diagnosis of dementia by leveraging evidence-based medical resources.
 
 ## 🌟 Features
@@ -12,15 +14,16 @@ A clinical decision support web application designed for primary care providers.
 - **Input Validation:** Automatic detection of insufficient user input with guidance for better prompts.
 - **Admin Panel:** A dedicated interface to inject and manage documentary resources (Knowledge Chunks) and configure RAG parameters.
 - **Auto-Seeding:** Automatic injection of default medical resources upon the administrator's first login.
-- **Secure Authentication:** Google Sign-In (Firebase Auth) to restrict access.
+- **Secure Authentication:** Email/password sign-in (Better Auth) to restrict access.
 - **Responsive Design:** Interface optimized for desktop, tablet, and mobile use.
 
 ## 🛠️ Tech Stack
 
-- **Frontend:** React 18, TypeScript, Vite
-- **Styling:** Tailwind CSS, Lucide React (icons)
-- **Backend & Database:** Firebase (Authentication, Firestore)
-- **Artificial Intelligence:** Google Gemini API (`@google/genai`) or MiniMax API for text generation and embeddings.
+- **Frontend:** Next.js 15 (App Router), React 19, TypeScript
+- **Styling:** Tailwind CSS v4, Lucide React (icons)
+- **Auth:** Better Auth (email/password)
+- **Database:** PostgreSQL 16 + pgvector, accessed via Drizzle ORM
+- **Artificial Intelligence:** Google Gemini API (`@google/genai`), MiniMax, or Harvard HUIT OpenAI gateway for text generation and embeddings.
 
 ## 🚀 Installation and Setup
 
@@ -437,3 +440,50 @@ This project is done in collaboration with the following schools and labs:
 ## ⚠️ Security Warning (PHI)
 
 **Warning:** This tool is designed for general clinical decision support. Users **must never** input Protected Health Information (PHI) or identifiable patient data into the chat interface. All queries must be anonymized.
+
+---
+
+## Migration status
+
+| Phase | Scope | Status |
+|---|---|---|
+| **1a — Foundation** | Next.js + Drizzle + Better Auth + Postgres (Docker) | ✅ **Done** |
+| 1b — Server-side LLM proxy | Move LLM calls into Route Handlers; rotate keys | ⏳ Pending |
+| 1c — Component migration | Rewrite App.tsx to call `/api` instead of Firestore | ⏳ Pending |
+| 2 — Data migration | Dual-write Firestore + Postgres, then drop Firebase | ⏳ Pending |
+| 3 — Cleanup | Delete `firebase/`, `backend/`, `netlify/` | ⏳ Pending |
+
+### What changed in 1a
+- **Build**: Vite 6 → Next.js 15 (App Router, standalone output).
+- **Auth**: Firebase Auth → Better Auth (email/password).
+- **DB schema**: Drizzle ORM ready (Postgres + pgvector). Tables defined in `lib/db/schema.ts`.
+- **Docker**: `frontend` + `backend` services collapsed into a single `next` service plus `postgres`.
+- **Env vars**: `VITE_*` → `NEXT_PUBLIC_*` (client) / `*` (server).
+- **Routing**: `BrowserRouter` → App Router (`src/app/{layout,page,documents/page}.tsx`).
+
+### Quick start (Docker)
+
+```bash
+cp .env.example .env.local       # fill in the secrets
+docker compose up                # Postgres + Next.js dev server on http://localhost:3000
+```
+
+### Local commands
+
+```bash
+npm install
+npm run dev               # next dev (requires Postgres reachable via DATABASE_URL)
+npm run build             # next build (standalone output)
+npm run typecheck         # tsc --noEmit
+npm run db:generate       # drizzle-kit generate (after schema changes)
+npm run db:migrate        # apply migrations to the DB in DATABASE_URL
+npm run db:studio         # drizzle-kit studio
+```
+
+### Migration TODOs for 1b (do these next)
+
+1. Create `app/api/chat/route.ts`, `app/api/harvard/route.ts`, `app/api/minimax/route.ts`, `app/api/gemini/route.ts` — server-side proxies.
+2. Refactor `src/lib/llm.ts`, `src/lib/rag.ts`, `src/lib/classifier/providers/*` to `fetch('/api/...')`.
+3. Delete `src/lib/env-client.ts`.
+4. Strip `NEXT_PUBLIC_*` LLM keys from `.env.example`, `Dockerfile`, and `docker-compose*.yml`.
+5. Rotate the previously-leaked API keys (Gemini, MiniMax, Harvard).

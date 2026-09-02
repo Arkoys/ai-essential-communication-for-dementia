@@ -1,3 +1,5 @@
+'use client';
+
 /**
  * Template 4 - Guidance Conditionnelle (Conditional Guidance)
  * 

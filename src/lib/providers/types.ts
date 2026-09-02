@@ -1,3 +1,7 @@
+'use client';
+
+import { CLIENT_ENV } from '../env-client';
+
 /**
  * Provider types and configuration
  */
@@ -29,7 +33,7 @@ export const PROVIDER_REGISTRY: Record<AIProvider, ProviderConfig> = {
     models: ['MiniMax-Text-01', 'MiniMax-M2.7'],
     requiresApiKey: true,
     supportsStreaming: false,
-    isConfigured: Boolean(process.env.MINIMAX_API_KEY),
+    isConfigured: Boolean(CLIENT_ENV.MINIMAX_API_KEY),
   },
   harvard: {
     name: 'Harvard HUIT',
@@ -37,7 +41,7 @@ export const PROVIDER_REGISTRY: Record<AIProvider, ProviderConfig> = {
     models: ['gpt-4o-mini', 'gpt-4.1', 'gpt-5.4-mini', 'gpt-5.4-nano', 'gpt-5.5'],
     requiresApiKey: true,
     supportsStreaming: true,
-    isConfigured: Boolean(process.env.HARVARD_OPENAI_KEY),
+    isConfigured: Boolean(CLIENT_ENV.HARVARD_OPENAI_KEY),
   },
 };
 

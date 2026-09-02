@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
 import { Settings, Save, RotateCcw, Loader2, BookOpen, Zap, MessageSquare, Info, Cpu, CheckCircle2, ChevronDown } from 'lucide-react';
 import { getPromptSettings, savePromptSettings, resetPromptSettings, PromptSettings, getDefaultPromptSettings } from '../lib/promptSettings';
@@ -430,7 +432,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
                   placeholder="Enter system prompt..."
                 />
                 <p className="text-xs text-zinc-500">
-                  {settings.systemPrompt.length} characters
+                  {(settings.systemPrompt || '').length} characters
                 </p>
               </div>
 
@@ -450,7 +452,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
                   placeholder="Enter knowledge content..."
                 />
                 <p className="text-xs text-zinc-500">
-                  {settings.knowledgeContent.length} characters
+                  {(settings.knowledgeContent || '').length} characters
                 </p>
               </div>
             </div>
@@ -480,7 +482,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
                   placeholder="Enter stuck mode prompt..."
                 />
                 <p className="text-xs text-zinc-500">
-                  {settings.stuckModePrompt.length} characters
+                  {(settings.stuckModePrompt || '').length} characters
                 </p>
               </div>
             </div>

@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState } from 'react';
 import { Send, Loader2, AlertTriangle } from 'lucide-react';
 import { anonymize } from '../lib/anonymizer';

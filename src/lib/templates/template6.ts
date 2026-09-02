@@ -1,3 +1,5 @@
+'use client';
+
 /**
  * Template 6 - Delirium Flag (Acute Deterioration Alert)
  * 

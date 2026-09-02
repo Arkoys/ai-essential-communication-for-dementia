@@ -1,5 +1,10 @@
-import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { db } from '../firebase';
+'use client';
+
+import {
+  getPromptSettings as fetchPromptSettings,
+  savePromptSettings as persistPromptSettings,
+  resetPromptSettings as clearPromptSettings,
+} from './api-client';
 import { generatePositiveCitationList } from './resources';
 
 // Default system prompt - Generic base (templates handle specific structures)
@@ -31,7 +36,6 @@ TONE:
 • Grounded in the toolkit's language and principles
 • Humble about phase/step assessments—invite correction`;
 
-// Default stuck mode prompt
 export const DEFAULT_STUCK_MODE_PROMPT = `You are a dementia clinical coach for primary care providers, specializing in the Stuck Points framework from the Ariadne Labs Essential Communications Toolkit.
 
 FOCUS: The clinician is STUCK on a specific problem. Your goal is to help them resolve their specific stuck point — NOT to guide them through the standard framework phases.
@@ -56,57 +60,15 @@ NO GUESSING:
 
 SOURCE-FIDELITY:
 - Use the SAME terminology and intent as the toolkit.
-- When possible, reuse or closely adapt phrases from the toolkit.
+- When possible, reuse or closely adapt phrases from the toolkit resources.
 
-RESPONSE FORMAT:
-Write directly and conversationally. Do NOT use headers, bullets, or numbered sections unless giving specific phrases. Just write naturally like a helpful colleague.
+TONE:
+- Conversational, like a supportive colleague offering a thought, not a lecture.`;
 
-Structure your response like this:
-1. Start by acknowledging the stuck point directly
-2. Explain what's likely going on
-3. Give practical advice
-4. End with a specific next step
-
-Keep it under 100 words. Be direct, not structured.`;
-
-// Default suggested prompts
-export const DEFAULT_SUGGESTED_PROMPTS = [
-  "Explain what this tool does.",
-  "Find where we are on the cognitive health journey and what comes next.",
-  "Give me language to talk with my patient, family, or care partner.",
-  "I'm stuck. Help me work through a difficult moment."
-];
-
-// Default knowledge content (embedded in prompts for MiniMax)
 export const DEFAULT_KNOWLEDGE_CONTENT = `PRIMER Essential Communications Toolkit
 Introduction
-Dementia touches the lives of millions and the primary care team belongs at the heart of dementia care as trusted guides who know their patients, understand their stories, and are prepared to work with them to seamlessly integrate the experience of dementia into the broader context of their health and life.
-The Challenge
-Recognizing cognitive impairment, diagnosing dementia, and helping those living with dementia can be complex. It requires more than just technical knowledge. The Essential Communications Toolkit was created by primary care clinicians for primary care clinicians, integrating technical guidance with practical communication strategies to help primary care clinicians navigate the clinical and emotional complexity inherent in the recognition and diagnosis of cognitive impairment and dementia.
-Our Vision:
-Primary care clinicians and teams, prepared, confident, and in relationship with those living with cognitive impairment and dementia, can catalyze a transformation in dementia care, cultivating a culture where individuals can live meaningfully with the condition, replacing fear with informed hope and proactive support. This enables a shift beyond solely focusing on deficits to acknowledging challenges while celebrating resilience, promoting well-being, and maximizing quality of life.
-The Care this Toolkit Enables
-- Prioritizes what matters most to each patient and family, recognizing evolving needs and goals.
-- Focuses on function, supporting independence and daily abilities for as long as possible.
-- Ameliorates suffering by addressing the distress of patients, families, and clinicians throughout the dementia journey.
-- Mitigates iatrogenic and self-medicating harms and reduces the likelihood crisis events
-- Reframes the clinical endeavor of detecting and diagnosing dementia to one that recognizes the individual with cognitive impairment and works to build the supports they and their carers need.
-- Holds the emotional and practical challenges of dementia while also putting effort into finding meaning and joy.
+Dementia touches the lives of millions and the primary care team belongs at the heart of dementia care as trusted providers who know their patients, understand their stories, and are prepared to work with them to seamlessly integrate the experience of dementia into the broader context of their health and life.`;
 
-The Approach
-The Toolkit is grounded in five core principles which support clinicians recognizing cognitive impairment and guiding patients toward the care and services that they need.
-Comfort with Ambiguity: Acknowledges the uncertainty and unpredictability of a dementia diagnosis while supporting those living with cognitive impairment and their families with confidence and care.
-Centering on the patient: The individual, with their unique story, is always at the center, with those who care for them. The primary care clinician and team are prepared, present and available to them on their journey.
-Addressing Emotions and Mood: Attends to the emotional experiences of patients, families, and clinicians—including loss of identity, anxiety, sadness, hope, and resilience—throughout the journey.
-Reframing Success: Shifts the dementia narrative from one solely of loss and decline to the possibility of growth, adaptation, and meaning. Reframes the task at hand from diagnosis to explanation and of care that optimizes—ongoing quality of life.
-Accompaniment: Adopts a flexible, nonjudgmental, and patient-centered stance - meeting patients and caregivers where they are, adapting responses to their needs, and supporting them throughout the winding journey.
-
-Our Toolkit Includes:
-- Navigation Map: Clear structure for the dementia journey, helping clinicians and families anticipate and navigate key milestones and transitions.
-- Conversation Guides: Ready-to-use language and dialogue for sensitive conversations along the navigation map—ensuring honesty, compassion, and clarity.
-- Stuck Points Framework: Practical tools to identify, address, and move through communication or relational obstacles that often cause uncertainty and discomfort (clinical and emotional "roadblocks").`;
-
-// Default coaching resources
 export const DEFAULT_COACHING_RESOURCE = `You are a dialogical clinical communication coach supporting dementia consultations in primary care.
 
 Your role is to help clinicians think through difficult conversations collaboratively rather than directiveIy.
@@ -142,6 +104,14 @@ judgmental language,
 excessive verbosity,
 overwhelming information,
   or replacing clinical judgment.`;
+
+// Default suggested prompts shown in the chat intro screen.
+export const DEFAULT_SUGGESTED_PROMPTS: string[] = [
+  "Explain what this tool does.",
+  "Find where we are on the cognitive health journey and what comes next.",
+  "Give me language to talk with my patient, family, or care partner.",
+  "I'm stuck. Help me work through a difficult moment.",
+];
 
 // CONDENSED MODE ADDON
 // Condensed mode reduces repetition and length while keeping the core structure
@@ -179,7 +149,7 @@ export interface PromptSettings {
   responseMode: 'basic' | 'condensed';
 }
 
-// Get default settings
+// Get default settings (used as a fallback when the API is unreachable).
 export function getDefaultPromptSettings(): PromptSettings {
   return {
     provider: 'harvard',
@@ -195,29 +165,36 @@ export function getDefaultPromptSettings(): PromptSettings {
   };
 }
 
-// Load prompt settings from Firestore
+// Load prompt settings via the Postgres-backed API.
 export async function getPromptSettings(): Promise<PromptSettings> {
+  const fallback = getDefaultPromptSettings();
   try {
-    const docRef = doc(db, 'app_settings', 'prompts');
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-      return docSnap.data() as PromptSettings;
+    const { settings, defaults } = await fetchPromptSettings();
+    // Merge: saved settings override defaults, but never let a missing/null
+    // field clobber a default (older DB rows or partial responses can leave
+    // fields as `null`/`undefined`, which the spread would otherwise copy
+    // through and crash callers that read `.length` on strings).
+    const base = { ...fallback, ...(defaults ?? {}) };
+    const merged: PromptSettings = { ...base, ...(settings ?? {}) };
+    for (const key of Object.keys(base) as (keyof PromptSettings)[]) {
+      if (merged[key] == null) {
+        (merged as Record<string, unknown>)[key] = base[key];
+      }
     }
+    return merged;
   } catch (error) {
-    console.error("Error fetching prompt settings:", error);
+    console.error('Error fetching prompt settings:', error);
+    return fallback;
   }
-  return getDefaultPromptSettings();
 }
 
-// Save prompt settings to Firestore
+// Save prompt settings via the API.
 export async function savePromptSettings(settings: PromptSettings): Promise<void> {
-  const docRef = doc(db, 'app_settings', 'prompts');
-  await setDoc(docRef, settings);
+  await persistPromptSettings(settings);
 }
 
-// Reset prompts to defaults
+// Reset prompts to defaults via the API.
 export async function resetPromptSettings(): Promise<PromptSettings> {
-  const defaults = getDefaultPromptSettings();
-  await savePromptSettings(defaults);
-  return defaults;
+  const { defaults } = await clearPromptSettings();
+  return defaults as PromptSettings;
 }

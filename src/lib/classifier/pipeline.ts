@@ -1,3 +1,5 @@
+'use client';
+
 /**
  * Classification Pipeline - Main Orchestration
  * 

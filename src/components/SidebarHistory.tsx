@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState } from 'react';
 import { Plus, MessageSquare, LogOut, Trash2, Settings, X, ChevronLeft, ChevronRight, Columns2, Minimize2 } from 'lucide-react';
 import { format } from 'date-fns';

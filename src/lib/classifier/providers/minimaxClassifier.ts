@@ -1,6 +1,10 @@
+'use client';
+
+import { CLIENT_ENV } from '../../env-client';
+
 /**
  * MiniMax Classifier
- * 
+ *
  * Uses strict prompt engineering + JSON extraction + validation.
  * MiniMax doesn't support Structured Outputs, so we use a different approach:
  * 1. Very explicit prompt with examples
@@ -78,9 +82,9 @@ Return JSON only.`;
  * Call MiniMax API
  */
 async function callMinimaxAPI(userMessage: string): Promise<string> {
-  const apiKey = process.env.MINIMAX_API_KEY;
-  const apiBase = process.env.MINIMAX_API_BASE_URL || 'https://api.minimaxi.chat';
-  const apiPath = process.env.MINIMAX_API_PATH || '/v1/chat/completions';
+  const apiKey = CLIENT_ENV.MINIMAX_API_KEY;
+  const apiBase = CLIENT_ENV.MINIMAX_API_BASE_URL;
+  const apiPath = CLIENT_ENV.MINIMAX_API_PATH;
   
   if (!apiKey) {
     throw new Error('MiniMax API key not configured');

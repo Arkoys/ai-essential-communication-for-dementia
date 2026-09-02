@@ -1,3 +1,5 @@
+'use client';
+
 /**
  * Safety Pre-Filter - Étape 1 du pipeline
  * 
