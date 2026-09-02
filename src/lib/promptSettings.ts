@@ -153,9 +153,12 @@ export interface PromptSettings {
 export function getDefaultPromptSettings(): PromptSettings {
   return {
     provider: 'harvard',
-    dualModeProvider: 'minimax',
-    selectedModel: 'gpt-4o-mini',
-    dualModeSelectedModel: 'MiniMax-Text-01',
+    // `dualModeProvider` / `dualModeSelectedModel` are kept for DB-schema
+    // backward compatibility but are no longer surfaced in the UI. Both
+    // default to Harvard with the same model as the primary lane.
+    dualModeProvider: 'harvard',
+    selectedModel: 'gpt-5.5',
+    dualModeSelectedModel: 'gpt-5.5',
     systemPrompt: DEFAULT_SYSTEM_PROMPT,
     stuckModePrompt: DEFAULT_STUCK_MODE_PROMPT,
     suggestedPrompts: DEFAULT_SUGGESTED_PROMPTS,

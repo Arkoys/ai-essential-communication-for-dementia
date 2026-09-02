@@ -27,7 +27,9 @@ export async function POST(req: NextRequest) {
     return Response.json({ error: 'invalid_messages' }, { status: 400 });
   }
 
-  const provider = ((body.provider as string) ?? process.env.LLM_PROVIDER ?? 'harvard').toLowerCase();
+  // Normalize legacy 'minimax' values to 'harvard' for backward compatibility.
+  const rawProvider = (body.provider as string) ?? process.env.LLM_PROVIDER ?? 'harvard';
+  const provider = rawProvider.toLowerCase() === 'minimax' ? 'harvard' : rawProvider.toLowerCase();
   const model = typeof body.model === 'string' ? body.model : undefined;
   const temperature = typeof body.temperature === 'number' ? body.temperature : 0.2;
   const maxTokens = typeof body.max_tokens === 'number' ? body.max_tokens : undefined;
@@ -36,8 +38,6 @@ export async function POST(req: NextRequest) {
   switch (provider) {
     case 'harvard':
       return forwardToHarvard(messages, model, temperature, maxTokens, stream);
-    case 'minimax':
-      return forwardToMinimax(messages, model, temperature, maxTokens, stream);
     case 'gemini':
       return forwardToGemini(messages, model, temperature, maxTokens, stream);
     default:
@@ -57,7 +57,7 @@ async function forwardToHarvard(
     process.env.HARVARD_OPENAI_BASE_URL ?? 'https://go.apis.huit.harvard.edu/ais-openai-direct/v2/';
   if (!apiKey) return Response.json({ error: 'harvard_not_configured' }, { status: 503 });
 
-  const m = model ?? 'gpt-4o-mini';
+  const m = model ?? process.env.HARVARD_MODEL ?? 'gpt-5.5';
   const payload: Record<string, unknown> = { messages, model: m, stream };
   if (!NO_TEMP_MODELS.has(m)) payload.temperature = temperature;
   if (maxTokens) payload.max_tokens = maxTokens;
@@ -78,45 +78,6 @@ async function forwardToHarvard(
     return Response.json(await upstream.json());
   } catch {
     return Response.json({ error: 'harvard_unreachable' }, { status: 502 });
-  }
-}
-
-async function forwardToMinimax(
-  messages: ChatMessage[],
-  model: string | undefined,
-  temperature: number,
-  maxTokens: number | undefined,
-  stream: boolean,
-) {
-  const apiKey = process.env.MINIMAX_API_KEY;
-  const baseUrl = process.env.MINIMAX_API_BASE_URL ?? 'https://api.minimaxi.chat';
-  const path = process.env.MINIMAX_API_PATH ?? '/v1/chat/completions';
-  if (!apiKey) return Response.json({ error: 'minimax_not_configured' }, { status: 503 });
-
-  const payload: Record<string, unknown> = {
-    model: model ?? process.env.MINIMAX_MODEL ?? 'MiniMax-Text-01',
-    messages,
-    stream,
-    temperature,
-  };
-  if (maxTokens) payload.max_tokens = maxTokens;
-
-  try {
-    const upstream = await fetch(baseUrl.replace(/\/$/, '') + path, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify(payload),
-    });
-    if (!upstream.ok) {
-      const text = await upstream.text().catch(() => '');
-      return Response.json(
-        { error: 'minimax_upstream_error', status: upstream.status, detail: text.slice(0, 500) },
-        { status: upstream.status },
-      );
-    }
-    return Response.json(await upstream.json());
-  } catch {
-    return Response.json({ error: 'minimax_unreachable' }, { status: 502 });
   }
 }
 

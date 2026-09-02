@@ -48,16 +48,13 @@ services:
       ADMIN_EMAILS: ${ADMIN_EMAILS:-}
       NEXT_PUBLIC_ADMIN_EMAILS: ${NEXT_PUBLIC_ADMIN_EMAILS:-}
       # Server-side LLM provider keys — read by /api/* proxies. Never exposed
-      # to the client (no NEXT_PUBLIC_ prefix).
+      # to the client (no NEXT_PUBLIC_ prefix). The MiniMax provider was
+      # removed in this build; only Harvard and Gemini are supported.
       LLM_PROVIDER: ${LLM_PROVIDER:-harvard}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
-      MINIMAX_API_KEY: ${MINIMAX_API_KEY:-}
-      MINIMAX_MODEL: ${MINIMAX_MODEL:-MiniMax-Text-01}
-      MINIMAX_API_BASE_URL: ${MINIMAX_API_BASE_URL:-https://api.minimaxi.chat}
-      MINIMAX_API_PATH: ${MINIMAX_API_PATH:-/v1/chat/completions}
       HARVARD_OPENAI_KEY: ${HARVARD_OPENAI_KEY:-}
       HARVARD_OPENAI_BASE_URL: ${HARVARD_OPENAI_BASE_URL:-https://go.apis.huit.harvard.edu/ais-openai-direct/v2/}
-      HARVARD_MODEL: ${HARVARD_MODEL:-gpt-4o-mini}
+      HARVARD_MODEL: ${HARVARD_MODEL:-gpt-5.5}
       NODE_ENV: development
     volumes:
       - .:/app

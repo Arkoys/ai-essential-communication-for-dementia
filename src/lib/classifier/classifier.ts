@@ -2,13 +2,10 @@
 
 /**
  * Classifier - Étape 2 du pipeline
- * 
+ *
  * Performs structured LLM classification to determine query type and routing.
- * Supports multiple providers with provider-specific implementation:
- * - OpenAI/Harvard: Uses Structured Outputs (JSON Schema enforcement)
- * - MiniMax: Uses strict prompt + JSON extraction + validation
- * 
- * Results are validated against a schema before being returned.
+ * Uses OpenAI Structured Outputs (JSON Schema enforcement) via the Harvard
+ * HUIT gateway. Results are validated against a schema before being returned.
  */
 
 import { CLASSIFICATION_MATRIX } from './classificationMatrix';
@@ -16,10 +13,10 @@ import type { ClassificationResult, ResponsePath, Confidence, QueryTypeId, Tier1
 
 // Provider-specific classification functions
 import { classifyWithOpenAI } from './providers/openaiClassifier';
-import { classifyWithMinimax } from './providers/minimaxClassifier';
 
-// Provider type for dispatching
-export type ClassifierProvider = 'openai' | 'minimax';
+// Provider type for dispatching. Only 'openai' is supported after the
+// MiniMax removal; the union is kept so legacy call sites keep compiling.
+export type ClassifierProvider = 'openai';
 
 interface ClassifierOptions {
   provider: ClassifierProvider;
@@ -28,7 +25,12 @@ interface ClassifierOptions {
 }
 
 /**
- * Main classification function - dispatches to provider-specific implementation
+ * Main classification function - dispatches to the OpenAI provider.
+ *
+ * The former prompt-based MiniMax fallback path has been removed: Harvard
+ * Structured Outputs is the sole implementation. If the OpenAI call fails,
+ * the error propagates and the pipeline falls back to its static Template 1
+ * fallback (see `pipeline.ts`).
  */
 export async function classifyPrompt(
   userPrompt: string,
@@ -36,10 +38,10 @@ export async function classifyPrompt(
   provider: ClassifierProvider = 'openai'
 ): Promise<ClassificationResult> {
   const maxRetries = 1;
-  
+
   // Build the full context for classification
   const fullContext = buildClassificationContext(userPrompt, conversationHistory);
-  
+
   let lastError: Error | null = null;
   let lastRawResult: unknown = null;
 
@@ -48,43 +50,8 @@ export async function classifyPrompt(
 
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
-      let result: ClassificationResult;
-
-      // Dispatch to provider-specific classifier. If the configured provider
-      // keeps failing (network error, malformed JSON, schema rejection), fall
-      // back to the prompt-based classifier so we don't give up entirely.
-      let usedProvider: ClassifierProvider = provider;
-      try {
-        switch (provider) {
-          case 'openai':
-            usedProvider = 'openai';
-            result = await classifyWithOpenAI(fullContext);
-            break;
-          case 'minimax':
-            usedProvider = 'minimax';
-            result = await classifyWithMinimax(fullContext);
-            break;
-          default:
-            usedProvider = 'minimax';
-            result = await classifyWithMinimax(fullContext);
-        }
-      } catch (primaryError) {
-        // Primary provider threw — try the prompt-based fallback if we haven't
-        // already tried it. This is what gives us resilience: a Harvard outage
-        // or a malformed structured-output response no longer means the user
-        // sees the static "fallback" template.
-        if (provider !== 'minimax' && attempt === 0) {
-          console.warn(
-            `Primary provider "${provider}" threw, attempting prompt-based fallback`,
-            primaryError instanceof Error ? primaryError.message : primaryError
-          );
-          usedProvider = 'minimax';
-          result = await classifyWithMinimax(fullContext);
-        } else {
-          throw primaryError;
-        }
-      }
-      attemptedProvider = usedProvider;
+      const result: ClassificationResult = await classifyWithOpenAI(fullContext);
+      attemptedProvider = 'openai';
 
       // Validate the result
       if (validateClassificationResult(result)) {
@@ -96,7 +63,7 @@ export async function classifyPrompt(
       lastRawResult = result;
       console.warn(
         `Classification attempt ${attempt + 1} failed validation, retrying...`,
-        { provider: usedProvider, rawResult: result }
+        { provider: attemptedProvider, rawResult: result }
       );
 
     } catch (error) {

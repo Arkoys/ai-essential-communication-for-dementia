@@ -214,9 +214,9 @@ export default function App() {
           // Fall back to a static default so the UI keeps working.
           setPromptSettings({
             provider: 'harvard',
-            dualModeProvider: 'minimax',
-            selectedModel: 'gpt-4o-mini',
-            dualModeSelectedModel: 'MiniMax-Text-01',
+            dualModeProvider: 'harvard',
+            selectedModel: 'gpt-5.5',
+            dualModeSelectedModel: 'gpt-5.5',
             systemPrompt: '',
             stuckModePrompt: '',
             suggestedPrompts: DEFAULT_SUGGESTED_PROMPTS,
@@ -443,7 +443,8 @@ export default function App() {
   const handleNewDualConversation = async () => {
     if (!user) return;
     const primaryProv = promptSettings?.provider || 'harvard';
-    const secondaryProv = promptSettings?.dualModeProvider || 'minimax';
+    // Dual mode now uses Harvard for both lanes.
+    const secondaryProv = 'harvard';
     try {
       const { conversation } = await createConversation({
         title: `Dual Mode - ${new Date().toLocaleTimeString()}`,
@@ -924,7 +925,9 @@ export default function App() {
   const isDualMode = activeConversation?.type === 'dual';
   const isCompareMode = activeConversation?.type === 'compare';
   const primaryProvider = activeConversation?.primaryProvider || promptSettings?.provider || 'harvard';
-  const secondaryProvider = activeConversation?.secondaryProvider || promptSettings?.dualModeProvider || 'minimax';
+  // Both lanes in dual mode now use Harvard. Kept as a separate variable so
+  // existing call sites that read `secondaryProvider` still compile.
+  const secondaryProvider = activeConversation?.secondaryProvider || 'harvard';
 
   const latestAssistantMessage = [...messages].reverse().find((m) => m.role === 'assistant') || null;
   const inferredFromOutput = latestAssistantMessage

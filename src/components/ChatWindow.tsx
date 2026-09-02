@@ -91,8 +91,9 @@ export function ChatWindow({
     onSendMessage(prompt);
   };
 
-  // Display name for provider
-  const providerDisplayName = provider === 'harvard' ? 'Harvard GPT (OpenAI)' : provider === 'minimax' ? 'MiniMax' : provider;
+  // Display name for provider (Harvard is the sole supported provider after
+  // the MiniMax removal).
+  const providerDisplayName = 'Harvard GPT (OpenAI)';
 
   return (
     <div className="flex flex-col h-full bg-white dark:bg-zinc-950">

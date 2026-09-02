@@ -200,7 +200,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
                 <div className="bg-white dark:bg-zinc-900 rounded-xl border border-zinc-200 dark:border-zinc-800 p-4 grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
                     <label className="block text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
-                      Select AI Provider
+                      AI Provider
                     </label>
                     <div className="relative">
                       <select
@@ -208,7 +208,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
                         onChange={(e) => updateField('provider', e.target.value)}
                         className="w-full p-3 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 appearance-none cursor-pointer pr-10"
                       >
-                        {(['minimax', 'harvard'] as const).map((providerKey) => {
+                        {(['harvard'] as const).map((providerKey) => {
                           const provider = PROVIDER_REGISTRY[providerKey];
                           const isConfigured = provider.isConfigured;
                           return (
@@ -243,80 +243,6 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
                   <p className="mt-2 text-xs text-zinc-500 md:col-span-2">
                     Changes take effect after saving and refreshing the page.
                   </p>
-                </div>
-
-                {/* Dual Mode Info - DISABLED */}
-                <div className="bg-gradient-to-r from-purple-50 to-blue-50 dark:from-purple-900/20 dark:to-blue-900/20 rounded-xl border border-purple-200 dark:border-purple-800/50 p-4 opacity-60">
-                  <div className="flex items-start gap-3">
-                    <div className="text-2xl">🔄</div>
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-zinc-800 dark:text-zinc-200 flex items-center gap-2">
-                        Dual Mode (Compare Models)
-                        <span className="text-xs bg-zinc-200 dark:bg-zinc-700 text-zinc-500 dark:text-zinc-400 px-2 py-0.5 rounded-full">
-                          Disabled
-                        </span>
-                      </h3>
-                      <p className="text-xs text-zinc-600 dark:text-zinc-400 mt-1 mb-3">
-                        Run two models simultaneously to compare their responses side-by-side
-                      </p>
-                      <div className="bg-white/50 dark:bg-zinc-800/50 rounded-lg p-3 space-y-2">
-                        <p className="text-xs text-zinc-600 dark:text-zinc-400">
-                          <strong>How to use:</strong>
-                        </p>
-                        <ol className="text-xs text-zinc-600 dark:text-zinc-400 space-y-1 list-decimal list-inside">
-                          <li>Click "Dual Mode" in the sidebar to create a dual comparison session</li>
-                          <li>Select your primary and secondary providers below</li>
-                          <li>Both models will receive the same input and respond in parallel</li>
-                        </ol>
-                      </div>
-                    </div>
-                  </div>
-                  
-                  <div className="mt-3 pt-3 border-t border-purple-200 dark:border-purple-800/50 grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium text-zinc-400 dark:text-zinc-500 mb-2">
-                        Default Secondary Provider (for dual mode)
-                      </label>
-                      <div className="relative">
-                        <select
-                          disabled
-                          value={settings.dualModeProvider || 'minimax'}
-                          className="w-full p-3 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-500 appearance-none cursor-not-allowed pr-10"
-                        >
-                          {(['minimax', 'harvard'] as const).map((providerKey) => {
-                            if (providerKey === settings.provider) return null;
-                            const provider = PROVIDER_REGISTRY[providerKey];
-                            const isConfigured = provider.isConfigured;
-                            return (
-                              <option key={providerKey} value={providerKey}>
-                                {provider.name} {!isConfigured ? '(Not configured)' : ''}
-                              </option>
-                            );
-                          })}
-                        </select>
-                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" size={20} />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-zinc-400 dark:text-zinc-500 mb-2">
-                        Secondary Model
-                      </label>
-                      <div className="relative">
-                        <select
-                          disabled
-                          value={settings.dualModeSelectedModel || PROVIDER_REGISTRY[settings.dualModeProvider as keyof typeof PROVIDER_REGISTRY]?.models[0]}
-                          className="w-full p-3 rounded-lg border border-zinc-200 dark:border-zinc-700 bg-zinc-100 dark:bg-zinc-800 text-zinc-400 dark:text-zinc-500 appearance-none cursor-not-allowed pr-10"
-                        >
-                          {PROVIDER_REGISTRY[settings.dualModeProvider as keyof typeof PROVIDER_REGISTRY]?.models.map((model) => (
-                            <option key={model} value={model}>
-                              {model}
-                            </option>
-                          ))}
-                        </select>
-                        <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" size={20} />
-                      </div>
-                    </div>
-                  </div>
                 </div>
 
                 {/* Provider Cards */}
@@ -393,12 +319,6 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
                         {PROVIDER_REGISTRY.harvard.isConfigured ? '✓ Server-side' : '✗ Not set'}
                       </span>
                     </div>
-                    <div className="flex justify-between">
-                      <span className="text-zinc-600 dark:text-zinc-400">MINIMAX_API_KEY</span>
-                      <span className={PROVIDER_REGISTRY.minimax.isConfigured ? 'text-green-600 dark:text-green-400' : 'text-red-500'}>
-                        {PROVIDER_REGISTRY.minimax.isConfigured ? '✓ Server-side' : '✗ Not set'}
-                      </span>
-                    </div>
                   </div>
                   <p className="mt-3 text-xs text-zinc-500">
                     API keys are configured server-side and are never exposed to the client.
@@ -443,7 +363,7 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
                   Knowledge Content
                 </label>
                 <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800/50 rounded-lg p-3 text-sm text-green-800 dark:text-green-200">
-                  <strong>📊 Influence:</strong> Embedded into prompts for MiniMax. Contains the Ariadne Labs toolkit content the AI uses to generate responses.
+                  <strong>📊 Influence:</strong> Embedded into prompts for the Harvard model. Contains the Ariadne Labs toolkit content the AI uses to generate responses.
                 </div>
                 <textarea
                   value={settings.knowledgeContent}

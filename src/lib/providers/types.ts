@@ -7,9 +7,14 @@ import { CLIENT_ENV } from '../env-client';
  */
 
 /**
- * Available AI providers in the application
+ * Available AI providers in the application.
+ *
+ * As of the post-MiniMax-removal migration, Harvard HUIT is the sole
+ * supported provider. The union is kept for forward compatibility and to
+ * avoid breaking legacy imports; treat any value other than `'harvard'` as
+ * "unsupported".
  */
-export type AIProvider = 'minimax' | 'harvard';
+export type AIProvider = 'harvard';
 
 /**
  * Configuration for each provider
@@ -27,18 +32,10 @@ export interface ProviderConfig {
  * Provider registry with metadata
  */
 export const PROVIDER_REGISTRY: Record<AIProvider, ProviderConfig> = {
-  minimax: {
-    name: 'MiniMax',
-    description: 'MiniMax text generation models',
-    models: ['MiniMax-Text-01', 'MiniMax-M2.7'],
-    requiresApiKey: true,
-    supportsStreaming: false,
-    isConfigured: Boolean(CLIENT_ENV.MINIMAX_API_KEY),
-  },
   harvard: {
     name: 'Harvard HUIT',
-    description: 'Harvard\'s OpenAI-compatible gateway (api-key auth)',
-    models: ['gpt-4o-mini', 'gpt-4.1', 'gpt-5.4-mini', 'gpt-5.4-nano', 'gpt-5.5'],
+    description: "Harvard's OpenAI-compatible gateway (api-key auth)",
+    models: ['gpt-5.5', 'gpt-4o-mini', 'gpt-4.1', 'gpt-5.4-mini', 'gpt-5.4-nano'],
     requiresApiKey: true,
     supportsStreaming: true,
     isConfigured: Boolean(CLIENT_ENV.HARVARD_OPENAI_KEY),

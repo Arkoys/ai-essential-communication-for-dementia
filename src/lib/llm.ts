@@ -20,8 +20,7 @@ import type { ResponsePath } from './classifier/types';
 import { chatCompletion as serverChatCompletion } from '@/lib/api-client';
 
 // Harvard configuration
-const HARVARD_DEFAULT_MODEL = 'gpt-4o-mini';
-const MINIMAX_DEFAULT_MODEL = 'MiniMax-Text-01';
+const HARVARD_DEFAULT_MODEL = 'gpt-5.5';
 
 // Use configurable system prompt, fallback to default
 const SYSTEM_PROMPT = DEFAULT_SYSTEM_PROMPT;
@@ -65,8 +64,8 @@ ${generatePositiveCitationList()}
 - NEVER write out URLs in full (e.g., write "[National Institute on Aging](https://www.nia.nih.gov/health/alzheimers-and-dementia)" not "https://www.nia.nih.gov/health/...")`;
 }
 
-// Build full MiniMax system prompt with knowledge embedded
-function buildMinimaxSystemPrompt(systemPrompt: string, knowledgeContent: string): string {
+// Build full Harvard system prompt with knowledge embedded
+function buildHarvardSystemPrompt(systemPrompt: string, knowledgeContent: string): string {
   const baseKnowledge = knowledgeContent || buildToolkitReferenceForPrompt();
   
   // Always include Curated External Resources
@@ -295,20 +294,20 @@ In order to best support you, I need to know:
 Once you provide this information, I can help you identify where you are in the dementia diagnosis journey and offer sample language to support your conversations.`;
 }
 
-async function generateWithMinimax(
-  messages: { role: string; content: string }[],
-  model?: string
+async function generateWithHarvard(
+  messages: { role: 'system' | 'user' | 'assistant'; content: string }[],
+  model: string,
+  temperature: number
 ) {
-  const minimaxModel = model || 'MiniMax-Text-01';
   const result = await serverChatCompletion({
-    provider: 'minimax',
-    model: minimaxModel,
-    messages: messages as Array<{ role: 'system' | 'user' | 'assistant'; content: string }>,
-    temperature: 0.2,
+    provider: 'harvard',
+    model,
+    messages,
+    temperature,
   });
-  const rawText =
-    result?.choices?.[0]?.message?.content || 'No response text returned from MiniMax.';
-  return sanitizeModelOutput(rawText);
+  return sanitizeModelOutput(
+    result?.choices?.[0]?.message?.content || 'No response returned.'
+  );
 }
 
 function buildStuckModeSystemPrompt(stuckModePrompt: string, knowledgeContent: string): string {
@@ -401,7 +400,7 @@ export async function generateClinicalResponseWithHistory(
         const pipelineResult = await runClassificationPipeline(
           query,
           history,
-          provider === 'minimax' ? 'minimax' : 'openai'
+          'openai'
         );
         
         templateAddon = pipelineResult.systemPromptAddon;
@@ -432,10 +431,10 @@ export async function generateClinicalResponseWithHistory(
     // Build the base prompt with template addon
     let promptWithTemplate = templateAddon 
       ? buildSystemPrompt(
-          buildMinimaxSystemPrompt(baseSystemPrompt, knowledgeContent),
+          buildHarvardSystemPrompt(baseSystemPrompt, knowledgeContent),
           templateAddon
         )
-      : buildMinimaxSystemPrompt(baseSystemPrompt, knowledgeContent);
+      : buildHarvardSystemPrompt(baseSystemPrompt, knowledgeContent);
     
     // Add condensed mode addon if enabled (only in normal mode, not stuck mode)
     const effectiveResponseMode = responseMode === 'condensed' && !isStuck ? 'condensed' : 'basic';
@@ -447,10 +446,12 @@ export async function generateClinicalResponseWithHistory(
 
     // ===== STEP 3: Generate Response Based on Provider =====
     
-    // Harvard: OpenAI-compatible gateway with api-key auth (server-side proxy).
+    // Harvard (sole supported provider): OpenAI-compatible gateway with
+    // api-key auth (server-side proxy). Anything other than 'harvard' is
+    // routed to the Gemini fallback below for graceful degradation.
     if (provider === 'harvard') {
       const userContent = query + phaseContext;
-      const harvardModel = promptSettings.selectedModel || 'gpt-4o-mini';
+      const harvardModel = promptSettings.selectedModel || HARVARD_DEFAULT_MODEL;
 
       const harvardMessages: { role: 'system' | 'user' | 'assistant'; content: string }[] = [
         {
@@ -469,44 +470,17 @@ export async function generateClinicalResponseWithHistory(
         { role: 'user', content: userContent },
       ];
 
-      const response = await serverChatCompletion({
-        provider: 'harvard',
-        model: harvardModel,
-        messages: harvardMessages,
-        temperature: 0.2,
-      });
+      const responseText = await generateWithHarvard(
+        harvardMessages,
+        harvardModel,
+        0.2
+      );
       return {
-        response: sanitizeModelOutput(response.choices?.[0]?.message?.content || 'No response returned.'),
+        response: responseText,
         template: detectedTemplate,
         tier1Complete,
         safetyOverride,
       };
-    }
-
-    // MiniMax: no RAG — full toolkit text is embedded in the system prompt.
-    if (provider === 'minimax') {
-      const userContent = query + phaseContext;
-      const minimaxModel = promptSettings.dualModeSelectedModel || promptSettings.selectedModel || MINIMAX_DEFAULT_MODEL;
-      
-      const minimaxMessages = [
-        { 
-          role: 'system', 
-          content: isStuck 
-            ? buildStuckModeSystemPrompt(
-                promptSettings.stuckModePrompt || DEFAULT_STUCK_MODE_PROMPT,
-                knowledgeContent
-              )
-            : fullSystemPrompt
-        },
-        ...history.map((msg) => ({
-          role: msg.role,
-          content: msg.content,
-        })),
-        { role: 'user', content: userContent },
-      ];
-
-      const response = await generateWithMinimax(minimaxMessages, minimaxModel);
-      return { response, template: detectedTemplate, tier1Complete, safetyOverride };
     }
 
     // Gemini fallback: RAG retrieval for relevant chunks only

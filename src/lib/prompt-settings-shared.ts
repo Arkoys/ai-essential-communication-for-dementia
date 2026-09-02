@@ -29,9 +29,11 @@ export interface PromptSettingsWire {
 export function getDefaultPromptSettings(): PromptSettingsWire {
   return {
     provider: 'harvard',
-    dualModeProvider: 'minimax',
-    selectedModel: 'gpt-4o-mini',
-    dualModeSelectedModel: 'MiniMax-Text-01',
+    // dualModeProvider / dualModeSelectedModel are kept for schema
+    // backward compatibility but are no longer used by the UI.
+    dualModeProvider: 'harvard',
+    selectedModel: 'gpt-5.5',
+    dualModeSelectedModel: 'gpt-5.5',
     systemPrompt: DEFAULT_SYSTEM_PROMPT,
     stuckModePrompt: DEFAULT_STUCK_MODE_PROMPT,
     suggestedPrompts: DEFAULT_SUGGESTED_PROMPTS,

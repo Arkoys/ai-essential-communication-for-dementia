@@ -31,7 +31,7 @@ This is the fastest way to get the app running locally for a new developer.
 
 - **Node.js 20+** (matches the Dockerfile)
 - **Docker + Docker Compose v2** — `docker compose version` should print `v2.x`
-- **One LLM provider key** — at least one of `HARVARD_OPENAI_KEY`, `GEMINI_API_KEY`, or `MINIMAX_API_KEY`
+- **One LLM provider key** — `HARVARD_OPENAI_KEY` (recommended). `GEMINI_API_KEY` is an optional fallback.
 
 ### 2. Clone and configure
 
@@ -47,7 +47,7 @@ Edit `.env.local` and fill in at least:
 
 - `BETTER_AUTH_SECRET` — generate with `openssl rand -base64 48`
 - `ADMIN_EMAILS` — comma-separated list of emails that should see the Admin panel
-- One of `HARVARD_OPENAI_KEY`, `GEMINI_API_KEY`, `MINIMAX_API_KEY`
+- One of `HARVARD_OPENAI_KEY`, `GEMINI_API_KEY`
 - Set `NEXT_PUBLIC_ADMIN_EMAILS` to the same value as `ADMIN_EMAILS` (it's safe to ship to the browser — only used to gate the Admin button)
 
 ### 3. Boot the stack
@@ -108,18 +108,15 @@ All variables live in `.env.local` (Docker compose reads the same file). The ful
 | `BETTER_AUTH_URL` | Public URL the app is served at | Better Auth trusted origins / cookies |
 | `ADMIN_EMAILS` | Comma-separated admin allowlist | `lib/admin.ts` (RAG mutations) |
 | `NEXT_PUBLIC_ADMIN_EMAILS` | Mirror of `ADMIN_EMAILS` for the client | `lib/auth-client.ts` (UI gating) |
-| `LLM_PROVIDER` | `harvard` \| `gemini` \| `minimax` | `/api/chat` proxy |
-| One of `HARVARD_OPENAI_KEY` / `GEMINI_API_KEY` / `MINIMAX_API_KEY` | LLM provider credentials | `/api/chat`, `/api/knowledge-chunks` |
+| `LLM_PROVIDER` | `harvard` \| `gemini` | `/api/chat` proxy |
+| `HARVARD_OPENAI_KEY` (recommended) or `GEMINI_API_KEY` (optional fallback) | LLM provider credentials | `/api/chat`, `/api/knowledge-chunks` |
 
 ### Optional
 
 | Variable | Default | Purpose |
 |---|---|---|
-| `HARVARD_MODEL` | `gpt-4o-mini` | Default Harvard model |
+| `HARVARD_MODEL` | `gpt-5.5` | Default Harvard model |
 | `HARVARD_OPENAI_BASE_URL` | Harvard gateway URL | Override for testing |
-| `MINIMAX_MODEL` | `MiniMax-Text-01` | Default MiniMax model |
-| `MINIMAX_API_BASE_URL` | `https://api.minimaxi.chat` | |
-| `MINIMAX_API_PATH` | `/v1/chat/completions` | |
 | `APP_URL` / `NEXT_PUBLIC_APP_URL` | `http://localhost:3000` | Used by Better Auth client during SSR |
 | `NODE_ENV` | `development` | Standard Next.js |
 
@@ -188,11 +185,10 @@ All routes under `/api/` are Node runtime and require an authenticated session u
 | `/api/rag-config` | GET, PUT | Per-user RAG tuning |
 | `/api/rag-search` | POST | Server-side RAG retrieval |
 | `/api/knowledge-chunks` | GET, POST, DELETE | Admin-only RAG corpus management |
-| `/api/chat` | POST | LLM proxy — dispatches to Harvard / MiniMax / Gemini |
+| `/api/chat` | POST | LLM proxy — dispatches to Harvard (default) / Gemini (fallback) |
 | `/api/harvard` | POST | Direct Harvard gateway proxy (used by classifier) |
 | `/api/harvard-responses` | POST | Harvard Responses API proxy |
 | `/api/gemini` | POST | Direct Gemini proxy |
-| `/api/minimax` | POST | Direct MiniMax proxy |
 
 ---
 
@@ -324,7 +320,6 @@ The following values are real secrets. If any of them leaks (commit, log, screen
 | `BETTER_AUTH_SECRET` | Cookie HMAC; rotating invalidates all sessions | Generate new (`openssl rand -base64 48`), redeploy. All users will be signed out — expect a brief spike of re-logins |
 | `DATABASE_URL` | All DB calls | Rotate DB password at the provider; update `DATABASE_URL`; redeploy |
 | `GEMINI_API_KEY` | `/api/chat`, `/api/knowledge-chunks` (embeddings) | Create new key in Google AI Studio; set as `GEMINI_API_KEY`; revoke old key |
-| `MINIMAX_API_KEY` | `/api/chat` when provider is `minimax` | Rotate via MiniMax dashboard |
 | `HARVARD_OPENAI_KEY` | `/api/chat` and `/api/harvard*` when provider is `harvard` | Request new key from HUIT; revoke old |
 
 After rotating any LLM key, run `npm run smoke` (against a deployed environment) to confirm `/api/chat` still returns 200.

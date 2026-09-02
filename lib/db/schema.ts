@@ -192,11 +192,14 @@ export const promptSettings = pgTable('prompt_settings', {
     .primaryKey()
     .references(() => user.id, { onDelete: 'cascade' }),
   provider: text('provider').notNull().default('harvard'),
-  dualModeProvider: text('dual_mode_provider').notNull().default('minimax'),
-  selectedModel: text('selected_model').notNull().default('gpt-4o-mini'),
+  // dualModeProvider / dualModeSelectedModel are retained for DB-schema
+  // backward compatibility after the MiniMax removal; they no longer drive
+  // any UI or runtime behavior. Defaults mirror the primary lane.
+  dualModeProvider: text('dual_mode_provider').notNull().default('harvard'),
+  selectedModel: text('selected_model').notNull().default('gpt-5.5'),
   dualModeSelectedModel: text('dual_mode_selected_model')
     .notNull()
-    .default('MiniMax-Text-01'),
+    .default('gpt-5.5'),
   systemPrompt: text('system_prompt').notNull().default(''),
   stuckModePrompt: text('stuck_mode_prompt').notNull().default(''),
   suggestedPrompts: jsonb('suggested_prompts').notNull().default(sql`'[]'::jsonb`),

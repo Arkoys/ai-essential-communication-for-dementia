@@ -72,7 +72,7 @@ export function TemplateDevBadge({ template, tier1Complete, provider }: Template
       {/* Provider */}
       {provider && (
         <div className="px-3 py-1.5 rounded-full text-xs font-mono bg-zinc-100 text-zinc-600 border border-zinc-300 shadow-sm">
-          {provider === 'harvard' ? '🤖 Harvard' : '⚡ MiniMax'}
+          🤖 Harvard
         </div>
       )}
     </div>

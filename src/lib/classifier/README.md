@@ -78,7 +78,9 @@ Performs structured classification using the matrix from `src/config/classificat
 | Provider | Method |
 |----------|--------|
 | **OpenAI (Harvard)** | Structured Outputs (JSON Schema enforcement) |
-| **MiniMax** | Strict prompt + JSON extraction + validation |
+
+> Note: the former MiniMax prompt-based classifier was removed alongside the
+> provider itself. Only the OpenAI Structured Outputs path remains.
 
 ### Output:
 ```typescript
@@ -211,8 +213,7 @@ src/
 │   │   ├── templateSelector.ts   # Step 3
 │   │   ├── classificationMatrix.ts
 │   │   └── providers/
-│   │       ├── openaiClassifier.ts   # OpenAI Structured Outputs
-│   │       └── minimaxClassifier.ts  # Prompt + extraction
+│   │       └── openaiClassifier.ts   # OpenAI Structured Outputs
 │   │
 │   └── templates/
 │       ├── index.ts              # Template instructions

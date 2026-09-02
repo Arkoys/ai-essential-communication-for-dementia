@@ -11,11 +11,7 @@
 export const CLIENT_ENV = {
   LLM_PROVIDER: 'harvard',
   GEMINI_API_KEY: '',
-  MINIMAX_API_KEY: '',
-  MINIMAX_MODEL: '',
-  MINIMAX_API_BASE_URL: '',
-  MINIMAX_API_PATH: '',
   HARVARD_OPENAI_KEY: '',
   HARVARD_OPENAI_BASE_URL: '',
-  HARVARD_MODEL: 'gpt-4o-mini',
+  HARVARD_MODEL: 'gpt-5.5',
 };
