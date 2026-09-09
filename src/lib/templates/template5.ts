@@ -124,6 +124,11 @@ export const TEMPLATE_5_CONFIG = {
   /**
    * The four framework steps, in order. Each entry drives both the prompt
    * text and the client-side step indicator FSM.
+   *
+   * The array is asserted as `StuckFrameworkStep[]` at its closing `]`
+   * so that the per-step `id` literals are correctly typed as
+   * `StuckStepName` (not widened to `string`) when consumers map over this
+   * array — without it, `STUCK_STEP_ORDER` below fails strict type-checking.
    */
   framework: [
     {
@@ -275,7 +280,7 @@ export const TEMPLATE_5_CONFIG = {
         'No reference to function.',
       ],
     },
-  ],
+  ] as StuckFrameworkStep[],
 
   /**
    * Final behavior rules — the "more directive version" the spec calls out.
