@@ -18,6 +18,9 @@ This codebase is a **Next.js 15 + PostgreSQL + Drizzle + Better Auth** single-st
 - [Key rotation runbook](#key-rotation-runbook)
 - [Troubleshooting](#troubleshooting)
 - [Roadmap](#roadmap)
+- [What's not yet wired](#whats-not-yet-wired)
+- [Where to look first](#where-to-look-first)
+- [Contributing & branches](#contributing--branches)
 - [In collaboration with](#in-collaboration-with)
 - [Security warning (PHI)](#security-warning-phi)
 
@@ -45,10 +48,16 @@ cp .env.example .env.local
 
 Edit `.env.local` and fill in at least:
 
-- `BETTER_AUTH_SECRET` — generate with `openssl rand -base64 48`
-- `ADMIN_EMAILS` — comma-separated list of emails that should see the Admin panel
+- `BETTER_AUTH_SECRET` — generate with `openssl rand -base64 48`. Make sure you replace the placeholder string `replace-me-with-a-long-random-string-min-32-chars` from the example.
+- `ADMIN_EMAILS` — comma-separated list of emails that should see the Admin panel (see [Granting yourself admin](#granting-yourself-admin) below)
 - One of `HARVARD_OPENAI_KEY`, `GEMINI_API_KEY`
 - Set `NEXT_PUBLIC_ADMIN_EMAILS` to the same value as `ADMIN_EMAILS` (it's safe to ship to the browser — only used to gate the Admin button)
+
+> **Verify the secret was actually replaced** before continuing:
+> ```bash
+> grep BETTER_AUTH_SECRET .env.local
+> ```
+> If you still see `replace-me-...`, Better Auth will reject it at startup.
 
 ### 3. Boot the stack
 
@@ -65,6 +74,18 @@ This brings up three services:
 | `next` | 3000 | Next.js dev server with hot reload |
 
 Open **http://localhost:3000** and sign up for the first account.
+
+> #### Granting yourself admin
+>
+> The admin allowlist is **env-driven** (see [Admin management](#admin-management)). The `user.is_admin` column is in the schema but **is not yet read by any route** — so the very first signup is *not* automatically admin unless the email was already in `ADMIN_EMAILS` when the stack booted.
+>
+> To bootstrap yourself as the first admin:
+>
+> 1. Sign up at http://localhost:3000 with the email you want to use as admin.
+> 2. Stop the stack: `docker compose down`.
+> 3. Edit `.env.local`: add that email to both `ADMIN_EMAILS` and `NEXT_PUBLIC_ADMIN_EMAILS` (same value).
+> 4. Rebuild and restart: `docker compose up --build`. (`NEXT_PUBLIC_*` is inlined at build time, so a rebuild is required.)
+> 5. Sign out and sign back in to refresh the session.
 
 ### 4. Sanity check
 
@@ -129,6 +150,21 @@ All variables live in `.env.local` (Docker compose reads the same file). The ful
 ---
 
 ## Project layout
+
+> #### Why are there two `lib/` folders?
+>
+> This is the single biggest "gotcha" in the repo. The two folders **are not duplicates**:
+>
+> | Folder | Reach via | Purpose | What lives here |
+> |---|---|---|---|
+> | **`/lib/`** (top-level) | `import ... from '@/lib/X'` (because `tsconfig.paths` maps `@/*` → repo root) | **Server-only** modules | auth, DB, admin, env validation, the API client wrapper, the part of prompt-settings that's read by API routes |
+> | **`/src/lib/`** | Relative paths only (`./lib/X`, `../lib/X`) | **Client-side** modules that ship to the browser | the classifier, providers, templates, the RAG helper, browser defaults |
+>
+> **Rule of thumb:** if a module imports `better-auth/react`, reads `process.env`, or depends on `pg`, it lives in `/lib/`. If it must ship to the JS bundle, it lives in `/src/lib/`.
+>
+> Some files (e.g. `promptSettings.ts`, `defaultData.ts`, `resources.ts`) exist in **both** folders. The `/lib/` copy is the authoritative server-side source and is what API routes consume; the `/src/lib/` copy exists when the browser needs the same constants and is wired in separately.
+
+```
 
 ```
 .
@@ -348,6 +384,81 @@ After rotating any LLM key, run `npm run smoke` (against a deployed environment)
 - **Per-user `is_admin`** column exists in the schema but is not yet read by the API. Wiring it would let admins be granted via SQL instead of env.
 - **Streaming** for `/api/chat` is scaffolded (`/api/.+/stream` location in nginx, `stream: true` flag in the proxy) but not exposed in the client UI.
 - **Compare-mode UI polish** — already functional but could use better empty-state copy.
+
+---
+
+## What's not yet wired
+
+A short, honest list of dead-looking code that's actually intentional, plus known gaps. If you're wondering "is this a bug?" — check here first.
+
+| Area | Status |
+|---|---|
+| `user.is_admin` column | Exists in `lib/db/schema.ts` but **no route reads it**. Admin gating is purely env-driven via `ADMIN_EMAILS`. |
+| `src/lib/env-client.ts` | A shim with hard-coded values, kept so legacy `import { CLIENT_ENV } from '../env-client'` keeps compiling. **Not** a real config source. |
+| `src/pages/DocumentsPage.tsx` | Looks like legacy pages-router code but is intentionally rendered via `src/app/documents/page.tsx`. Don't delete it. |
+| `MiniMax` strings in `promptSettings.ts`, `prompt-settings-shared.ts`, `/api/chat`, `/api/prompt-settings` | Defensive coercers that map any stale DB row or request payload still containing `minimax` → `harvard`. The MiniMax provider was removed; these exist so historical rows don't crash reads. |
+| `/api/.+/stream` nginx location | Configured for future streaming responses. Not yet exposed in the client UI. |
+| `comparison-mode` empty states | Functional; UI polish on empty states is unfinished. |
+| `lib/db/schema.ts` enums | `messageRole`, `messageLane`, `conversationType` are PG enums. Adding new values requires a new migration (`ALTER TYPE ... ADD VALUE`). |
+
+---
+
+## Where to look first
+
+If you're new to the repo, start here. Don't grep the whole tree.
+
+| If you're working on... | Open this file first |
+|---|---|
+| Auth, sessions, sign-in/up/out | `lib/auth.ts` (Better Auth setup), `lib/auth-server.ts` (`requireUser()` for route handlers), `lib/auth-client.ts` (React hooks) |
+| DB schema or migrations | `lib/db/schema.ts`, then `drizzle/NNNN_*.sql` |
+| Admin gating (RAG mutations) | `lib/admin.ts` (server-side), `lib/auth-client.ts` (client-side UI) |
+| Chat / LLM call path | `src/app/api/chat/route.ts` → `src/lib/llm.ts` → `src/lib/providers/index.ts` |
+| Classification pipeline (which template?) | `src/lib/classifier/README.md` (already excellent), then `src/lib/classifier/pipeline.ts` |
+| RAG retrieval / knowledge chunks | `src/lib/rag.ts`, `src/app/api/rag-search/route.ts`, `knowledge_chunks` table in `lib/db/schema.ts` |
+| Prompt / coaching defaults | `lib/promptSettings.ts` (server), `src/lib/promptSettings.ts` (client) |
+| Static reference PDFs (Navigation Map, etc.) | `public/documents/README.md` |
+| Deploy / CI | `Dockerfile`, `docker-compose.prod.yml`, `.github/workflows/` |
+
+---
+
+## Contributing & branches
+
+### Branches
+
+| Branch | Purpose |
+|---|---|
+| `main` | Default branch; integration of merged features |
+| `prod` | Production deployable state |
+| `migration-nextJs` | Frozen historical: the Next.js cutover from Vite/Firebase |
+| `revamp-july` / `from-july-revamp` | Frozen historical: the July UI revamp and the Ariadne Labs ECS deploy branch |
+| `report` / `new-template-5` | Active feature branches under development |
+
+The legacy migration branches are kept around for archaeology — don't rebase or push to them.
+
+### Commit message convention
+
+The history already uses prefixes like `feat:`, `fix:`, `add:`, `remove:`, `Update`. Please keep them. Examples:
+
+```text
+feat: add streaming to /api/chat
+fix: rag-search crashes when embedding is null
+add: migration for message_lane enum value
+```
+
+### Before opening a PR
+
+1. `npm run typecheck`
+2. `npm run lint`
+3. `npm run smoke` (with `.env.local` loaded; requires Postgres + pgvector)
+4. If you changed `lib/db/schema.ts`: `npm run db:generate`, review the generated SQL, commit it under `drizzle/`
+5. If you added or changed env vars: update `.env.example` **and** the [Environment variables](#environment-variables) table
+
+### Code style
+
+- TypeScript `strict` is on. No `any` except at API boundaries.
+- Server code in `/lib/`, client code in `/src/lib/` (see [Project layout](#project-layout)).
+- React components in `/src/components/`. New API routes in `/src/app/api/...`.
+- Tailwind 4 utility classes; the global stylesheet is `src/app/globals.css`.
 
 ---
 
