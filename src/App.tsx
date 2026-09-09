@@ -43,7 +43,6 @@ interface Message {
   role: 'user' | 'assistant';
   content: string;
   createdAt: Date;
-  isStuck?: boolean;
   isInsufficientInfo?: boolean;
   lane?: 'single' | 'primary' | 'secondary' | 'basic' | 'condensed';
 }
@@ -130,7 +129,6 @@ function apiMsgToLocal(m: ApiMessage): Message {
     role: m.role,
     content: m.content,
     createdAt: new Date(m.createdAt),
-    isStuck: m.isStuck || false,
     isInsufficientInfo: m.isInsufficientInfo || false,
     lane: m.lane || 'single',
   };
@@ -502,7 +500,7 @@ export default function App() {
     }
   };
 
-  const handleSendMessage = async (content: string, isStuck?: boolean) => {
+  const handleSendMessage = async (content: string) => {
     if (!user) return;
     setIsLoading(true);
 
@@ -530,7 +528,6 @@ export default function App() {
         role: 'user',
         content,
         createdAt: new Date(),
-        isStuck: isStuck || false,
       }]);
 
       // Persist user message via API (idempotent via clientId).
@@ -539,7 +536,6 @@ export default function App() {
         const { message } = await appendMessage(convId, {
           role: 'user',
           content,
-          isStuck,
           clientId: localUserId,
         });
         persistedUserId = message.id;
@@ -566,7 +562,6 @@ export default function App() {
           content,
           currentMessages,
           effectivePhase,
-          isStuck,
           undefined,
           localResponseMode,
         );
@@ -574,7 +569,7 @@ export default function App() {
         detectedTemplate = result.template;
         isInsufficientInfo = isInsufficientInfoResponse(finalContent);
 
-        if (!isStuck && !isInsufficientInfo) {
+        if (!isInsufficientInfo) {
           const inferred = parseFrameworkPosition(finalContent);
           detectedPhase = inferred.phase;
           detectedStep = inferred.step;
@@ -592,7 +587,6 @@ export default function App() {
         role: 'assistant',
         content: finalContent,
         createdAt: new Date(),
-        isStuck: isStuck || false,
         isInsufficientInfo,
       }]);
 
@@ -601,7 +595,6 @@ export default function App() {
         const { message } = await appendMessage(convId, {
           role: 'assistant',
           content: finalContent,
-          isStuck,
           isInsufficientInfo,
           clientId: localAssistantId,
         });
@@ -635,7 +628,7 @@ export default function App() {
     }
   };
 
-  const handleDualSendMessage = async (content: string, isStuck?: boolean) => {
+  const handleDualSendMessage = async (content: string) => {
     if (!user || !activeConversationId) return;
     const convId = activeConversationId;
     const userClientIdPrimary = `local-user-${Date.now()}-${Math.random().toString(36).slice(2)}-primary`;
@@ -666,14 +659,12 @@ export default function App() {
         appendMessage(convId, {
           role: 'user',
           content,
-          isStuck,
           clientId: userClientIdPrimary,
           lane: 'primary',
         }),
         appendMessage(convId, {
           role: 'user',
           content,
-          isStuck,
           clientId: userClientIdSecondary,
           lane: 'secondary',
         }),
@@ -684,8 +675,8 @@ export default function App() {
     }
     try {
       const [primaryResponse, secondaryResponse] = await Promise.allSettled([
-        generateClinicalResponseWithHistory(content, [], null, isStuck, 'harvard', 'basic'),
-        generateClinicalResponseWithHistory(content, [], null, isStuck, 'harvard', 'condensed'),
+        generateClinicalResponseWithHistory(content, [], null, 'harvard', 'basic'),
+        generateClinicalResponseWithHistory(content, [], null, 'harvard', 'condensed'),
       ]);
 
       const primaryAssistantId = `local-assistant-${Date.now()}-${Math.random().toString(36).slice(2)}-primary`;
@@ -704,7 +695,6 @@ export default function App() {
           await appendMessage(convId, {
             role: 'assistant',
             content: primaryResponse.value.response,
-            isStuck,
             isInsufficientInfo: false,
             clientId: primaryAssistantId,
             lane: 'primary',
@@ -746,7 +736,6 @@ export default function App() {
           await appendMessage(convId, {
             role: 'assistant',
             content: secondaryResponse.value.response,
-            isStuck,
             isInsufficientInfo: false,
             clientId: secondaryAssistantId,
             lane: 'secondary',
@@ -780,7 +769,7 @@ export default function App() {
     }
   };
 
-  const handleCompareSendMessage = async (content: string, isStuck?: boolean) => {
+  const handleCompareSendMessage = async (content: string) => {
     if (!user || !activeConversationId) return;
     const convId = activeConversationId;
     const userClientIdBasic = `local-user-${Date.now()}-${Math.random().toString(36).slice(2)}-basic`;
@@ -811,14 +800,12 @@ export default function App() {
         appendMessage(convId, {
           role: 'user',
           content,
-          isStuck,
           clientId: userClientIdBasic,
           lane: 'basic',
         }),
         appendMessage(convId, {
           role: 'user',
           content,
-          isStuck,
           clientId: userClientIdCondensed,
           lane: 'condensed',
         }),
@@ -829,8 +816,8 @@ export default function App() {
     }
     try {
       const [basicResponse, condensedResponse] = await Promise.allSettled([
-        generateClinicalResponseWithHistory(content, [], null, isStuck, 'harvard', 'basic'),
-        generateClinicalResponseWithHistory(content, [], null, isStuck, 'harvard', 'condensed'),
+        generateClinicalResponseWithHistory(content, [], null, 'harvard', 'basic'),
+        generateClinicalResponseWithHistory(content, [], null, 'harvard', 'condensed'),
       ]);
 
       const basicAssistantId = `local-assistant-${Date.now()}-${Math.random().toString(36).slice(2)}-basic`;
@@ -849,7 +836,6 @@ export default function App() {
           await appendMessage(convId, {
             role: 'assistant',
             content: basicResponse.value.response,
-            isStuck,
             isInsufficientInfo: false,
             clientId: basicAssistantId,
             lane: 'basic',
@@ -891,7 +877,6 @@ export default function App() {
           await appendMessage(convId, {
             role: 'assistant',
             content: condensedResponse.value.response,
-            isStuck,
             isInsufficientInfo: false,
             clientId: condensedAssistantId,
             lane: 'condensed',

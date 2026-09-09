@@ -125,7 +125,6 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
   if (!content) {
     return Response.json({ error: 'empty_content' }, { status: 400 });
   }
-  const isStuck = Boolean(body.isStuck);
   const isInsufficientInfo = Boolean(body.isInsufficientInfo);
   const clientId = typeof body.clientId === 'string' ? body.clientId : null;
   const lane =
@@ -150,7 +149,8 @@ export async function POST(req: NextRequest, { params }: { params: Promise<{ id:
     conversationId: id,
     role,
     content,
-    isStuck,
+    // `isStuck` was removed when the Stuck Points Framework coaching mode was
+    // unified. The DB column still exists (legacy data) and defaults to false.
     isInsufficientInfo,
     lane,
   });

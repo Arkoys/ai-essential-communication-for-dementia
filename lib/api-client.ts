@@ -100,10 +100,16 @@ export interface ApiMessage {
   conversationId: string;
   role: 'user' | 'assistant';
   content: string;
-  isStuck: boolean;
   isInsufficientInfo: boolean;
   lane: 'single' | 'primary' | 'secondary' | 'basic' | 'condensed';
   createdAt: string;
+  /**
+   * Legacy field — `isStuck` was removed from the Stuck Points Framework
+   * coaching mode; the column may still exist in older database rows but
+   * is no longer set by the application.
+   * @deprecated
+   */
+  isStuck?: boolean;
 }
 
 export function listMessages(conversationId: string): Promise<{ messages: ApiMessage[] }> {
@@ -115,7 +121,6 @@ export function appendMessage(
   input: {
     role: 'user' | 'assistant';
     content: string;
-    isStuck?: boolean;
     isInsufficientInfo?: boolean;
     clientId?: string;
     lane?: 'single' | 'primary' | 'secondary' | 'basic' | 'condensed';

@@ -2,7 +2,7 @@
 
 /**
  * Integration layer for the classification pipeline
- * 
+ *
  * This file provides the integration between the existing LLM system
  * and the new classification pipeline.
  */
@@ -17,7 +17,6 @@ import { type ClassifierProvider } from './classifier/classifier';
 
 import {
   DEFAULT_SYSTEM_PROMPT,
-  DEFAULT_KNOWLEDGE_CONTENT,
   getPromptSettings
 } from './promptSettings';
 
@@ -30,8 +29,7 @@ export async function processWithClassification(
   userPrompt: string,
   conversationHistory: { role: 'user' | 'assistant'; content: string }[],
   currentPhase: string | null,
-  provider: ClassifierProvider = 'openai',
-  isStuck: boolean = false
+  provider: ClassifierProvider = 'openai'
 ): Promise<{
   response: string;
   pipelineResult: PipelineResult;
@@ -41,15 +39,12 @@ export async function processWithClassification(
   const pipelineResult = await runClassificationPipeline(
     userPrompt,
     conversationHistory,
-    provider,
-    { skipLLM: isStuck } // Skip LLM classification in stuck mode
+    provider
   );
 
   // Build the system prompt with template addon
   const promptSettings = await getPromptSettings();
-  const basePrompt = isStuck
-    ? promptSettings.stuckModePrompt || DEFAULT_SYSTEM_PROMPT
-    : promptSettings.systemPrompt || DEFAULT_SYSTEM_PROMPT;
+  const basePrompt = promptSettings.systemPrompt || DEFAULT_SYSTEM_PROMPT;
 
   const fullSystemPrompt = buildSystemPrompt(basePrompt, pipelineResult.systemPromptAddon);
 
@@ -61,7 +56,6 @@ export async function processWithClassification(
       userPrompt,
       conversationHistory,
       currentPhase,
-      isStuck,
       provider
     );
     response = result.response;
@@ -72,7 +66,7 @@ export async function processWithClassification(
 
   // Build notification if fallback was triggered
   let notification: { message: string; type: 'info' | 'warning' | 'error' } | null = null;
-  
+
   if (pipelineResult.fallbackTriggered) {
     notification = getFallbackNotificationMessage(pipelineResult.fallbackReason);
   }

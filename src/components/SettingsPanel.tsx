@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Settings, Save, RotateCcw, Loader2, BookOpen, Zap, MessageSquare, Info, Cpu, CheckCircle2, ChevronDown } from 'lucide-react';
-import { getPromptSettings, savePromptSettings, resetPromptSettings, PromptSettings, getDefaultPromptSettings } from '../lib/promptSettings';
+import { getPromptSettings, savePromptSettings, resetPromptSettings, PromptSettings, getDefaultPromptSettings, DEFAULT_STUCK_MODE_PROMPT } from '../lib/promptSettings';
 import { PROVIDER_REGISTRY, AIProvider } from '../lib/providers/types';
 
 interface SettingsPanelProps {
@@ -380,29 +380,47 @@ export function SettingsPanel({ onClose }: SettingsPanelProps) {
 
           {activeTab === 'knowledge' && (
             <div className="space-y-6">
-              {/* Stuck Mode Prompt */}
+              {/* Stuck Mode Prompt (read-only display + reset button) */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <label className="text-lg font-semibold flex items-center gap-2">
                     <Zap size={20} className="text-purple-500" />
-                    Stuck Mode Prompt
+                    Stuck Points Framework Prompt
                   </label>
                   <div className="flex items-center gap-2 text-xs text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/30 px-2 py-1 rounded-full">
                     <Zap size={12} />
-                    Active when "Stuck" is toggled
+                    Auto-fired on relational prompts
                   </div>
                 </div>
                 <div className="bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800/50 rounded-lg p-3 text-sm text-purple-800 dark:text-purple-200">
-                  <strong>📊 Influence:</strong> Activated when user toggles "Stuck" button. Overrides normal framework structure for relational support (acknowledge, get curious, summarize & plan).
+                  <strong>📊 Influence:</strong> Auto-fired when the classifier routes a relational / emotional / stuck prompt to Template&nbsp;5 (the Stuck Points Framework coaching dialog). Walks the clinician through four steps — Ground Yourself → Bridge Connection → Explore → Find a Path Forward — one step per response, with an opening reflection and a closing menu.
                 </div>
-                <textarea
-                  value={settings.stuckModePrompt}
-                  onChange={(e) => updateField('stuckModePrompt', e.target.value)}
-                  className="w-full h-80 p-4 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 font-mono text-sm resize-y"
-                  placeholder="Enter stuck mode prompt..."
-                />
+                <div className="flex items-center justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      const defaults = await resetPromptSettings();
+                      // Surface the reset default back into the form
+                      if (defaults?.stuckModePrompt !== undefined) {
+                        updateField('stuckModePrompt', defaults.stuckModePrompt);
+                      }
+                    }}
+                    className="text-xs px-3 py-1.5 rounded-lg border border-purple-300 dark:border-purple-700 text-purple-700 dark:text-purple-300 hover:bg-purple-100 dark:hover:bg-purple-900/40 transition-colors"
+                  >
+                    Reset to default
+                  </button>
+                </div>
+                <pre
+                  aria-readonly="true"
+                  className="w-full max-h-[28rem] overflow-auto whitespace-pre-wrap break-words p-4 rounded-lg border border-zinc-300 dark:border-zinc-700 bg-zinc-50 dark:bg-zinc-900 font-mono text-xs text-zinc-800 dark:text-zinc-200"
+                >
+                  {settings.stuckModePrompt || DEFAULT_STUCK_MODE_PROMPT}
+                </pre>
                 <p className="text-xs text-zinc-500">
-                  {(settings.stuckModePrompt || '').length} characters
+                  {(settings.stuckModePrompt || DEFAULT_STUCK_MODE_PROMPT || '').length} characters
+                </p>
+                <p className="text-xs text-zinc-500">
+                  This prompt is now read-only by design — it powers the multi-turn Stuck Points Framework coaching dialog. Use Reset to revert any prior edits.
                 </p>
               </div>
             </div>

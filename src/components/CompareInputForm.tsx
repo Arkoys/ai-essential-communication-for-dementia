@@ -5,7 +5,7 @@ import { Send, Loader2, AlertTriangle } from 'lucide-react';
 import { anonymize } from '../lib/anonymizer';
 
 interface CompareInputFormProps {
-  onSendMessage: (content: string, isStuck?: boolean) => void;
+  onSendMessage: (content: string) => void;
   basicLoading: boolean;
   condensedLoading: boolean;
 }
@@ -16,15 +16,14 @@ export function CompareInputForm({
   condensedLoading,
 }: CompareInputFormProps) {
   const [input, setInput] = useState('');
-  const [isStuck, setIsStuck] = useState(false);
   const isLoading = basicLoading || condensedLoading;
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
-    
+
     const cleanInput = anonymize(input);
-    onSendMessage(cleanInput, isStuck);
+    onSendMessage(cleanInput);
     setInput('');
   };
 
@@ -38,17 +37,12 @@ export function CompareInputForm({
         onSubmit={handleSubmit}
         className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3"
       >
-        <div className={[
-          "relative flex flex-1 items-center min-w-0 bg-white dark:bg-zinc-900 rounded-2xl shadow-sm transition-all",
-          isStuck 
-            ? "border-2 border-green-500 ring-4 ring-green-200 dark:ring-green-800/30" 
-            : "border border-zinc-300 dark:border-zinc-700 focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500"
-        ].join(" ")}>
+        <div className="relative flex flex-1 items-center min-w-0 bg-white dark:bg-zinc-900 rounded-2xl shadow-sm transition-all border border-zinc-300 dark:border-zinc-700 focus-within:ring-2 focus-within:ring-blue-500/20 focus-within:border-blue-500">
           <input
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder={isStuck ? "Describe your stuck point..." : "Explain the patient's situation..."}
+            placeholder="Explain the patient's situation..."
             className="w-full bg-transparent py-3 md:py-4 pl-4 md:pl-6 pr-12 md:pr-14 outline-none text-sm md:text-base text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400"
             disabled={isLoading}
           />

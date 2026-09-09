@@ -86,10 +86,10 @@ export async function runClassificationPipeline(
   config?: Partial<PipelineConfig>
 ): Promise<PipelineResult> {
   const skipLLM = config?.skipLLM ?? false;
-  
+
   // ===== STEP 1: Safety Pre-Filter =====
   const safetyResult = checkSafetyPreFilter(conversationHistory, userPrompt);
-  
+
   if (safetyResult.shouldOverride && safetyResult.template) {
     // Safety override takes precedence
     return {
@@ -123,6 +123,30 @@ export async function runClassificationPipeline(
         templateSelection
       };
     }
+  }
+
+  // ===== STEP 1.5: Session Pin — once Template 5 has been entered in this
+  // conversation, every subsequent turn stays in Template 5 so the four-step
+  // coaching dialog (Ground Yourself → Bridge Connection → Explore →
+  // Find a Path Forward) plays out turn-by-turn. The only ways out are:
+  //   • safety override (Template 6) — already checked above
+  //   • explicit user exit ("different case", "start over", "never mind",
+  //     "stop", "back to regular", "exit coaching")
+  if (isStuckPointsSession(conversationHistory) && !userRequestsExit(userPrompt)) {
+    return {
+      template: 'assess_template_5' as ResponsePath,
+      tier1Complete: true,
+      systemPromptAddon: TEMPLATE_SYSTEM_ADDONS.template_5,
+      safetyOverride: false,
+      fallbackTriggered: false,
+      fallbackReason: 'stuck_points_session_pin',
+      templateSelection: {
+        template: 'assess_template_5' as ResponsePath,
+        tier1_complete: true,
+        templateInstructions: '',
+        systemPromptAddon: TEMPLATE_SYSTEM_ADDONS.template_5,
+      },
+    };
   }
 
   // ===== STEP 2 (full): LLM Classification =====
@@ -238,4 +262,54 @@ export function getFallbackNotificationMessage(
     message: 'Showing guidance based on available information',
     type: 'info'
   };
+}
+
+/**
+ * Header patterns emitted by the LLM in Stuck Points Mode. If any of these
+ * appear in a prior assistant message, the conversation has been "entered"
+ * into the Stuck Points Framework coaching dialog and should stay there.
+ */
+const STUCK_POINTS_HEADER_PATTERNS: RegExp[] = [
+  /^#{1,3}\s*Ground Yourself\b/im,
+  /^#{1,3}\s*Bridge Connection\b/im,
+  /^#{1,3}\s*Explore(\s+Experience)?\b/im,
+  /^#{1,3}\s*Find a Path Forward\b/im,
+  // Opening intro line — present in the very first response of Stuck Points Mode
+  // (e.g. "The Ariadne Labs Stuck Points Framework is meant for exactly this:…").
+  /Stuck Points Framework\b/i,
+];
+
+/**
+ * Has the conversation already entered the Stuck Points Framework?
+ * True if any prior assistant message contains one of the framework headers
+ * or the framework intro line.
+ */
+function isStuckPointsSession(
+  conversationHistory: { role: string; content: string }[],
+): boolean {
+  for (const msg of conversationHistory) {
+    if (msg.role !== 'assistant') continue;
+    const text = (msg.content ?? '').toString();
+    for (const pattern of STUCK_POINTS_HEADER_PATTERNS) {
+      if (pattern.test(text)) return true;
+    }
+  }
+  return false;
+}
+
+/**
+ * Patterns that signal the user wants to leave the Stuck Points Framework
+ * dialog entirely (so the next turn re-runs the classifier).
+ */
+const STUCK_POINTS_EXIT_PATTERNS: RegExp[] = [
+  /\b(different case|new case|switch (case|patient)|different patient|back to (regular|normal))\b/i,
+  /\b(exit coaching|never\s*mind|forget it|stop coaching|end coaching)\b/i,
+];
+
+function userRequestsExit(userPrompt: string): boolean {
+  const text = (userPrompt ?? '').toString();
+  for (const pattern of STUCK_POINTS_EXIT_PATTERNS) {
+    if (pattern.test(text)) return true;
+  }
+  return false;
 }

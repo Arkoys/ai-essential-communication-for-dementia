@@ -4,11 +4,9 @@ import { DEFAULT_KNOWLEDGE_CHUNKS } from './defaultData';
 import { retrieveRelevantChunks } from './rag';
 import {
   DEFAULT_SYSTEM_PROMPT,
-  DEFAULT_STUCK_MODE_PROMPT,
   DEFAULT_KNOWLEDGE_CONTENT,
   getPromptSettings
 } from './promptSettings';
-import { harvardChatCompletion, isHarvardConfigured } from './providers/harvard';
 import {
   CURATED_EXTERNAL_RESOURCES,
   generatePositiveCitationList
@@ -310,53 +308,6 @@ async function generateWithHarvard(
   );
 }
 
-function buildStuckModeSystemPrompt(stuckModePrompt: string, knowledgeContent: string): string {
-  return `${stuckModePrompt}
-
----
-
-## Toolkit reference (Ariadne Labs Essential Communications)
-
-${knowledgeContent || buildToolkitReferenceForPrompt()}
-
----
-
-## Curated External Resources
-${CURATED_EXTERNAL_RESOURCES}
-
----
-
-## CITATION RULES (MANDATORY - STRICT)
-### For Internal Sources (Ariadne Labs chunks):
-You MAY cite these exact internal sources:
-- "Ariadne Labs - Primer"
-- "Ariadne Labs - Stuck Points Framework"
-- "Ariadne Labs - Sample Language (Phase 1: Recognition)"
-- "Ariadne Labs - Sample Language (Phase 2: Evaluation)"
-- "Ariadne Labs - Sample Language (Phase 3: Diagnosis)"
-
-### For External Sources:
-${generatePositiveCitationList()}
-
-### FORBIDDEN:
-- DO NOT cite IQCODE (it is NOT in our resources)
-- DO NOT cite any assessment tool, article, or resource NOT in the ALLOWED list above
-- DO NOT invent or hallucinate any citation
-- DO NOT include any external URLs or links except those from the ALLOWED list above
-- If you mention any external resource, you MUST use ONLY the exact URLs provided in the ALLOWED list
-- DO NOT add subpages, specific article URLs, or any URL variations not explicitly listed
-- If no resource from the allowed list is relevant, simply do not include a Resources section
-- NEVER write out URLs in full (e.g., write "[National Institute on Aging](https://www.nia.nih.gov/health/alzheimers-and-dementia)" not "https://www.nia.nih.gov/health/...")
-
----
-
-## Output format (STRICT — mandatory for Stuck Mode)
-
-Write directly and conversationally. Structure your response naturally without headers or bullet lists.
-Keep it under 100 words. Be direct and helpful.
-`;
-}
-
 export interface GenerationResult {
   response: string;
   template: ResponsePath;
@@ -368,14 +319,13 @@ export async function generateClinicalResponseWithHistory(
   query: string,
   history: { role: 'user' | 'assistant'; content: string }[],
   currentPhase: string | null,
-  isStuck?: boolean,
   forceProvider?: string,
   responseMode?: 'basic' | 'condensed'
 ): Promise<GenerationResult> {
   try {
     // Load prompt settings from Firestore
     const promptSettings = await getPromptSettings();
-    
+
     const contents = history.map(msg => ({
       role: msg.role === 'assistant' ? 'model' : 'user',
       parts: [{ text: msg.content }]
@@ -387,65 +337,63 @@ export async function generateClinicalResponseWithHistory(
 
     // Determine provider: forceProvider (for dual mode) > Firestore settings > env var > default
     const provider = (forceProvider || promptSettings.provider || 'harvard').toLowerCase();
-    
+
     // ===== STEP 1: Run Classification Pipeline =====
     let classificationResult;
     let templateAddon = '';
     let detectedTemplate: ResponsePath = 'assess_template_1_or_3';
     let tier1Complete = false;
     let safetyOverride = false;
-    
-    if (!isStuck) {
-      try {
-        const pipelineResult = await runClassificationPipeline(
-          query,
-          history,
-          'openai'
-        );
-        
-        templateAddon = pipelineResult.systemPromptAddon;
-        detectedTemplate = pipelineResult.template;
-        tier1Complete = pipelineResult.tier1Complete;
-        safetyOverride = pipelineResult.safetyOverride;
-        classificationResult = pipelineResult;
-        
-        // Log for debugging
-        console.log('[Template Classification]', {
-          template: detectedTemplate,
-          tier1Complete,
-          safetyOverride,
-          fallback: pipelineResult.fallbackTriggered
-        });
-      } catch (classError) {
-        console.error('Classification pipeline failed:', classError);
-        // Fallback to template 1 if classification fails
-        templateAddon = TEMPLATE_SYSTEM_ADDONS.template_1;
-        detectedTemplate = 'assess_template_1_or_3';
-      }
+
+    try {
+      const pipelineResult = await runClassificationPipeline(
+        query,
+        history,
+        'openai'
+      );
+
+      templateAddon = pipelineResult.systemPromptAddon;
+      detectedTemplate = pipelineResult.template;
+      tier1Complete = pipelineResult.tier1Complete;
+      safetyOverride = pipelineResult.safetyOverride;
+      classificationResult = pipelineResult;
+
+      // Log for debugging
+      console.log('[Template Classification]', {
+        template: detectedTemplate,
+        tier1Complete,
+        safetyOverride,
+        fallback: pipelineResult.fallbackTriggered
+      });
+    } catch (classError) {
+      console.error('Classification pipeline failed:', classError);
+      // Fallback to template 1 if classification fails
+      templateAddon = TEMPLATE_SYSTEM_ADDONS.template_1;
+      detectedTemplate = 'assess_template_1_or_3';
     }
 
     // ===== STEP 2: Build System Prompt with Template Addon =====
     const knowledgeContent = promptSettings.knowledgeContent || DEFAULT_KNOWLEDGE_CONTENT;
     const baseSystemPrompt = promptSettings.systemPrompt || SYSTEM_PROMPT;
-    
+
     // Build the base prompt with template addon
-    let promptWithTemplate = templateAddon 
+    let promptWithTemplate = templateAddon
       ? buildSystemPrompt(
           buildHarvardSystemPrompt(baseSystemPrompt, knowledgeContent),
           templateAddon
         )
       : buildHarvardSystemPrompt(baseSystemPrompt, knowledgeContent);
-    
-    // Add condensed mode addon if enabled (only in normal mode, not stuck mode)
-    const effectiveResponseMode = responseMode === 'condensed' && !isStuck ? 'condensed' : 'basic';
+
+    // Add condensed mode addon if enabled
+    const effectiveResponseMode = responseMode === 'condensed' ? 'condensed' : 'basic';
     if (effectiveResponseMode === 'condensed') {
       promptWithTemplate = `${promptWithTemplate}\n\n${CONDENSED_MODE_ADDON}`;
     }
-    
+
     const fullSystemPrompt = promptWithTemplate;
 
     // ===== STEP 3: Generate Response Based on Provider =====
-    
+
     // Harvard (sole supported provider): OpenAI-compatible gateway with
     // api-key auth (server-side proxy). Anything other than 'harvard' is
     // routed to the Gemini fallback below for graceful degradation.
@@ -456,12 +404,7 @@ export async function generateClinicalResponseWithHistory(
       const harvardMessages: { role: 'system' | 'user' | 'assistant'; content: string }[] = [
         {
           role: 'system',
-          content: isStuck
-            ? buildStuckModeSystemPrompt(
-                promptSettings.stuckModePrompt || DEFAULT_STUCK_MODE_PROMPT,
-                knowledgeContent
-              )
-            : fullSystemPrompt
+          content: fullSystemPrompt
         },
         ...history.map((msg) => ({
           role: msg.role as 'user' | 'assistant',
@@ -522,9 +465,8 @@ export async function generateClinicalResponseString(
   query: string,
   history: { role: 'user' | 'assistant'; content: string }[],
   currentPhase: string | null,
-  isStuck?: boolean,
   forceProvider?: string
 ): Promise<string> {
-  const result = await generateClinicalResponseWithHistory(query, history, currentPhase, isStuck, forceProvider);
+  const result = await generateClinicalResponseWithHistory(query, history, currentPhase, forceProvider);
   return result.response;
 }

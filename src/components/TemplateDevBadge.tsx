@@ -15,7 +15,7 @@ const TEMPLATE_LABELS: Record<ResponsePath, string> = {
   'assess_template_1_or_3': 'T1 Clarification',
   'direct_template_2': 'T2 Éducatif',
   'direct_template_4': 'T4 Conditionnel',
-  'assess_template_5': 'T5 Relationnel',
+  'assess_template_5': 'T5 Stuck Points',
   'delirium_flag': 'T6 Delirium 🚨',
   'out_of_scope': 'Out of Scope',
 };

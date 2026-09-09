@@ -166,6 +166,13 @@ export const messages = pgTable(
       .references(() => conversations.id, { onDelete: 'cascade' }),
     role: messageRole('role').notNull(),
     content: text('content').notNull(),
+    /**
+     * Legacy flag from the pre-Stuck-Points-Framework version of the app.
+     * The column is retained so historical rows still parse, but it is no
+     * longer written or read by application code. Safe to drop in a future
+     * migration once all production data has aged past retention.
+     * @deprecated
+     */
     isStuck: boolean('is_stuck').notNull().default(false),
     isInsufficientInfo: boolean('is_insufficient_info')
       .notNull()

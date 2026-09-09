@@ -13,7 +13,6 @@ interface Message {
   id: string;
   role: 'user' | 'assistant';
   content: string;
-  isStuck?: boolean;
   isInsufficientInfo?: boolean;
 }
 
@@ -21,7 +20,7 @@ import { DEFAULT_SUGGESTED_PROMPTS } from '../lib/promptSettings';
 
 interface ChatWindowProps {
   messages: Message[];
-  onSendMessage: (content: string, isStuck?: boolean) => void;
+  onSendMessage: (content: string) => void;
   isLoading: boolean;
   suggestedPrompts?: string[];
   provider?: string;
@@ -45,7 +44,6 @@ export function ChatWindow({
   isFetchingHistory = false,
 }: ChatWindowProps) {
   const [input, setInput] = useState('');
-  const [isStuck, setIsStuck] = useState(false);
   const [isInputFocused, setIsInputFocused] = useState(false);
   const [responseMode, setResponseMode] = useState<ResponseMode>(() => {
     // Load from localStorage or default to 'basic'
@@ -56,7 +54,7 @@ export function ChatWindow({
     return 'basic';
   });
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  
+
   // Check if this is a new session (no messages yet)
   const isNewSession = messages.length === 0;
 
@@ -80,9 +78,9 @@ export function ChatWindow({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
-    
+
     const cleanInput = anonymize(input);
-    onSendMessage(cleanInput, isStuck);
+    onSendMessage(cleanInput);
     setInput('');
   };
 
@@ -139,11 +137,9 @@ export function ChatWindow({
             <div className="w-full max-w-3xl mb-4">
               <div className={[
                 "bg-white dark:bg-zinc-900 rounded-2xl shadow-sm transition-all border-2",
-                isStuck 
-                  ? "border-green-500 ring-4 ring-green-200 dark:ring-green-800/30" 
-                  : !isInputFocused 
-                    ? "border-orange-500 animate-pulse-border" 
-                    : "border-orange-500"
+                !isInputFocused
+                  ? "border-orange-500 animate-pulse-border"
+                  : "border-orange-500"
               ].join(" ")}>
                 <form
                   onSubmit={handleSubmit}
@@ -155,8 +151,8 @@ export function ChatWindow({
                     onChange={(e) => setInput(e.target.value)}
                     onFocus={() => setIsInputFocused(true)}
                     onBlur={() => setIsInputFocused(false)}
-                    placeholder={isStuck ? "Describe your stuck point..." : "Ask the coach…"}
-                    className={`w-full bg-transparent py-3 md:py-4 pl-4 md:pl-6 pr-12 md:pr-14 outline-none text-sm md:text-base text-zinc-800 dark:text-zinc-200 ${!isInputFocused && !isStuck ? 'placeholder:text-zinc-400 animate-pulse-text' : 'placeholder:text-zinc-400'}`}
+                    placeholder="Ask the coach…"
+                    className={`w-full bg-transparent py-3 md:py-4 pl-4 md:pl-6 pr-12 md:pr-14 outline-none text-sm md:text-base text-zinc-800 dark:text-zinc-200 ${!isInputFocused ? 'placeholder:text-zinc-400 animate-pulse-text' : 'placeholder:text-zinc-400'}`}
                     disabled={isLoading}
                   />
                   <button
@@ -238,7 +234,7 @@ export function ChatWindow({
         ) : (
           <div className="pt-12 md:pt-14 pb-24 md:pb-28">
             {messages.map((msg) => (
-              <MessageBubble key={msg.id} role={msg.role} content={msg.content} isStuck={msg.isStuck} isInsufficientInfo={msg.isInsufficientInfo} />
+              <MessageBubble key={msg.id} role={msg.role} content={msg.content} isInsufficientInfo={msg.isInsufficientInfo} />
             ))}
             {isLoading && (
               <div className="flex w-full py-4 md:py-6 bg-zinc-50 dark:bg-zinc-900">
@@ -273,13 +269,11 @@ export function ChatWindow({
             >
               <div className={[
                 "relative flex flex-1 items-center min-w-0 bg-white dark:bg-zinc-900 rounded-2xl shadow-sm transition-all",
-                isStuck 
-                  ? "border-2 border-green-500 ring-4 ring-green-200 dark:ring-green-800/30" 
-                  : isNewSession && !isInputFocused
-                    ? "border-2 border-orange-500 animate-pulse-border"
-                    : isNewSession && isInputFocused
-                      ? "border-2 border-orange-500"
-                      : "border border-zinc-300 dark:border-zinc-700 focus-within:ring-2 focus-within:ring-orange-500/20 focus-within:border-orange-500"
+                isNewSession && !isInputFocused
+                  ? "border-2 border-orange-500 animate-pulse-border"
+                  : isNewSession && isInputFocused
+                    ? "border-2 border-orange-500"
+                    : "border border-zinc-300 dark:border-zinc-700 focus-within:ring-2 focus-within:ring-orange-500/20 focus-within:border-orange-500"
               ].join(" ")}>
                 <input
                   type="text"
@@ -287,7 +281,7 @@ export function ChatWindow({
                   onChange={(e) => setInput(e.target.value)}
                   onFocus={() => setIsInputFocused(true)}
                   onBlur={() => setIsInputFocused(false)}
-                  placeholder={isStuck ? "Describe your stuck point..." : "Ask the coach…"}
+                  placeholder="Ask the coach…"
                   className="w-full bg-transparent py-3 md:py-4 pl-4 md:pl-6 pr-12 md:pr-14 outline-none text-sm md:text-base text-zinc-800 dark:text-zinc-200 placeholder:text-zinc-400"
                   disabled={isLoading}
                 />
