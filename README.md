@@ -244,14 +244,55 @@ erDiagram
     USER ||--|| RAG_CONFIG : "singleton"
     KNOWLEDGE_CHUNK }o..|| USER : "managed by admin"
 
-    USER { text id PK; text email UK; bool is_admin; }
-    SESSION { text id PK; text token UK; text user_id FK; timestamp expires_at; }
-    ACCOUNT { text id PK; text user_id FK; text issuer; text account_id; }
-    CONVERSATION { text id PK; text user_id FK; text title; enum type; enum current_phase; }
-    MESSAGE { text id PK; text conversation_id FK; enum role; enum lane; bool is_stuck; }
-    PROMPT_SETTINGS { text user_id PK FK; text provider; text system_prompt; jsonb suggested_prompts; }
-    RAG_CONFIG { text user_id PK FK; int top_k; text min_similarity; bool enabled; }
-    KNOWLEDGE_CHUNK { text id PK; text source; text content; vector embedding; }
+    USER {
+        text id PK
+        text email UK
+        bool is_admin
+    }
+    SESSION {
+        text id PK
+        text token UK
+        text user_id FK
+        timestamp expires_at
+    }
+    ACCOUNT {
+        text id PK
+        text user_id FK
+        text issuer
+        text account_id
+    }
+    CONVERSATION {
+        text id PK
+        text user_id FK
+        text title
+        enum type
+        enum current_phase
+    }
+    MESSAGE {
+        text id PK
+        text conversation_id FK
+        enum role
+        enum lane
+        bool is_stuck
+    }
+    PROMPT_SETTINGS {
+        text user_id PK, FK
+        text provider
+        text system_prompt
+        jsonb suggested_prompts
+    }
+    RAG_CONFIG {
+        text user_id PK, FK
+        int top_k
+        text min_similarity
+        bool enabled
+    }
+    KNOWLEDGE_CHUNK {
+        text id PK
+        text source
+        text content
+        vector embedding
+    }
 ```
 
 ### Migration commands
