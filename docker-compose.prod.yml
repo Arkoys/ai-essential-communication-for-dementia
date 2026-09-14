@@ -38,6 +38,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      target: migration
     command: node --import tsx scripts/migrate.ts
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-dementia_coach}
@@ -51,18 +52,21 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      args:
+        # Safe to expose in the browser; the authoritative check remains
+        # server-side via ADMIN_EMAILS.
+        NEXT_PUBLIC_ADMIN_EMAILS: ${NEXT_PUBLIC_ADMIN_EMAILS:-}
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-dementia_coach}
       BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET must be set}
       BETTER_AUTH_URL: ${BETTER_AUTH_URL:?BETTER_AUTH_URL must be set}
-      # Comma-separated list of emails granted admin access (RAG corpus management).
       ADMIN_EMAILS: ${ADMIN_EMAILS:-}
+      LLM_PROVIDER: ${LLM_PROVIDER:-harvard}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      HARVARD_OPENAI_KEY: ${HARVARD_OPENAI_KEY:-}
+      HARVARD_OPENAI_BASE_URL: ${HARVARD_OPENAI_BASE_URL:-https://go.apis.huit.harvard.edu/ais-openai-direct/v2/}
+      HARVARD_MODEL: ${HARVARD_MODEL:-gpt-5.5}
       NODE_ENV: production
-    build_args:
-      # Comma-separated admin emails. Safe to expose at build time — these are
-      # only used for client-side UI gating. The authoritative check is
-      # server-side (lib/admin.ts) and reads ADMIN_EMAILS at runtime.
-      NEXT_PUBLIC_ADMIN_EMAILS: ${NEXT_PUBLIC_ADMIN_EMAILS:-}
     depends_on:
       postgres:
         condition: service_healthy
@@ -70,10 +74,11 @@ services:
         condition: service_completed_successfully
     restart: unless-stopped
     healthcheck:
-      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/"]
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/healthz"]
       interval: 30s
       timeout: 10s
       retries: 3
+      start_period: 10s
 
 volumes:
   postgres_data:

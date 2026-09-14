@@ -1,0 +1,127 @@
+{
+  "family": "ecllm_app",
+  "taskRoleArn": "arn:aws:iam::895735450791:role/Aria_API_ECS_Task",
+  "executionRoleArn": "arn:aws:iam::895735450791:role/Aria_API_ECS_Task",
+  "networkMode": "bridge",
+  "requiresCompatibilities": [
+    "EC2"
+  ],
+  "runtimePlatform": {
+    "cpuArchitecture": "X86_64",
+    "operatingSystemFamily": "LINUX"
+  },
+  "containerDefinitions": [
+    {
+      "name": "ecllm_migrate",
+      "image": "895735450791.dkr.ecr.us-west-2.amazonaws.com/ecllm_app:migration-latest",
+      "essential": false,
+      "cpu": 100,
+      "memoryReservation": 128,
+      "secrets": [
+        {
+          "name": "DATABASE_URL",
+          "valueFrom": "arn:aws:secretsmanager:us-west-2:895735450791:secret:ecllmapp-fRw0Wn:DATABASE_URL::"
+        }
+      ],
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "ecllm_app",
+          "awslogs-region": "us-west-2",
+          "awslogs-stream-prefix": "migration"
+        }
+      }
+    },
+    {
+      "name": "ecllm_app",
+      "image": "895735450791.dkr.ecr.us-west-2.amazonaws.com/ecllm_app:latest",
+      "essential": true,
+      "cpu": 500,
+      "memoryReservation": 512,
+      "dependsOn": [
+        {
+          "containerName": "ecllm_migrate",
+          "condition": "SUCCESS"
+        }
+      ],
+      "portMappings": [
+        {
+          "containerPort": 3000,
+          "hostPort": 0,
+          "protocol": "tcp",
+          "appProtocol": "http"
+        }
+      ],
+      "environment": [
+        {
+          "name": "NODE_ENV",
+          "value": "production"
+        },
+        {
+          "name": "BETTER_AUTH_URL",
+          "value": "https://ec-dementia-app.ariadnelabs.net"
+        },
+        {
+          "name": "LLM_PROVIDER",
+          "value": "harvard"
+        },
+        {
+          "name": "HARVARD_OPENAI_BASE_URL",
+          "value": "https://go.apis.huit.harvard.edu/ais-openai-direct/v2/"
+        },
+        {
+          "name": "HARVARD_MODEL",
+          "value": "gpt-5.5"
+        }
+      ],
+      "secrets": [
+        {
+          "name": "DATABASE_URL",
+          "valueFrom": "arn:aws:secretsmanager:us-west-2:895735450791:secret:ecllmapp-fRw0Wn:DATABASE_URL::"
+        },
+        {
+          "name": "BETTER_AUTH_SECRET",
+          "valueFrom": "arn:aws:secretsmanager:us-west-2:895735450791:secret:ecllmapp-fRw0Wn:BETTER_AUTH_SECRET::"
+        },
+        {
+          "name": "ADMIN_EMAILS",
+          "valueFrom": "arn:aws:secretsmanager:us-west-2:895735450791:secret:ecllmapp-fRw0Wn:ADMIN_EMAILS::"
+        },
+        {
+          "name": "GEMINI_API_KEY",
+          "valueFrom": "arn:aws:secretsmanager:us-west-2:895735450791:secret:ecllmapp-fRw0Wn:GEMINI_API_KEY::"
+        },
+        {
+          "name": "HARVARD_OPENAI_KEY",
+          "valueFrom": "arn:aws:secretsmanager:us-west-2:895735450791:secret:ecllmapp-fRw0Wn:HARVARD_OPENAI_KEY::"
+        }
+      ],
+      "healthCheck": {
+        "command": [
+          "CMD-SHELL",
+          "wget -q --spider http://localhost:3000/healthz || exit 1"
+        ],
+        "interval": 30,
+        "timeout": 10,
+        "retries": 3,
+        "startPeriod": 10
+      },
+      "logConfiguration": {
+        "logDriver": "awslogs",
+        "options": {
+          "awslogs-group": "ecllm_app",
+          "awslogs-region": "us-west-2",
+          "awslogs-stream-prefix": "ecs"
+        }
+      }
+    }
+  ],
+  "volumes": [],
+  "placementConstraints": [],
+  "tags": [
+    {
+      "key": "Application",
+      "value": "ecllm"
+    }
+  ]
+}

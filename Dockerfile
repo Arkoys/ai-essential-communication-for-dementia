@@ -5,45 +5,28 @@ WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
 
-# ---------- Stage 2: builder ----------
+# ---------- Stage 2: database migrations ----------
+FROM deps AS migration
+WORKDIR /app
+COPY . .
+CMD ["node", "--import", "tsx", "scripts/migrate.ts"]
+
+# ---------- Stage 3: builder ----------
 FROM node:20-alpine AS builder
 WORKDIR /app
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
-# Build-time args for client-side values. Only NEXT_PUBLIC_* values are
-# inlined into the JS bundle; everything else stays server-side and is
-# supplied at runtime via the docker-compose environment block.
+# Only public values belong in build arguments. Server credentials are
+# supplied to the runtime container and are never stored in image layers.
 ARG NEXT_PUBLIC_ADMIN_EMAILS=
 
-# Server-only LLM provider keys + Postgres URL + Better Auth.
-# (For local dev, copy these from .env.example; for production, supply them
-# via docker-compose env entries — never via NEXT_PUBLIC_* build args.)
-ARG DATABASE_URL
-ARG BETTER_AUTH_SECRET
-ARG BETTER_AUTH_URL=http://localhost:3000
-ARG ADMIN_EMAILS=
-ARG LLM_PROVIDER=harvard
-ARG GEMINI_API_KEY
-ARG HARVARD_OPENAI_KEY
-ARG HARVARD_OPENAI_BASE_URL=https://go.apis.huit.harvard.edu/ais-openai-direct/v2/
-ARG HARVARD_MODEL=gpt-5.5
-
 ENV NEXT_PUBLIC_ADMIN_EMAILS=$NEXT_PUBLIC_ADMIN_EMAILS \
-    DATABASE_URL=$DATABASE_URL \
-    BETTER_AUTH_SECRET=$BETTER_AUTH_SECRET \
-    BETTER_AUTH_URL=$BETTER_AUTH_URL \
-    ADMIN_EMAILS=$ADMIN_EMAILS \
-    LLM_PROVIDER=$LLM_PROVIDER \
-    GEMINI_API_KEY=$GEMINI_API_KEY \
-    HARVARD_OPENAI_KEY=$HARVARD_OPENAI_KEY \
-    HARVARD_OPENAI_BASE_URL=$HARVARD_OPENAI_BASE_URL \
-    HARVARD_MODEL=$HARVARD_MODEL \
     NEXT_TELEMETRY_DISABLED=1
 
 RUN npm run build
 
-# ---------- Stage 3: runner ----------
+# ---------- Stage 4: runner ----------
 FROM node:20-alpine AS runner
 WORKDIR /app
 
@@ -65,7 +48,7 @@ USER nextjs
 EXPOSE 3000
 
 # Healthcheck
-HEALTHCHECK --interval=30s --timeout=10s --retries=3 \
-  CMD wget -q --spider http://localhost:3000/ || exit 1
+HEALTHCHECK --interval=30s --timeout=10s --start-period=10s --retries=3 \
+  CMD wget -q --spider http://localhost:3000/healthz || exit 1
 
 CMD ["node", "server.js"]

@@ -22,6 +22,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      target: migration
     command: node --import tsx scripts/migrate.ts
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-dementia_coach}
@@ -36,7 +37,7 @@ services:
       context: .
       dockerfile: Dockerfile
       target: deps
-    command: sh -c "npm run db:migrate && npm run dev"
+    command: npm run dev
     ports:
       - "3000:3000"
     environment:
@@ -66,6 +67,12 @@ services:
       migrate:
         condition: service_completed_successfully
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
 
 volumes:
   postgres_data:
