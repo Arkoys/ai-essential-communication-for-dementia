@@ -1,0 +1,34 @@
+services:
+  # Next.js development server connected to an existing, initialized
+  # PostgreSQL/RDS database. This stack does not run schema or data migrations.
+  next:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      target: deps
+    command: npm run dev
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL must be set}
+      BETTER_AUTH_SECRET: ${BETTER_AUTH_SECRET:?BETTER_AUTH_SECRET must be set}
+      BETTER_AUTH_URL: ${BETTER_AUTH_URL:-http://localhost:3000}
+      ADMIN_EMAILS: ${ADMIN_EMAILS:-}
+      NEXT_PUBLIC_ADMIN_EMAILS: ${NEXT_PUBLIC_ADMIN_EMAILS:-}
+      LLM_PROVIDER: ${LLM_PROVIDER:-harvard}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      HARVARD_OPENAI_KEY: ${HARVARD_OPENAI_KEY:-}
+      HARVARD_OPENAI_BASE_URL: ${HARVARD_OPENAI_BASE_URL:-https://go.apis.huit.harvard.edu/ais-openai-direct/v2/}
+      HARVARD_MODEL: ${HARVARD_MODEL:-gpt-5.5}
+      NODE_ENV: development
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost:3000/healthz"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s

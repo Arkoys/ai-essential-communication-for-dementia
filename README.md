@@ -75,6 +75,24 @@ This brings up three services:
 
 Open **http://localhost:3000** and sign up for the first account.
 
+### Use an existing PostgreSQL or AWS RDS database
+
+To run the Next.js development container without starting the local Postgres
+service, create an RDS-specific environment file and use the dedicated Compose
+configuration:
+
+```bash
+cp .env.rds.example .env.rds.local
+# Set DATABASE_URL, BETTER_AUTH_SECRET, and an LLM provider key.
+docker compose --env-file .env.rds.local -f docker-compose.dev-rds.yml up --build
+```
+
+This starts only the Next.js development server and assumes the external
+database already contains the required schema and data. It does not run schema
+or data migrations. The database endpoint must be reachable from the Docker
+host, and its security group must allow PostgreSQL traffic from that host. The
+example connection string enables TLS with `sslmode=require`.
+
 > #### Granting yourself admin
 >
 > The admin allowlist is **env-driven** (see [Admin management](#admin-management)). The `user.is_admin` column is in the schema but **is not yet read by any route** — so the very first signup is *not* automatically admin unless the email was already in `ADMIN_EMAILS` when the stack booted.
@@ -169,6 +187,7 @@ All variables live in `.env.local` (Docker compose reads the same file). The ful
 ```
 .
 ├── docker-compose.yml          # Dev stack: postgres + migrate + next
+├── docker-compose.dev-rds.yml  # Dev stack: Next.js using an initialized external RDS DB
 ├── docker-compose.prod.yml     # Prod stack: postgres + migrate + next + nginx
 ├── Dockerfile                  # Multi-stage Next.js standalone build
 ├── nginx/                      # Reverse proxy (SSL, gzip, SSE-friendly)

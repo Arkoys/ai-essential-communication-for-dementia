@@ -6,6 +6,7 @@ coverage/
 *.log
 .env*
 !.env.example
+!.env.rds.example
 .env.docker.local
 .env.local
 docker-compose.override.yml
