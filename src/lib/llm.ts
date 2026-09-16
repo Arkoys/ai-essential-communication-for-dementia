@@ -373,7 +373,9 @@ export async function generateClinicalResponseWithHistory(
     }
 
     // ===== STEP 2: Build System Prompt with Template Addon =====
-    const knowledgeContent = promptSettings.knowledgeContent || DEFAULT_KNOWLEDGE_CONTENT;
+    // Fall back to the full static toolkit (Primer + Stuck Points + Sample
+    // Language for all three phases + curated resources + citation rules)
+    const knowledgeContent = promptSettings.knowledgeContent || buildToolkitReferenceForPrompt();
     const baseSystemPrompt = promptSettings.systemPrompt || SYSTEM_PROMPT;
 
     // Build the base prompt with template addon
