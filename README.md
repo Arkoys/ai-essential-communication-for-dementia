@@ -75,23 +75,53 @@ This brings up three services:
 
 Open **http://localhost:3000** and sign up for the first account.
 
-### Use an existing PostgreSQL or AWS RDS database
+### Local development with private RDS through a bastion
 
-To run the Next.js development container without starting the local Postgres
-service, create an RDS-specific environment file and use the dedicated Compose
-configuration:
+This runs only Next.js against an existing RDS database with its schema, data,
+and pgvector already installed. No local Postgres or migrations are started.
+Replace all `<PLACEHOLDERS>` below with your own values.
 
-```bash
-cp .env.rds.example .env.rds.local
-# Set DATABASE_URL, BETTER_AUTH_SECRET, and an LLM provider key.
-docker compose --env-file .env.rds.local -f docker-compose.dev-rds.yml up --build
-```
+1. Connect the Windows host to the required VPN. The bastion must allow SSH
+   from your VPN egress address, and RDS must allow port 5432 from the bastion.
+   Run this on **Windows** and keep the terminal open:
 
-This starts only the Next.js development server and assumes the external
-database already contains the required schema and data. It does not run schema
-or data migrations. The database endpoint must be reachable from the Docker
-host, and its security group must allow PostgreSQL traffic from that host. The
-example connection string enables TLS with `sslmode=require`.
+   ```powershell
+   ssh -i "<KEY_FILE>" -N -L "127.0.0.1:15432:<RDS_ENDPOINT>:5432" -L "<WINDOWS_HOST_ONLY_IP>:15432:<RDS_ENDPOINT>:5432" -o ExitOnForwardFailure=yes -o ServerAliveInterval=60 <BASTION_USER>@<BASTION_HOST>
+   ```
+
+   Find `<WINDOWS_HOST_ONLY_IP>` using `ipconfig`: use the Windows adapter on
+   the same subnet as Vagrant. For example, if the Vagrant guest IP is
+   `192.168.33.11`, the Windows host-only adapter IP might be `192.168.33.1`;
+   confirm it with `ipconfig` before using it. If needed, allow inbound TCP 15432 in Windows
+   Firewall on that adapter, restricted to the Vagrant guest IP. pgAdmin can
+   continue using `127.0.0.1:15432`.
+
+2. Edit the Git-ignored `.env.docker.local`. If it does not exist, copy
+   `.env.rds.example` to it first. Keep your Better Auth secret and provider key
+   set, and URL-encode special characters in the database credentials:
+
+   ```dotenv
+   DATABASE_URL=postgresql://<DB_USER>:<URL_ENCODED_PASSWORD>@<WINDOWS_HOST_ONLY_IP>:15432/<DB_NAME>?sslmode=no-verify
+   BETTER_AUTH_URL=http://<VAGRANT_GUEST_IP>:3000
+   ```
+
+   Container localhost cannot reach the Windows tunnel. `sslmode=no-verify`
+   keeps database TLS encryption but skips certificate verification; use it
+   only as a local development workaround. Production should use the RDS CA
+   bundle and `sslmode=verify-full`. Never commit credentials or private keys.
+
+3. In **Vagrant**, from the repository directory:
+
+   ```bash
+   docker-compose -f docker-compose.dev-rds.yml --env-file .env.docker.local up --build
+   ```
+
+   Open `http://<VAGRANT_GUEST_IP>:3000`. After changing environment values,
+   recreate the container:
+
+   ```bash
+   docker-compose -f docker-compose.dev-rds.yml --env-file .env.docker.local up -d --force-recreate next
+   ```
 
 > #### Granting yourself admin
 >
