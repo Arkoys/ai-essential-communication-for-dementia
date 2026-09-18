@@ -1,9 +1,8 @@
 {
-    "taskDefinitionArn": "arn:aws:ecs:us-west-2:895735450791:task-definition/ecllm_app:3",
     "containerDefinitions": [
         {
-            "name": "ecllm_app",
-            "image": "895735450791.dkr.ecr.us-west-2.amazonaws.com/ecllm_app:latest",
+            "name": "ecllm_nextjs",
+            "image": "895735450791.dkr.ecr.us-west-2.amazonaws.com/ecllm_nextjs:latest",
             "cpu": 250,
             "memoryReservation": 256,
             "portMappings": [
@@ -19,16 +18,26 @@
                 {
                     "name": "NODE_ENV",
                     "value": "production"
+                },
+                {
+                    "name": "BETTER_AUTH_URL",
+                    "value": "https://ec-dementia-app.ariadnelabs.net"
+                },
+                {
+                    "name": "LLM_PROVIDER",
+                    "value": "harvard"
+                },
+                {
+                    "name": "HARVARD_OPENAI_BASE_URL",
+                    "value": "https://go.apis.huit.harvard.edu/ais-openai-direct/v2/"
+                },
+                {
+                    "name": "HARVARD_MODEL",
+                    "value": "gpt-5.5"
                 }
             ],
             "mountPoints": [],
             "volumesFrom": [],
-            "dependsOn": [
-                {
-                    "containerName": "ecllm_backend",
-                    "condition": "HEALTHY"
-                }
-            ],
             "logConfiguration": {
                 "logDriver": "awslogs",
                 "options": {
@@ -40,118 +49,36 @@
             "healthCheck": {
                 "command": [
                     "CMD-SHELL",
-                    "wget -q --spider http://localhost:3000/ || exit 1"
+                    "wget -q --spider http://localhost:3000/healthz || exit 1"
                 ],
                 "interval": 30,
                 "timeout": 10,
                 "retries": 3,
                 "startPeriod": 10
             },
-            "systemControls": []
-        },
-        {
-            "name": "ecllm_backend",
-            "image": "895735450791.dkr.ecr.us-west-2.amazonaws.com/ecllm_backend:latest",
-            "cpu": 250,
-            "memoryReservation": 256,
-            "portMappings": [
-                {
-                    "containerPort": 3001,
-                    "hostPort": 0,
-                    "protocol": "tcp",
-                    "appProtocol": "http"
-                }
-            ],
-            "essential": true,
-            "environment": [
-                {
-                    "name": "PORT",
-                    "value": "3001"
-                },
-                {
-                    "name": "HARVARD_OPENAI_BASE_URL",
-                    "value": "https://go.apis.huit.harvard.edu/ais-openai-direct/v2/"
-                },
-                {
-                    "name": "NODE_ENV",
-                    "value": "production"
-                }
-            ],
-            "mountPoints": [],
-            "volumesFrom": [],
+            "systemControls": [],
             "secrets": [
+                {
+                    "name": "DATABASE_URL",
+                    "valueFrom": "arn:aws:secretsmanager:us-west-2:895735450791:secret:ecllmapp-fRw0Wn:DATABASE_URL::"
+                },
+                {
+                    "name": "BETTER_AUTH_SECRET",
+                    "valueFrom": "arn:aws:secretsmanager:us-west-2:895735450791:secret:ecllmapp-fRw0Wn:BETTER_AUTH_SECRET::"
+                },
                 {
                     "name": "HARVARD_OPENAI_KEY",
                     "valueFrom": "arn:aws:secretsmanager:us-west-2:895735450791:secret:ecllmapp-fRw0Wn:HARVARD_OPENAI_KEY::"
                 }
-            ],
-            "logConfiguration": {
-                "logDriver": "awslogs",
-                "options": {
-                    "awslogs-group": "ecllm_backend",
-                    "awslogs-region": "us-west-2",
-                    "awslogs-stream-prefix": "ecs"
-                }
-            },
-            "healthCheck": {
-                "command": [
-                    "CMD-SHELL",
-                    "wget -q --spider http://localhost:3001/health || exit 1"
-                ],
-                "interval": 30,
-                "timeout": 10,
-                "retries": 3,
-                "startPeriod": 10
-            },
-            "systemControls": []
+            ]
         }
     ],
     "family": "ecllm_app",
     "taskRoleArn": "arn:aws:iam::895735450791:role/Aria_API_ECS_Task",
     "executionRoleArn": "arn:aws:iam::895735450791:role/Aria_API_ECS_Task",
     "networkMode": "bridge",
-    "revision": 3,
     "volumes": [],
-    "status": "ACTIVE",
-    "requiresAttributes": [
-        {
-            "name": "com.amazonaws.ecs.capability.logging-driver.awslogs"
-        },
-        {
-            "name": "ecs.capability.execution-role-awslogs"
-        },
-        {
-            "name": "com.amazonaws.ecs.capability.ecr-auth"
-        },
-        {
-            "name": "com.amazonaws.ecs.capability.docker-remote-api.1.19"
-        },
-        {
-            "name": "ecs.capability.secrets.asm.environment-variables"
-        },
-        {
-            "name": "com.amazonaws.ecs.capability.docker-remote-api.1.21"
-        },
-        {
-            "name": "com.amazonaws.ecs.capability.task-iam-role"
-        },
-        {
-            "name": "ecs.capability.container-health-check"
-        },
-        {
-            "name": "ecs.capability.container-ordering"
-        },
-        {
-            "name": "ecs.capability.execution-role-ecr-pull"
-        },
-        {
-            "name": "com.amazonaws.ecs.capability.docker-remote-api.1.29"
-        }
-    ],
     "placementConstraints": [],
-    "compatibilities": [
-        "EC2"
-    ],
     "runtimePlatform": {
         "cpuArchitecture": "X86_64",
         "operatingSystemFamily": "LINUX"
@@ -159,8 +86,6 @@
     "requiresCompatibilities": [
         "EC2"
     ],
-    "registeredAt": "2026-08-26T22:39:19.077Z",
-    "registeredBy": "arn:aws:iam::895735450791:user/ssrinath@ariadnelabs.org",
     "tags": [
         {
             "key": "Application",
