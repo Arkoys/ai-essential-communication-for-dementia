@@ -1,0 +1,44 @@
+version: 0.2
+
+env:
+  variables:
+    AWS_DEFAULT_REGION: us-west-2
+    APP_REPOSITORY_URI: 895735450791.dkr.ecr.us-west-2.amazonaws.com/ecllm_dev_nextjs
+
+phases:
+  pre_build:
+    commands:
+      - echo Logging in to Amazon ECR...
+      - aws ecr get-login-password --region "$AWS_DEFAULT_REGION" | docker login --username AWS --password-stdin 895735450791.dkr.ecr.us-west-2.amazonaws.com
+      - echo Logging in to Docker Hub...
+      - aws s3 cp s3://ariadnelabs-admin/docker.key docker.key
+      - docker login --username ssrinathal --password-stdin < docker.key
+      - rm -f docker.key
+      - COMMIT_HASH=$(echo "${CODEBUILD_RESOLVED_SOURCE_VERSION:-latest}" | cut -c 1-7)
+      - IMAGE_TAG=${COMMIT_HASH:-latest}
+      - echo Building image tag "$IMAGE_TAG"
+
+  build:
+    commands:
+      - echo Build started on `date`
+      - echo Building the Next.js production image...
+      - |
+        docker build \
+          --target runner \
+          --build-arg NEXT_PUBLIC_ADMIN_EMAILS="${NEXT_PUBLIC_ADMIN_EMAILS:-}" \
+          --tag "$APP_REPOSITORY_URI:$IMAGE_TAG" \
+          --tag "$APP_REPOSITORY_URI:latest" \
+          .
+
+  post_build:
+    commands:
+      - echo Build completed on `date`
+      - echo Pushing Next.js images...
+      - docker push "$APP_REPOSITORY_URI:$IMAGE_TAG"
+      - docker push "$APP_REPOSITORY_URI:latest"
+      - printf '[{"name":"ecllm_dev_nextjs","imageUri":"%s"}]' "$APP_REPOSITORY_URI:$IMAGE_TAG" > imagedefinitions.json
+
+artifacts:
+  files:
+    - imagedefinitions.json
+    - ecs_task_definition.json
