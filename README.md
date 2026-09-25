@@ -415,17 +415,28 @@ docker compose -f docker-compose.prod.yml up --build -d
 
 Place SSL certs at `nginx/ssl/` and edit `nginx/nginx.conf` to set your `server_name` and TLS paths.
 
-### Production (Ariadne Labs ECS)
+### 🚀 Automated deployment - Production (Ariadne Labs ECS)
 
-The deployment is triggered by the `aria-deploy` workflow after pushing the `from-july-revamp` branch:
+To deploy:
 
-1. Push to `from-july-revamp`.
-2. Open the [aria-deploy job](https://github.com/Arkoys/ai-essential-communication-for-dementia/actions) and click **Run workflow** on `aria deployment job`.
-3. A successfully submitted deployment displays `Sucessfully submitted aria deployment job`.
-4. Do not click the deployment link multiple times — each click starts a separate deployment job.
-5. The updated version will be deployed within a few minutes and become available on the [EC Dementia site](https://ec-dementia-app.ariadnelabs.net/).
+- Click the [deployment link](https://api.aria.ariadnelabs.net/deployaria/ecllmapp).
+  - This starts the build process. The repository's `main` branch is checked out and built as Docker images. Changes from another branch must first be merged into `main`.
+  - A successfully submitted deployment displays: `Sucessfully submitted aria deployment job`.
+  - Do not click the deployment link multiple times, because each click starts a separate deployment job.
+- The updated version will be deployed within a few minutes and become available on the [EC Dementia site](https://ec-dementia-app.ariadnelabs.net/).
 
-The future plan is to schedule this job nightly to auto-deploy the latest `from-july-revamp`.
+In the future, this job could be scheduled to run nightly and automatically deploy the latest version of `main`.
+
+### 🚀 Automated deployment - Development (Ariadne Labs ECS)
+
+To deploy:
+
+- Click the [deployment link](https://api.aria.ariadnelabs.net/deployaria/ecllmappdev).
+  - This starts the build process. The repository's `dev` branch is checked out and built as Docker images. Changes from another branch must first be merged into `dev`.
+  - A successfully submitted deployment displays: `Sucessfully submitted aria deployment job`.
+  - Do not click the deployment link multiple times, because each click starts a separate deployment job.
+- The updated version will be deployed within a few minutes and become available on the [EC Dementia site](https://dev.ec-dementia-app.ariadnelabs.net/).
+
 
 ### CI/CD secrets (what to provision in your deploy env)
 
